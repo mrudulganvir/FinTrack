@@ -1,78 +1,46 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.orm import Session
 from app.database.db import get_db_connection
-from app.database.schema import UserCreate, UserLogin
-from app.auth.security import hash_password, verify_password, create_access_token
-from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError
-from fastapi import status
+from app.database.models import User
+from app.schemas.user_schema import UserCreate, UserLogin, UserResponse
+from app.core.security import hash_password, verify_password, create_access_token
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
-def get_current_user(token: str = Depends(oauth2_scheme)):
-    from app.core.config import settings
-    try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
-            raise HTTPException(status_code=401, detail="Invalid token")
-        return email
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    
-router = APIRouter()
+@router.post("/signup", response_model=UserResponse)
+def signup(user: UserCreate, db: Session = Depends(get_db_connection)):
 
+    existing_user = db.query(User).filter(User.email == user.email).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
 
-@router.get("/profile")
-def get_profile(current_user: str = Depends(get_current_user)):
-    return {"message": f"Welcome {current_user}"}
+    new_user = User(
+        email=user.email,
+        hashed_password=hash_password(user.password)
+    )
 
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
 
-@router.post("/register")
-def register(user: UserCreate):
-    db = get_db_connection()
-    cursor = db.cursor(dictionary=True)
+    return new_user
 
-    try:
-        hashed_password = hash_password(user.password)
-
-        sql = "INSERT INTO users (email, password) VALUES (%s, %s)"
-        cursor.execute(sql, (user.email, hashed_password))
-        db.commit()
-
-        return {"message": "User registered successfully"}
-
-    except:
-        raise HTTPException(status_code=400, detail="Email already exists")
-
-    finally:
-        cursor.close()
-        db.close()
 
 @router.post("/login")
-def login(user: UserLogin):
-    db = get_db_connection()
-    cursor = db.cursor(dictionary=True)
+def login(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db_connection)
+):
+    db_user = db.query(User).filter(User.email == form_data.username).first()
 
-    sql = "SELECT * FROM users WHERE email = %s"
-    cursor.execute(sql, (user.email,))
-    db_user = cursor.fetchone()
-
-    cursor.close()
-    db.close()
-
-    if not db_user:
+    if not db_user or not verify_password(form_data.password, db_user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    if not verify_password(user.password, db_user["password"]):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-
-    access_token = create_access_token(
-        data={"sub": db_user["email"]}
-    )
+    access_token = create_access_token({"user_id": db_user.id})
 
     return {
         "access_token": access_token,
         "token_type": "bearer"
     }
-    
