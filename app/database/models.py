@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Enu
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database.db import Base
+from datetime import datetime
 import enum
 
 
@@ -31,7 +32,7 @@ class Transaction(Base):
     category = Column(String(100), nullable=True)
     description = Column(String(255), nullable=True)
 
-    transaction_date = Column(DateTime, nullable=False)
+    transaction_date = Column(DateTime, nullable=False, default=datetime.utcnow)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     user = relationship("User", back_populates="transactions")

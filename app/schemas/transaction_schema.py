@@ -1,5 +1,5 @@
-from pydantic import BaseModel
 from datetime import datetime
+from pydantic import BaseModel
 from typing import Optional
 from enum import Enum
 
@@ -20,11 +20,10 @@ class TransactionCreate(BaseModel):
 class TransactionResponse(BaseModel):
     id: int
     amount: float
-    type: TransactionType
-    category: Optional[str]
-    description: Optional[str]
+    type: str
+    category: str | None = None
+    description: str | None = None
     transaction_date: datetime
-    created_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True 
