@@ -1,12 +1,23 @@
-from app.config import settings
-import mysql.connector
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+engine = create_engine(
+    DATABASE_URL,
+    connect_args={"ssl": {"ssl_disabled": False}}
+)
+
+SessionLocal = sessionmaker(bind=engine)
+Base = declarative_base()
 
 def get_db_connection():
-    return mysql.connector.connect(
-        host=settings.DB_HOST,
-        port=settings.DB_PORT,
-        user=settings.DB_USER,
-        password=settings.DB_PASSWORD,
-        database=settings.DB_NAME,
-        ssl_disabled=False   
-    )
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

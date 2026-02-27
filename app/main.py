@@ -1,8 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routes import auth_route
-from app.database.db import get_db_connection
+from .database.db import get_db_connection
+from app.database.db import engine
+from app import models
 
+models.Base.metadata.create_all(bind=engine)
 app = FastAPI(title="FinTrack", description="A financial tracking application", version="1.0.0")
 
 app.add_middleware(
