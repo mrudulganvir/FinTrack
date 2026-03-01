@@ -1,0 +1,17 @@
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+
+# Database
+sqlalchemy==2.0.35
+pymysql==1.1.1
+
+# Authentication
+python-jose==3.3.0
+passlib[bcrypt]==1.7.4
+
+# Validation & Settings
+pydantic==2.9.2
+python-dotenv==1.0.1
+
+# Optional but recommended
+alembic==1.13.2
