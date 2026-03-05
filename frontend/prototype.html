@@ -1,0 +1,2096 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FinanceHub - Personal Finance Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      box-sizing: border-box;
+    }
+    * {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #1a1a2e;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #374151;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #4b5563;
+    }
+    .glass-card {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .glow-teal {
+      box-shadow: 0 0 20px rgba(20, 184, 166, 0.3);
+    }
+    .gradient-border {
+      position: relative;
+    }
+    .gradient-border::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      padding: 1px;
+      background: linear-gradient(135deg, #14b8a6, #0ea5e9);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+    }
+    .nav-item {
+      transition: all 0.3s ease;
+    }
+    .nav-item:hover {
+      background: rgba(20, 184, 166, 0.1);
+      border-left: 3px solid #14b8a6;
+    }
+    .nav-item.active {
+      background: rgba(20, 184, 166, 0.15);
+      border-left: 3px solid #14b8a6;
+    }
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 5px rgba(20, 184, 166, 0.5); }
+      50% { box-shadow: 0 0 20px rgba(20, 184, 166, 0.8); }
+    }
+    .pulse-animation {
+      animation: pulse-glow 2s infinite;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .slide-in {
+      animation: slideIn 0.5s ease-out forwards;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+    .float-animation {
+      animation: float 3s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body class="h-full bg-[#0f0f1a] text-gray-100 overflow-auto">
+  <div id="app" class="h-full w-full">
+    
+    <!-- Login Screen -->
+    <div id="login-screen" class="h-full w-full flex items-center justify-center p-4">
+      <div class="w-full max-w-md">
+        <div class="glass-card rounded-2xl p-8 slide-in">
+          <div class="text-center mb-8">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center glow-teal">
+              <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+            <h1 id="app-title-login" class="text-2xl font-bold text-white">FinanceHub</h1>
+            <p class="text-gray-400 mt-2">Manage your finances smartly</p>
+          </div>
+          
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-2">Email Address</label>
+              <input type="email" id="login-email" placeholder="Enter your email" 
+                class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-teal-500 transition-colors">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-2">Password</label>
+              <input type="password" id="login-password" placeholder="Enter your password"
+                class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-teal-500 transition-colors">
+            </div>
+            
+            <div class="flex items-center justify-between text-sm">
+              <label class="flex items-center text-gray-400">
+                <input type="checkbox" class="mr-2 rounded bg-[#1a1a2e] border-gray-700 text-teal-500 focus:ring-teal-500">
+                Remember me
+              </label>
+              <a href="#" class="text-teal-400 hover:text-teal-300">Forgot password?</a>
+            </div>
+            
+            <button onclick="showDashboard()" class="w-full py-3 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-semibold hover:from-teal-600 hover:to-cyan-600 transition-all transform hover:scale-[1.02] active:scale-[0.98]">
+              Sign In
+            </button>
+            
+            <button class="w-full py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white font-medium flex items-center justify-center gap-3 hover:bg-[#252540] transition-colors">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 1C5.925 1 1 5.925 1 12s4.925 11 11 11 11-4.925 11-11S18.075 1 12 1zm0 2c4.97 0 9 4.03 9 9s-4.03 9-9 9-9-4.03-9-9 4.03-9 9-9zm0 3a3 3 0 100 6 3 3 0 000-6zm0 8c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+              </svg>
+              Sign in with Biometrics
+            </button>
+          </div>
+          
+          <div class="mt-6 text-center">
+            <p class="text-gray-400">Don't have an account? 
+              <button onclick="showSignup()" class="text-teal-400 hover:text-teal-300 font-medium">Sign up</button>
+            </p>
+          </div>
+          
+          <div class="mt-4 flex items-center justify-center gap-2 text-xs text-gray-500">
+            <span class="w-2 h-2 rounded-full bg-green-500"></span>
+            Session secure • 256-bit encryption
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Signup Screen -->
+    <div id="signup-screen" class="h-full w-full hidden flex items-center justify-center p-4">
+      <div class="w-full max-w-md">
+        <div class="glass-card rounded-2xl p-8 slide-in">
+          <div class="text-center mb-8">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center glow-teal">
+              <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+              </svg>
+            </div>
+            <h1 class="text-2xl font-bold text-white">Create Account</h1>
+            <p class="text-gray-400 mt-2">Start your financial journey</p>
+          </div>
+          
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-2">Full Name</label>
+              <input type="text" placeholder="Enter your name" 
+                class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-teal-500 transition-colors">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-2">Email Address</label>
+              <input type="email" placeholder="Enter your email" 
+                class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-teal-500 transition-colors">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-2">Mobile Number</label>
+              <div class="flex">
+                <span class="px-4 py-3 rounded-l-xl bg-[#252540] border border-r-0 border-gray-700 text-gray-400">+91</span>
+                <input type="tel" placeholder="Enter mobile number" 
+                  class="flex-1 px-4 py-3 rounded-r-xl bg-[#1a1a2e] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-teal-500 transition-colors">
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-2">Password</label>
+              <input type="password" placeholder="Create a strong password"
+                class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-teal-500 transition-colors">
+            </div>
+            
+            <label class="flex items-start text-gray-400 text-sm">
+              <input type="checkbox" class="mt-1 mr-2 rounded bg-[#1a1a2e] border-gray-700 text-teal-500 focus:ring-teal-500">
+              I agree to the Terms of Service and Privacy Policy
+            </label>
+            
+            <button onclick="showDashboard()" class="w-full py-3 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-semibold hover:from-teal-600 hover:to-cyan-600 transition-all transform hover:scale-[1.02] active:scale-[0.98]">
+              Create Account
+            </button>
+          </div>
+          
+          <div class="mt-6 text-center">
+            <p class="text-gray-400">Already have an account? 
+              <button onclick="showLogin()" class="text-teal-400 hover:text-teal-300 font-medium">Sign in</button>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Main Dashboard -->
+    <div id="main-app" class="h-full w-full hidden flex">
+      
+      <!-- Sidebar -->
+      <aside class="w-64 bg-[#12121f] border-r border-gray-800 flex flex-col flex-shrink-0">
+        <div class="p-6 border-b border-gray-800">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center">
+              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+            <span id="app-title-sidebar" class="text-xl font-bold text-white">FinanceHub</span>
+          </div>
+        </div>
+        
+        <nav class="flex-1 py-4 overflow-y-auto">
+          <div class="px-4 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Main</div>
+          <button onclick="showSection('dashboard')" class="nav-item active w-full flex items-center gap-3 px-6 py-3 text-gray-300 hover:text-white transition-colors" data-section="dashboard">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+            </svg>
+            Dashboard
+          </button>
+          <button onclick="showSection('expenses')" class="nav-item w-full flex items-center gap-3 px-6 py-3 text-gray-300 hover:text-white transition-colors" data-section="expenses">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            Expenses
+          </button>
+          <button onclick="showSection('income')" class="nav-item w-full flex items-center gap-3 px-6 py-3 text-gray-300 hover:text-white transition-colors" data-section="income">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            Income
+          </button>
+          <button onclick="showSection('budgets')" class="nav-item w-full flex items-center gap-3 px-6 py-3 text-gray-300 hover:text-white transition-colors" data-section="budgets">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+            </svg>
+            Budgets
+          </button>
+          <button onclick="showSection('loans')" class="nav-item w-full flex items-center gap-3 px-6 py-3 text-gray-300 hover:text-white transition-colors" data-section="loans">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+            </svg>
+            Loans
+          </button>
+          
+          <div class="px-4 mt-6 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Analytics</div>
+          <button onclick="showSection('reports')" class="nav-item w-full flex items-center gap-3 px-6 py-3 text-gray-300 hover:text-white transition-colors" data-section="reports">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+            </svg>
+            Reports
+          </button>
+          <button onclick="showSection('investments')" class="nav-item w-full flex items-center gap-3 px-6 py-3 text-gray-300 hover:text-white transition-colors" data-section="investments">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+            </svg>
+            Investments
+          </button>
+          <button onclick="showSection('insights')" class="nav-item w-full flex items-center gap-3 px-6 py-3 text-gray-300 hover:text-white transition-colors" data-section="insights">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+            </svg>
+            Insights
+          </button>
+          
+          <div class="px-4 mt-6 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Support</div>
+          <button onclick="showSection('chatbot')" class="nav-item w-full flex items-center gap-3 px-6 py-3 text-gray-300 hover:text-white transition-colors" data-section="chatbot">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+            </svg>
+            Chatbot
+          </button>
+          <button onclick="showSection('settings')" class="nav-item w-full flex items-center gap-3 px-6 py-3 text-gray-300 hover:text-white transition-colors" data-section="settings">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            Settings
+          </button>
+        </nav>
+        
+        <div class="p-4 border-t border-gray-800">
+          <div class="glass-card rounded-xl p-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold">
+                RS
+              </div>
+              <div class="flex-1">
+                <p class="text-sm font-medium text-white">Rahul Sharma</p>
+                <p class="text-xs text-gray-400">Premium User</p>
+              </div>
+              <button onclick="showLogin()" class="text-gray-400 hover:text-white">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </aside>
+      
+      <!-- Main Content -->
+      <main class="flex-1 overflow-y-auto">
+        
+        <!-- Dashboard Section -->
+        <section id="section-dashboard" class="p-6">
+          <!-- Header -->
+          <div class="flex items-center justify-between mb-8">
+            <div>
+              <h1 id="welcome-message" class="text-2xl font-bold text-white">Welcome back, Rahul! 👋</h1>
+              <p class="text-gray-400 mt-1">Here's your financial overview for January 2025</p>
+            </div>
+            <div class="flex items-center gap-4">
+              <button class="p-2 rounded-xl bg-[#1a1a2e] text-gray-400 hover:text-white hover:bg-[#252540] transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                </svg>
+              </button>
+              <div class="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1a1a2e]">
+                <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                <span class="text-sm text-gray-400">Live</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Balance Card -->
+          <div class="glass-card rounded-2xl p-6 mb-6 gradient-border">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-gray-400 text-sm mb-1">Total Balance</p>
+                <h2 class="text-4xl font-bold text-white">₹4,52,750</h2>
+                <p class="text-green-400 text-sm mt-2 flex items-center gap-1">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+                  </svg>
+                  +12.5% from last month
+                </p>
+              </div>
+              <div class="w-24 h-24 float-animation">
+                <svg viewBox="0 0 100 100" class="w-full h-full">
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="#1a1a2e" stroke-width="8"/>
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="url(#gradient)" stroke-width="8" stroke-dasharray="200" stroke-dashoffset="50" stroke-linecap="round" transform="rotate(-90 50 50)"/>
+                  <defs>
+                    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stop-color="#14b8a6"/>
+                      <stop offset="100%" stop-color="#0ea5e9"/>
+                    </linearGradient>
+                  </defs>
+                </svg>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Stats Cards -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div class="glass-card rounded-2xl p-6">
+              <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center">
+                  <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                  </svg>
+                </div>
+                <span class="text-green-400 text-sm font-medium">+8.2%</span>
+              </div>
+              <p class="text-gray-400 text-sm">Total Income</p>
+              <h3 class="text-2xl font-bold text-white mt-1">₹1,25,000</h3>
+            </div>
+            
+            <div class="glass-card rounded-2xl p-6">
+              <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center">
+                  <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/>
+                  </svg>
+                </div>
+                <span class="text-red-400 text-sm font-medium">+3.1%</span>
+              </div>
+              <p class="text-gray-400 text-sm">Total Expenses</p>
+              <h3 class="text-2xl font-bold text-white mt-1">₹67,250</h3>
+            </div>
+            
+            <div class="glass-card rounded-2xl p-6">
+              <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                  <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+                  </svg>
+                </div>
+                <span class="text-blue-400 text-sm font-medium">46%</span>
+              </div>
+              <p class="text-gray-400 text-sm">Monthly Savings</p>
+              <h3 class="text-2xl font-bold text-white mt-1">₹57,750</h3>
+            </div>
+          </div>
+          
+          <!-- Charts -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- Pie Chart -->
+            <div class="glass-card rounded-2xl p-6">
+              <h3 class="text-lg font-semibold text-white mb-6">Expense Distribution</h3>
+              <div class="flex items-center justify-center">
+                <div class="relative w-48 h-48">
+                  <svg viewBox="0 0 100 100" class="w-full h-full transform -rotate-90">
+                    <circle cx="50" cy="50" r="40" fill="none" stroke="#ef4444" stroke-width="20" stroke-dasharray="75.4 251.2"/>
+                    <circle cx="50" cy="50" r="40" fill="none" stroke="#f59e0b" stroke-width="20" stroke-dasharray="50.24 251.2" stroke-dashoffset="-75.4"/>
+                    <circle cx="50" cy="50" r="40" fill="none" stroke="#10b981" stroke-width="20" stroke-dasharray="37.68 251.2" stroke-dashoffset="-125.64"/>
+                    <circle cx="50" cy="50" r="40" fill="none" stroke="#6366f1" stroke-width="20" stroke-dasharray="25.12 251.2" stroke-dashoffset="-163.32"/>
+                    <circle cx="50" cy="50" r="40" fill="none" stroke="#ec4899" stroke-width="20" stroke-dasharray="62.8 251.2" stroke-dashoffset="-188.44"/>
+                  </svg>
+                  <div class="absolute inset-0 flex items-center justify-center">
+                    <div class="text-center">
+                      <p class="text-2xl font-bold text-white">₹67.2K</p>
+                      <p class="text-xs text-gray-400">Total</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="mt-6 grid grid-cols-2 gap-3">
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                  <span class="text-sm text-gray-400">Food (30%)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-amber-500"></span>
+                  <span class="text-sm text-gray-400">Transport (20%)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+                  <span class="text-sm text-gray-400">Shopping (15%)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-indigo-500"></span>
+                  <span class="text-sm text-gray-400">Bills (10%)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-pink-500"></span>
+                  <span class="text-sm text-gray-400">Others (25%)</span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Bar Chart -->
+            <div class="glass-card rounded-2xl p-6">
+              <h3 class="text-lg font-semibold text-white mb-6">Monthly Spending Trend</h3>
+              <div class="flex items-end justify-between h-48 gap-2">
+                <div class="flex flex-col items-center flex-1">
+                  <div class="w-full bg-gradient-to-t from-teal-500 to-cyan-500 rounded-t-lg" style="height: 60%"></div>
+                  <span class="text-xs text-gray-400 mt-2">Aug</span>
+                </div>
+                <div class="flex flex-col items-center flex-1">
+                  <div class="w-full bg-gradient-to-t from-teal-500 to-cyan-500 rounded-t-lg" style="height: 80%"></div>
+                  <span class="text-xs text-gray-400 mt-2">Sep</span>
+                </div>
+                <div class="flex flex-col items-center flex-1">
+                  <div class="w-full bg-gradient-to-t from-teal-500 to-cyan-500 rounded-t-lg" style="height: 45%"></div>
+                  <span class="text-xs text-gray-400 mt-2">Oct</span>
+                </div>
+                <div class="flex flex-col items-center flex-1">
+                  <div class="w-full bg-gradient-to-t from-teal-500 to-cyan-500 rounded-t-lg" style="height: 90%"></div>
+                  <span class="text-xs text-gray-400 mt-2">Nov</span>
+                </div>
+                <div class="flex flex-col items-center flex-1">
+                  <div class="w-full bg-gradient-to-t from-teal-500 to-cyan-500 rounded-t-lg" style="height: 70%"></div>
+                  <span class="text-xs text-gray-400 mt-2">Dec</span>
+                </div>
+                <div class="flex flex-col items-center flex-1">
+                  <div class="w-full bg-gradient-to-t from-teal-500 to-cyan-500 rounded-t-lg pulse-animation" style="height: 55%"></div>
+                  <span class="text-xs text-gray-400 mt-2">Jan</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Income vs Expense Line Chart -->
+          <div class="glass-card rounded-2xl p-6 mb-6">
+            <h3 class="text-lg font-semibold text-white mb-6">Income vs Expense Comparison</h3>
+            <div class="relative h-48">
+              <svg viewBox="0 0 400 150" class="w-full h-full">
+                <!-- Grid lines -->
+                <line x1="40" y1="20" x2="380" y2="20" stroke="#374151" stroke-width="0.5"/>
+                <line x1="40" y1="50" x2="380" y2="50" stroke="#374151" stroke-width="0.5"/>
+                <line x1="40" y1="80" x2="380" y2="80" stroke="#374151" stroke-width="0.5"/>
+                <line x1="40" y1="110" x2="380" y2="110" stroke="#374151" stroke-width="0.5"/>
+                <line x1="40" y1="140" x2="380" y2="140" stroke="#374151" stroke-width="0.5"/>
+                
+                <!-- Y-axis labels -->
+                <text x="35" y="25" text-anchor="end" class="fill-gray-500 text-xs">₹150K</text>
+                <text x="35" y="55" text-anchor="end" class="fill-gray-500 text-xs">₹100K</text>
+                <text x="35" y="85" text-anchor="end" class="fill-gray-500 text-xs">₹75K</text>
+                <text x="35" y="115" text-anchor="end" class="fill-gray-500 text-xs">₹50K</text>
+                <text x="35" y="145" text-anchor="end" class="fill-gray-500 text-xs">₹0</text>
+                
+                <!-- Income line (green) -->
+                <path d="M60,60 L120,50 L180,55 L240,40 L300,45 L360,35" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="60" cy="60" r="4" fill="#10b981"/>
+                <circle cx="120" cy="50" r="4" fill="#10b981"/>
+                <circle cx="180" cy="55" r="4" fill="#10b981"/>
+                <circle cx="240" cy="40" r="4" fill="#10b981"/>
+                <circle cx="300" cy="45" r="4" fill="#10b981"/>
+                <circle cx="360" cy="35" r="4" fill="#10b981"/>
+                
+                <!-- Expense line (red) -->
+                <path d="M60,90 L120,85 L180,100 L240,80 L300,95 L360,90" fill="none" stroke="#ef4444" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="60" cy="90" r="4" fill="#ef4444"/>
+                <circle cx="120" cy="85" r="4" fill="#ef4444"/>
+                <circle cx="180" cy="100" r="4" fill="#ef4444"/>
+                <circle cx="240" cy="80" r="4" fill="#ef4444"/>
+                <circle cx="300" cy="95" r="4" fill="#ef4444"/>
+                <circle cx="360" cy="90" r="4" fill="#ef4444"/>
+                
+                <!-- X-axis labels -->
+                <text x="60" y="155" text-anchor="middle" class="fill-gray-500 text-xs">Aug</text>
+                <text x="120" y="155" text-anchor="middle" class="fill-gray-500 text-xs">Sep</text>
+                <text x="180" y="155" text-anchor="middle" class="fill-gray-500 text-xs">Oct</text>
+                <text x="240" y="155" text-anchor="middle" class="fill-gray-500 text-xs">Nov</text>
+                <text x="300" y="155" text-anchor="middle" class="fill-gray-500 text-xs">Dec</text>
+                <text x="360" y="155" text-anchor="middle" class="fill-gray-500 text-xs">Jan</text>
+              </svg>
+            </div>
+            <div class="flex items-center justify-center gap-8 mt-4">
+              <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-green-500"></span>
+                <span class="text-sm text-gray-400">Income</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                <span class="text-sm text-gray-400">Expenses</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Recent Transactions -->
+          <div class="glass-card rounded-2xl p-6">
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="text-lg font-semibold text-white">Recent Transactions</h3>
+              <button class="text-teal-400 text-sm hover:text-teal-300">View All →</button>
+            </div>
+            <div class="space-y-4">
+              <div class="flex items-center justify-between p-4 rounded-xl bg-[#1a1a2e] hover:bg-[#252540] transition-colors">
+                <div class="flex items-center gap-4">
+                  <div class="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center">
+                    <span class="text-2xl">🍔</span>
+                  </div>
+                  <div>
+                    <p class="font-medium text-white">Swiggy Order</p>
+                    <p class="text-sm text-gray-400">Food & Dining • Today</p>
+                  </div>
+                </div>
+                <span class="text-red-400 font-semibold">-₹458</span>
+              </div>
+              
+              <div class="flex items-center justify-between p-4 rounded-xl bg-[#1a1a2e] hover:bg-[#252540] transition-colors">
+                <div class="flex items-center gap-4">
+                  <div class="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center">
+                    <span class="text-2xl">💼</span>
+                  </div>
+                  <div>
+                    <p class="font-medium text-white">Salary Credit</p>
+                    <p class="text-sm text-gray-400">Income • Jan 1</p>
+                  </div>
+                </div>
+                <span class="text-green-400 font-semibold">+₹1,25,000</span>
+              </div>
+              
+              <div class="flex items-center justify-between p-4 rounded-xl bg-[#1a1a2e] hover:bg-[#252540] transition-colors">
+                <div class="flex items-center gap-4">
+                  <div class="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                    <span class="text-2xl">🚕</span>
+                  </div>
+                  <div>
+                    <p class="font-medium text-white">Uber Ride</p>
+                    <p class="text-sm text-gray-400">Transport • Yesterday</p>
+                  </div>
+                </div>
+                <span class="text-red-400 font-semibold">-₹245</span>
+              </div>
+              
+              <div class="flex items-center justify-between p-4 rounded-xl bg-[#1a1a2e] hover:bg-[#252540] transition-colors">
+                <div class="flex items-center gap-4">
+                  <div class="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                    <span class="text-2xl">🛒</span>
+                  </div>
+                  <div>
+                    <p class="font-medium text-white">Amazon Purchase</p>
+                    <p class="text-sm text-gray-400">Shopping • Jan 3</p>
+                  </div>
+                </div>
+                <span class="text-red-400 font-semibold">-₹2,999</span>
+              </div>
+              
+              <div class="flex items-center justify-between p-4 rounded-xl bg-[#1a1a2e] hover:bg-[#252540] transition-colors">
+                <div class="flex items-center gap-4">
+                  <div class="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                    <span class="text-2xl">💡</span>
+                  </div>
+                  <div>
+                    <p class="font-medium text-white">Electricity Bill</p>
+                    <p class="text-sm text-gray-400">Utilities • Jan 2</p>
+                  </div>
+                </div>
+                <span class="text-red-400 font-semibold">-₹1,850</span>
+              </div>
+            </div>
+          </div>
+        </section>
+        
+        <!-- Expenses Section -->
+        <section id="section-expenses" class="p-6 hidden">
+          <div class="flex items-center justify-between mb-8">
+            <div>
+              <h1 class="text-2xl font-bold text-white">Expense Management</h1>
+              <p class="text-gray-400 mt-1">Track and manage your daily expenses</p>
+            </div>
+          </div>
+          
+          <!-- Add Expense Form -->
+          <div class="glass-card rounded-2xl p-6 mb-6">
+            <h3 class="text-lg font-semibold text-white mb-6">Add New Expense</h3>
+            <form id="expense-form" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">Amount (₹)</label>
+                <input type="number" placeholder="Enter amount" class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-teal-500 transition-colors">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">Category</label>
+                <select class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white focus:outline-none focus:border-teal-500 transition-colors">
+                  <option value="">Select category</option>
+                  <option value="food">🍔 Food & Dining</option>
+                  <option value="transport">🚕 Transport</option>
+                  <option value="shopping">🛒 Shopping</option>
+                  <option value="bills">💡 Bills & Utilities</option>
+                  <option value="entertainment">🎬 Entertainment</option>
+                  <option value="health">💊 Health</option>
+                  <option value="education">📚 Education</option>
+                  <option value="others">📦 Others</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">Date</label>
+                <input type="date" class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white focus:outline-none focus:border-teal-500 transition-colors">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">Description</label>
+                <input type="text" placeholder="Brief description" class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-teal-500 transition-colors">
+              </div>
+              <div class="md:col-span-2 lg:col-span-4">
+                <button type="submit" class="px-8 py-3 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-semibold hover:from-teal-600 hover:to-cyan-600 transition-all">
+                  Add Expense
+                </button>
+              </div>
+            </form>
+          </div>
+          
+          <!-- Filters -->
+          <div class="glass-card rounded-2xl p-4 mb-6">
+            <div class="flex flex-wrap items-center gap-4">
+              <div class="flex items-center gap-2">
+                <span class="text-gray-400 text-sm">Filter by:</span>
+              </div>
+              <select class="px-4 py-2 rounded-lg bg-[#1a1a2e] border border-gray-700 text-white text-sm focus:outline-none focus:border-teal-500">
+                <option>All Categories</option>
+                <option>Food & Dining</option>
+                <option>Transport</option>
+                <option>Shopping</option>
+                <option>Bills & Utilities</option>
+              </select>
+              <input type="date" class="px-4 py-2 rounded-lg bg-[#1a1a2e] border border-gray-700 text-white text-sm focus:outline-none focus:border-teal-500">
+              <span class="text-gray-400">to</span>
+              <input type="date" class="px-4 py-2 rounded-lg bg-[#1a1a2e] border border-gray-700 text-white text-sm focus:outline-none focus:border-teal-500">
+              <button class="px-4 py-2 rounded-lg bg-teal-500/20 text-teal-400 text-sm hover:bg-teal-500/30 transition-colors">Apply</button>
+            </div>
+          </div>
+          
+          <!-- Expense Table -->
+          <div class="glass-card rounded-2xl overflow-hidden">
+            <table class="w-full">
+              <thead class="bg-[#1a1a2e]">
+                <tr>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-300">Description</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-300">Category</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-300">Date</th>
+                  <th class="px-6 py-4 text-right text-sm font-semibold text-gray-300">Amount</th>
+                  <th class="px-6 py-4 text-center text-sm font-semibold text-gray-300">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-800">
+                <tr class="hover:bg-[#1a1a2e]/50 transition-colors">
+                  <td class="px-6 py-4 text-white">Swiggy Order - Lunch</td>
+                  <td class="px-6 py-4"><span class="px-3 py-1 rounded-full bg-red-500/20 text-red-400 text-sm">🍔 Food</span></td>
+                  <td class="px-6 py-4 text-gray-400">Jan 15, 2025</td>
+                  <td class="px-6 py-4 text-right text-red-400 font-semibold">₹458</td>
+                  <td class="px-6 py-4 text-center">
+                    <button class="p-2 text-gray-400 hover:text-teal-400 transition-colors">✏️</button>
+                    <button class="p-2 text-gray-400 hover:text-red-400 transition-colors">🗑️</button>
+                  </td>
+                </tr>
+                <tr class="hover:bg-[#1a1a2e]/50 transition-colors">
+                  <td class="px-6 py-4 text-white">Uber Ride to Office</td>
+                  <td class="px-6 py-4"><span class="px-3 py-1 rounded-full bg-amber-500/20 text-amber-400 text-sm">🚕 Transport</span></td>
+                  <td class="px-6 py-4 text-gray-400">Jan 14, 2025</td>
+                  <td class="px-6 py-4 text-right text-red-400 font-semibold">₹245</td>
+                  <td class="px-6 py-4 text-center">
+                    <button class="p-2 text-gray-400 hover:text-teal-400 transition-colors">✏️</button>
+                    <button class="p-2 text-gray-400 hover:text-red-400 transition-colors">🗑️</button>
+                  </td>
+                </tr>
+                <tr class="hover:bg-[#1a1a2e]/50 transition-colors">
+                  <td class="px-6 py-4 text-white">Amazon - Electronics</td>
+                  <td class="px-6 py-4"><span class="px-3 py-1 rounded-full bg-purple-500/20 text-purple-400 text-sm">🛒 Shopping</span></td>
+                  <td class="px-6 py-4 text-gray-400">Jan 13, 2025</td>
+                  <td class="px-6 py-4 text-right text-red-400 font-semibold">₹2,999</td>
+                  <td class="px-6 py-4 text-center">
+                    <button class="p-2 text-gray-400 hover:text-teal-400 transition-colors">✏️</button>
+                    <button class="p-2 text-gray-400 hover:text-red-400 transition-colors">🗑️</button>
+                  </td>
+                </tr>
+                <tr class="hover:bg-[#1a1a2e]/50 transition-colors">
+                  <td class="px-6 py-4 text-white">Electricity Bill - January</td>
+                  <td class="px-6 py-4"><span class="px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 text-sm">💡 Bills</span></td>
+                  <td class="px-6 py-4 text-gray-400">Jan 12, 2025</td>
+                  <td class="px-6 py-4 text-right text-red-400 font-semibold">₹1,850</td>
+                  <td class="px-6 py-4 text-center">
+                    <button class="p-2 text-gray-400 hover:text-teal-400 transition-colors">✏️</button>
+                    <button class="p-2 text-gray-400 hover:text-red-400 transition-colors">🗑️</button>
+                  </td>
+                </tr>
+                <tr class="hover:bg-[#1a1a2e]/50 transition-colors">
+                  <td class="px-6 py-4 text-white">Netflix Subscription</td>
+                  <td class="px-6 py-4"><span class="px-3 py-1 rounded-full bg-pink-500/20 text-pink-400 text-sm">🎬 Entertainment</span></td>
+                  <td class="px-6 py-4 text-gray-400">Jan 10, 2025</td>
+                  <td class="px-6 py-4 text-right text-red-400 font-semibold">₹649</td>
+                  <td class="px-6 py-4 text-center">
+                    <button class="p-2 text-gray-400 hover:text-teal-400 transition-colors">✏️</button>
+                    <button class="p-2 text-gray-400 hover:text-red-400 transition-colors">🗑️</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+        
+        <!-- Income Section -->
+        <section id="section-income" class="p-6 hidden">
+          <div class="flex items-center justify-between mb-8">
+            <div>
+              <h1 class="text-2xl font-bold text-white">Income Management</h1>
+              <p class="text-gray-400 mt-1">Track all your income sources</p>
+            </div>
+          </div>
+          
+          <!-- Add Income Form -->
+          <div class="glass-card rounded-2xl p-6 mb-6">
+            <h3 class="text-lg font-semibold text-white mb-6">Add New Income</h3>
+            <form class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">Amount (₹)</label>
+                <input type="number" placeholder="Enter amount" class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-teal-500 transition-colors">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">Source Type</label>
+                <select class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white focus:outline-none focus:border-teal-500 transition-colors">
+                  <option value="">Select source</option>
+                  <option value="salary">💼 Salary</option>
+                  <option value="freelance">💻 Freelance</option>
+                  <option value="passive">📈 Passive Income</option>
+                  <option value="bonus">🎁 Bonus</option>
+                  <option value="investment">💰 Investment Returns</option>
+                  <option value="others">📦 Others</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">Date</label>
+                <input type="date" class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white focus:outline-none focus:border-teal-500 transition-colors">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">Description</label>
+                <input type="text" placeholder="Brief description" class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-teal-500 transition-colors">
+              </div>
+              <div class="md:col-span-2 lg:col-span-4">
+                <button type="submit" class="px-8 py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold hover:from-green-600 hover:to-emerald-600 transition-all">
+                  Add Income
+                </button>
+              </div>
+            </form>
+          </div>
+          
+          <!-- Income Sources Summary -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div class="glass-card rounded-2xl p-6">
+              <div class="flex items-center gap-4 mb-4">
+                <div class="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                  <span class="text-2xl">💼</span>
+                </div>
+                <div>
+                  <p class="text-gray-400 text-sm">Salary</p>
+                  <p class="text-xl font-bold text-white">₹1,25,000</p>
+                </div>
+              </div>
+              <div class="w-full h-2 rounded-full bg-[#1a1a2e]">
+                <div class="w-3/4 h-full rounded-full bg-blue-500"></div>
+              </div>
+            </div>
+            
+            <div class="glass-card rounded-2xl p-6">
+              <div class="flex items-center gap-4 mb-4">
+                <div class="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                  <span class="text-2xl">💻</span>
+                </div>
+                <div>
+                  <p class="text-gray-400 text-sm">Freelance</p>
+                  <p class="text-xl font-bold text-white">₹35,000</p>
+                </div>
+              </div>
+              <div class="w-full h-2 rounded-full bg-[#1a1a2e]">
+                <div class="w-1/4 h-full rounded-full bg-purple-500"></div>
+              </div>
+            </div>
+            
+            <div class="glass-card rounded-2xl p-6">
+              <div class="flex items-center gap-4 mb-4">
+                <div class="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center">
+                  <span class="text-2xl">📈</span>
+                </div>
+                <div>
+                  <p class="text-gray-400 text-sm">Passive Income</p>
+                  <p class="text-xl font-bold text-white">₹8,500</p>
+                </div>
+              </div>
+              <div class="w-full h-2 rounded-full bg-[#1a1a2e]">
+                <div class="w-1/6 h-full rounded-full bg-green-500"></div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Monthly Income Trend -->
+          <div class="glass-card rounded-2xl p-6">
+            <h3 class="text-lg font-semibold text-white mb-6">Monthly Income Trend</h3>
+            <div class="flex items-end justify-between h-48 gap-3">
+              <div class="flex flex-col items-center flex-1">
+                <div class="w-full bg-gradient-to-t from-green-500 to-emerald-400 rounded-t-lg" style="height: 65%"></div>
+                <span class="text-xs text-gray-400 mt-2">Aug</span>
+                <span class="text-xs text-green-400">₹1.1L</span>
+              </div>
+              <div class="flex flex-col items-center flex-1">
+                <div class="w-full bg-gradient-to-t from-green-500 to-emerald-400 rounded-t-lg" style="height: 70%"></div>
+                <span class="text-xs text-gray-400 mt-2">Sep</span>
+                <span class="text-xs text-green-400">₹1.15L</span>
+              </div>
+              <div class="flex flex-col items-center flex-1">
+                <div class="w-full bg-gradient-to-t from-green-500 to-emerald-400 rounded-t-lg" style="height: 75%"></div>
+                <span class="text-xs text-gray-400 mt-2">Oct</span>
+                <span class="text-xs text-green-400">₹1.2L</span>
+              </div>
+              <div class="flex flex-col items-center flex-1">
+                <div class="w-full bg-gradient-to-t from-green-500 to-emerald-400 rounded-t-lg" style="height: 85%"></div>
+                <span class="text-xs text-gray-400 mt-2">Nov</span>
+                <span class="text-xs text-green-400">₹1.35L</span>
+              </div>
+              <div class="flex flex-col items-center flex-1">
+                <div class="w-full bg-gradient-to-t from-green-500 to-emerald-400 rounded-t-lg" style="height: 95%"></div>
+                <span class="text-xs text-gray-400 mt-2">Dec</span>
+                <span class="text-xs text-green-400">₹1.5L</span>
+              </div>
+              <div class="flex flex-col items-center flex-1">
+                <div class="w-full bg-gradient-to-t from-green-500 to-emerald-400 rounded-t-lg pulse-animation" style="height: 80%"></div>
+                <span class="text-xs text-gray-400 mt-2">Jan</span>
+                <span class="text-xs text-green-400">₹1.68L</span>
+              </div>
+            </div>
+          </div>
+        </section>
+        
+        <!-- Budgets Section -->
+        <section id="section-budgets" class="p-6 hidden">
+          <div class="flex items-center justify-between mb-8">
+            <div>
+              <h1 class="text-2xl font-bold text-white">Budget Management</h1>
+              <p class="text-gray-400 mt-1">Set and track your spending limits</p>
+            </div>
+            <button class="px-4 py-2 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-semibold hover:from-teal-600 hover:to-cyan-600 transition-all">
+              + Add Budget
+            </button>
+          </div>
+          
+          <!-- Budget Cards -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+            <div class="glass-card rounded-2xl p-6">
+              <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center">
+                    <span class="text-xl">🍔</span>
+                  </div>
+                  <div>
+                    <p class="font-semibold text-white">Food & Dining</p>
+                    <p class="text-xs text-gray-400">Monthly Budget</p>
+                  </div>
+                </div>
+                <span class="px-2 py-1 rounded-full bg-yellow-500/20 text-yellow-400 text-xs">85%</span>
+              </div>
+              <div class="mb-3">
+                <div class="flex justify-between text-sm mb-1">
+                  <span class="text-gray-400">₹12,750 spent</span>
+                  <span class="text-white">₹15,000</span>
+                </div>
+                <div class="w-full h-3 rounded-full bg-[#1a1a2e]">
+                  <div class="h-full rounded-full bg-gradient-to-r from-yellow-500 to-orange-500" style="width: 85%"></div>
+                </div>
+              </div>
+              <p class="text-yellow-400 text-sm flex items-center gap-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+                Approaching limit!
+              </p>
+            </div>
+            
+            <div class="glass-card rounded-2xl p-6">
+              <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                    <span class="text-xl">🚕</span>
+                  </div>
+                  <div>
+                    <p class="font-semibold text-white">Transport</p>
+                    <p class="text-xs text-gray-400">Monthly Budget</p>
+                  </div>
+                </div>
+                <span class="px-2 py-1 rounded-full bg-green-500/20 text-green-400 text-xs">45%</span>
+              </div>
+              <div class="mb-3">
+                <div class="flex justify-between text-sm mb-1">
+                  <span class="text-gray-400">₹4,500 spent</span>
+                  <span class="text-white">₹10,000</span>
+                </div>
+                <div class="w-full h-3 rounded-full bg-[#1a1a2e]">
+                  <div class="h-full rounded-full bg-gradient-to-r from-green-500 to-emerald-500" style="width: 45%"></div>
+                </div>
+              </div>
+              <p class="text-green-400 text-sm">On track ✓</p>
+            </div>
+            
+            <div class="glass-card rounded-2xl p-6">
+              <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                    <span class="text-xl">🛒</span>
+                  </div>
+                  <div>
+                    <p class="font-semibold text-white">Shopping</p>
+                    <p class="text-xs text-gray-400">Monthly Budget</p>
+                  </div>
+                </div>
+                <span class="px-2 py-1 rounded-full bg-red-500/20 text-red-400 text-xs">110%</span>
+              </div>
+              <div class="mb-3">
+                <div class="flex justify-between text-sm mb-1">
+                  <span class="text-gray-400">₹11,000 spent</span>
+                  <span class="text-white">₹10,000</span>
+                </div>
+                <div class="w-full h-3 rounded-full bg-[#1a1a2e]">
+                  <div class="h-full rounded-full bg-gradient-to-r from-red-500 to-pink-500" style="width: 100%"></div>
+                </div>
+              </div>
+              <p class="text-red-400 text-sm flex items-center gap-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+                Budget exceeded!
+              </p>
+            </div>
+            
+            <div class="glass-card rounded-2xl p-6">
+              <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                    <span class="text-xl">💡</span>
+                  </div>
+                  <div>
+                    <p class="font-semibold text-white">Bills & Utilities</p>
+                    <p class="text-xs text-gray-400">Monthly Budget</p>
+                  </div>
+                </div>
+                <span class="px-2 py-1 rounded-full bg-green-500/20 text-green-400 text-xs">62%</span>
+              </div>
+              <div class="mb-3">
+                <div class="flex justify-between text-sm mb-1">
+                  <span class="text-gray-400">₹6,200 spent</span>
+                  <span class="text-white">₹10,000</span>
+                </div>
+                <div class="w-full h-3 rounded-full bg-[#1a1a2e]">
+                  <div class="h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-500" style="width: 62%"></div>
+                </div>
+              </div>
+              <p class="text-green-400 text-sm">On track ✓</p>
+            </div>
+            
+            <div class="glass-card rounded-2xl p-6">
+              <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-pink-500/20 flex items-center justify-center">
+                    <span class="text-xl">🎬</span>
+                  </div>
+                  <div>
+                    <p class="font-semibold text-white">Entertainment</p>
+                    <p class="text-xs text-gray-400">Monthly Budget</p>
+                  </div>
+                </div>
+                <span class="px-2 py-1 rounded-full bg-green-500/20 text-green-400 text-xs">35%</span>
+              </div>
+              <div class="mb-3">
+                <div class="flex justify-between text-sm mb-1">
+                  <span class="text-gray-400">₹1,750 spent</span>
+                  <span class="text-white">₹5,000</span>
+                </div>
+                <div class="w-full h-3 rounded-full bg-[#1a1a2e]">
+                  <div class="h-full rounded-full bg-gradient-to-r from-pink-500 to-rose-500" style="width: 35%"></div>
+                </div>
+              </div>
+              <p class="text-green-400 text-sm">On track ✓</p>
+            </div>
+            
+            <div class="glass-card rounded-2xl p-6">
+              <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center">
+                    <span class="text-xl">💊</span>
+                  </div>
+                  <div>
+                    <p class="font-semibold text-white">Health</p>
+                    <p class="text-xs text-gray-400">Monthly Budget</p>
+                  </div>
+                </div>
+                <span class="px-2 py-1 rounded-full bg-green-500/20 text-green-400 text-xs">20%</span>
+              </div>
+              <div class="mb-3">
+                <div class="flex justify-between text-sm mb-1">
+                  <span class="text-gray-400">₹1,000 spent</span>
+                  <span class="text-white">₹5,000</span>
+                </div>
+                <div class="w-full h-3 rounded-full bg-[#1a1a2e]">
+                  <div class="h-full rounded-full bg-gradient-to-r from-green-500 to-teal-500" style="width: 20%"></div>
+                </div>
+              </div>
+              <p class="text-green-400 text-sm">On track ✓</p>
+            </div>
+          </div>
+          
+          <!-- AI Budget Suggestion -->
+          <div class="glass-card rounded-2xl p-6 border border-teal-500/30">
+            <div class="flex items-start gap-4">
+              <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center flex-shrink-0">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                </svg>
+              </div>
+              <div>
+                <h3 class="text-lg font-semibold text-white mb-2">AI Budget Suggestions</h3>
+                <div class="space-y-3">
+                  <p class="text-gray-300">Based on your spending patterns, here are some recommendations:</p>
+                  <ul class="space-y-2 text-gray-400">
+                    <li class="flex items-start gap-2">
+                      <span class="text-teal-400 mt-1">•</span>
+                      <span>Consider reducing your <strong class="text-white">Food & Dining</strong> budget allocation or limit Swiggy orders to weekends.</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                      <span class="text-teal-400 mt-1">•</span>
+                      <span>Your <strong class="text-white">Shopping</strong> category exceeded by ₹1,000. Set up spending alerts.</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                      <span class="text-teal-400 mt-1">•</span>
+                      <span>Great job on <strong class="text-white">Entertainment</strong>! You could reallocate ₹2,000 to savings.</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        
+        <!-- Loans Section -->
+        <section id="section-loans" class="p-6 hidden">
+          <div class="flex items-center justify-between mb-8">
+            <div>
+              <h1 class="text-2xl font-bold text-white">Loan Tracking</h1>
+              <p class="text-gray-400 mt-1">Manage money lent and borrowed</p>
+            </div>
+            <button class="px-4 py-2 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-semibold hover:from-teal-600 hover:to-cyan-600 transition-all">
+              + Add Entry
+            </button>
+          </div>
+          
+          <!-- Tabs -->
+          <div class="flex gap-4 mb-6">
+            <button onclick="showLoanTab('lent')" class="loan-tab active px-6 py-3 rounded-xl bg-green-500/20 text-green-400 font-medium transition-all" data-tab="lent">
+              💰 Money Lent
+            </button>
+            <button onclick="showLoanTab('borrowed')" class="loan-tab px-6 py-3 rounded-xl bg-[#1a1a2e] text-gray-400 font-medium hover:text-white transition-all" data-tab="borrowed">
+              💸 Money Borrowed
+            </button>
+          </div>
+          
+          <!-- Money Lent -->
+          <div id="loan-lent" class="space-y-4">
+            <div class="glass-card rounded-2xl p-6">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                  <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold">
+                    AK
+                  </div>
+                  <div>
+                    <p class="font-semibold text-white">Amit Kumar</p>
+                    <p class="text-sm text-gray-400">Lent on Jan 5, 2025</p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <p class="text-xl font-bold text-green-400">₹5,000</p>
+                  <p class="text-sm text-gray-400">Due: Feb 5, 2025</p>
+                </div>
+              </div>
+              <div class="mt-4 flex items-center justify-between">
+                <span class="px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-400 text-sm">⏳ Pending</span>
+                <div class="flex gap-2">
+                  <button class="px-4 py-2 rounded-lg bg-green-500/20 text-green-400 text-sm hover:bg-green-500/30 transition-colors">Mark Settled</button>
+                  <button class="px-4 py-2 rounded-lg bg-[#1a1a2e] text-gray-400 text-sm hover:text-white transition-colors">Remind</button>
+                </div>
+              </div>
+            </div>
+            
+            <div class="glass-card rounded-2xl p-6">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                  <div class="w-12 h-12 rounded-full bg-gradient-to-br from-pink-500 to-red-500 flex items-center justify-center text-white font-semibold">
+                    PS
+                  </div>
+                  <div>
+                    <p class="font-semibold text-white">Priya Singh</p>
+                    <p class="text-sm text-gray-400">Lent on Dec 20, 2024</p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <p class="text-xl font-bold text-green-400">₹2,500</p>
+                  <p class="text-sm text-gray-400">Due: Jan 20, 2025</p>
+                </div>
+              </div>
+              <div class="mt-4 flex items-center justify-between">
+                <span class="px-3 py-1 rounded-full bg-red-500/20 text-red-400 text-sm">⚠️ Overdue</span>
+                <div class="flex gap-2">
+                  <button class="px-4 py-2 rounded-lg bg-green-500/20 text-green-400 text-sm hover:bg-green-500/30 transition-colors">Mark Settled</button>
+                  <button class="px-4 py-2 rounded-lg bg-[#1a1a2e] text-gray-400 text-sm hover:text-white transition-colors">Remind</button>
+                </div>
+              </div>
+            </div>
+            
+            <div class="glass-card rounded-2xl p-6 opacity-60">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                  <div class="w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-teal-500 flex items-center justify-center text-white font-semibold">
+                    RV
+                  </div>
+                  <div>
+                    <p class="font-semibold text-white">Rahul Verma</p>
+                    <p class="text-sm text-gray-400">Lent on Nov 15, 2024</p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <p class="text-xl font-bold text-gray-400 line-through">₹10,000</p>
+                  <p class="text-sm text-gray-400">Settled on Dec 1</p>
+                </div>
+              </div>
+              <div class="mt-4 flex items-center justify-between">
+                <span class="px-3 py-1 rounded-full bg-green-500/20 text-green-400 text-sm">✓ Settled</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Money Borrowed -->
+          <div id="loan-borrowed" class="space-y-4 hidden">
+            <div class="glass-card rounded-2xl p-6">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                  <div class="w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-white font-semibold">
+                    MG
+                  </div>
+                  <div>
+                    <p class="font-semibold text-white">Mohit Gupta</p>
+                    <p class="text-sm text-gray-400">Borrowed on Jan 10, 2025</p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <p class="text-xl font-bold text-red-400">₹15,000</p>
+                  <p class="text-sm text-gray-400">Due: Feb 10, 2025</p>
+                </div>
+              </div>
+              <div class="mt-4 flex items-center justify-between">
+                <span class="px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-400 text-sm">⏳ Pending</span>
+                <button class="px-4 py-2 rounded-lg bg-red-500/20 text-red-400 text-sm hover:bg-red-500/30 transition-colors">Mark as Paid</button>
+              </div>
+            </div>
+          </div>
+        </section>
+        
+        <!-- Reports Section -->
+        <section id="section-reports" class="p-6 hidden">
+          <div class="flex items-center justify-between mb-8">
+            <div>
+              <h1 class="text-2xl font-bold text-white">Reports & Analytics</h1>
+              <p class="text-gray-400 mt-1">Comprehensive financial reports</p>
+            </div>
+            <div class="flex gap-3">
+              <button class="px-4 py-2 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white flex items-center gap-2 hover:bg-[#252540] transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                Download PDF
+              </button>
+              <button class="px-4 py-2 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white flex items-center gap-2 hover:bg-[#252540] transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                Download CSV
+              </button>
+            </div>
+          </div>
+          
+          <!-- Monthly Summary -->
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+            <div class="glass-card rounded-2xl p-6">
+              <p class="text-gray-400 text-sm">Total Income (Jan)</p>
+              <p class="text-2xl font-bold text-green-400 mt-2">₹1,68,500</p>
+              <p class="text-green-400 text-sm mt-1">↑ 12% vs Dec</p>
+            </div>
+            <div class="glass-card rounded-2xl p-6">
+              <p class="text-gray-400 text-sm">Total Expenses (Jan)</p>
+              <p class="text-2xl font-bold text-red-400 mt-2">₹67,250</p>
+              <p class="text-red-400 text-sm mt-1">↑ 8% vs Dec</p>
+            </div>
+            <div class="glass-card rounded-2xl p-6">
+              <p class="text-gray-400 text-sm">Net Savings (Jan)</p>
+              <p class="text-2xl font-bold text-blue-400 mt-2">₹1,01,250</p>
+              <p class="text-blue-400 text-sm mt-1">↑ 15% vs Dec</p>
+            </div>
+            <div class="glass-card rounded-2xl p-6">
+              <p class="text-gray-400 text-sm">Savings Rate</p>
+              <p class="text-2xl font-bold text-teal-400 mt-2">60.1%</p>
+              <p class="text-teal-400 text-sm mt-1">Excellent! 🎉</p>
+            </div>
+          </div>
+          
+          <!-- Yearly Overview -->
+          <div class="glass-card rounded-2xl p-6 mb-6">
+            <h3 class="text-lg font-semibold text-white mb-6">Yearly Overview - 2024</h3>
+            <div class="grid grid-cols-12 gap-2 mb-4">
+              <div class="text-center">
+                <div class="h-24 flex flex-col justify-end">
+                  <div class="w-full bg-green-500/30 rounded-t" style="height: 60%"></div>
+                </div>
+                <span class="text-xs text-gray-400">Jan</span>
+              </div>
+              <div class="text-center">
+                <div class="h-24 flex flex-col justify-end">
+                  <div class="w-full bg-green-500/30 rounded-t" style="height: 55%"></div>
+                </div>
+                <span class="text-xs text-gray-400">Feb</span>
+              </div>
+              <div class="text-center">
+                <div class="h-24 flex flex-col justify-end">
+                  <div class="w-full bg-green-500/30 rounded-t" style="height: 70%"></div>
+                </div>
+                <span class="text-xs text-gray-400">Mar</span>
+              </div>
+              <div class="text-center">
+                <div class="h-24 flex flex-col justify-end">
+                  <div class="w-full bg-green-500/30 rounded-t" style="height: 65%"></div>
+                </div>
+                <span class="text-xs text-gray-400">Apr</span>
+              </div>
+              <div class="text-center">
+                <div class="h-24 flex flex-col justify-end">
+                  <div class="w-full bg-green-500/30 rounded-t" style="height: 75%"></div>
+                </div>
+                <span class="text-xs text-gray-400">May</span>
+              </div>
+              <div class="text-center">
+                <div class="h-24 flex flex-col justify-end">
+                  <div class="w-full bg-green-500/30 rounded-t" style="height: 68%"></div>
+                </div>
+                <span class="text-xs text-gray-400">Jun</span>
+              </div>
+              <div class="text-center">
+                <div class="h-24 flex flex-col justify-end">
+                  <div class="w-full bg-green-500/30 rounded-t" style="height: 72%"></div>
+                </div>
+                <span class="text-xs text-gray-400">Jul</span>
+              </div>
+              <div class="text-center">
+                <div class="h-24 flex flex-col justify-end">
+                  <div class="w-full bg-green-500/30 rounded-t" style="height: 80%"></div>
+                </div>
+                <span class="text-xs text-gray-400">Aug</span>
+              </div>
+              <div class="text-center">
+                <div class="h-24 flex flex-col justify-end">
+                  <div class="w-full bg-green-500/30 rounded-t" style="height: 78%"></div>
+                </div>
+                <span class="text-xs text-gray-400">Sep</span>
+              </div>
+              <div class="text-center">
+                <div class="h-24 flex flex-col justify-end">
+                  <div class="w-full bg-green-500/30 rounded-t" style="height: 85%"></div>
+                </div>
+                <span class="text-xs text-gray-400">Oct</span>
+              </div>
+              <div class="text-center">
+                <div class="h-24 flex flex-col justify-end">
+                  <div class="w-full bg-green-500/30 rounded-t" style="height: 90%"></div>
+                </div>
+                <span class="text-xs text-gray-400">Nov</span>
+              </div>
+              <div class="text-center">
+                <div class="h-24 flex flex-col justify-end">
+                  <div class="w-full bg-gradient-to-t from-green-500 to-emerald-400 rounded-t" style="height: 95%"></div>
+                </div>
+                <span class="text-xs text-gray-400">Dec</span>
+              </div>
+            </div>
+            <div class="flex items-center justify-center gap-8">
+              <div class="text-center">
+                <p class="text-gray-400 text-sm">Total Income</p>
+                <p class="text-xl font-bold text-green-400">₹18,45,000</p>
+              </div>
+              <div class="text-center">
+                <p class="text-gray-400 text-sm">Total Expenses</p>
+                <p class="text-xl font-bold text-red-400">₹7,85,000</p>
+              </div>
+              <div class="text-center">
+                <p class="text-gray-400 text-sm">Total Savings</p>
+                <p class="text-xl font-bold text-blue-400">₹10,60,000</p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Category Analysis -->
+          <div class="glass-card rounded-2xl p-6">
+            <h3 class="text-lg font-semibold text-white mb-6">Category-wise Analysis (2024)</h3>
+            <div class="space-y-4">
+              <div class="flex items-center gap-4">
+                <div class="w-24 text-gray-400 text-sm">Food</div>
+                <div class="flex-1 h-8 rounded-lg bg-[#1a1a2e] overflow-hidden">
+                  <div class="h-full bg-gradient-to-r from-red-500 to-pink-500 flex items-center justify-end pr-3" style="width: 28%">
+                    <span class="text-white text-xs font-medium">₹2,19,800</span>
+                  </div>
+                </div>
+                <span class="text-gray-400 text-sm w-12">28%</span>
+              </div>
+              <div class="flex items-center gap-4">
+                <div class="w-24 text-gray-400 text-sm">Transport</div>
+                <div class="flex-1 h-8 rounded-lg bg-[#1a1a2e] overflow-hidden">
+                  <div class="h-full bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-end pr-3" style="width: 18%">
+                    <span class="text-white text-xs font-medium">₹1,41,300</span>
+                  </div>
+                </div>
+                <span class="text-gray-400 text-sm w-12">18%</span>
+              </div>
+              <div class="flex items-center gap-4">
+                <div class="w-24 text-gray-400 text-sm">Shopping</div>
+                <div class="flex-1 h-8 rounded-lg bg-[#1a1a2e] overflow-hidden">
+                  <div class="h-full bg-gradient-to-r from-purple-500 to-violet-500 flex items-center justify-end pr-3" style="width: 22%">
+                    <span class="text-white text-xs font-medium">₹1,72,700</span>
+                  </div>
+                </div>
+                <span class="text-gray-400 text-sm w-12">22%</span>
+              </div>
+              <div class="flex items-center gap-4">
+                <div class="w-24 text-gray-400 text-sm">Bills</div>
+                <div class="flex-1 h-8 rounded-lg bg-[#1a1a2e] overflow-hidden">
+                  <div class="h-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-end pr-3" style="width: 15%">
+                    <span class="text-white text-xs font-medium">₹1,17,750</span>
+                  </div>
+                </div>
+                <span class="text-gray-400 text-sm w-12">15%</span>
+              </div>
+              <div class="flex items-center gap-4">
+                <div class="w-24 text-gray-400 text-sm">Others</div>
+                <div class="flex-1 h-8 rounded-lg bg-[#1a1a2e] overflow-hidden">
+                  <div class="h-full bg-gradient-to-r from-gray-500 to-slate-500 flex items-center justify-end pr-3" style="width: 17%">
+                    <span class="text-white text-xs font-medium">₹1,33,450</span>
+                  </div>
+                </div>
+                <span class="text-gray-400 text-sm w-12">17%</span>
+              </div>
+            </div>
+          </div>
+        </section>
+        
+        <!-- Investments Section -->
+        <section id="section-investments" class="p-6 hidden">
+          <div class="flex items-center justify-between mb-8">
+            <div>
+              <h1 class="text-2xl font-bold text-white">Investment Suggestions</h1>
+              <p class="text-gray-400 mt-1">Smart investment recommendations for your goals</p>
+            </div>
+          </div>
+          
+          <!-- Risk Level Selector -->
+          <div class="glass-card rounded-2xl p-6 mb-6">
+            <h3 class="text-lg font-semibold text-white mb-4">Select Your Risk Appetite</h3>
+            <div class="flex gap-4">
+              <button onclick="selectRisk('low')" class="risk-btn flex-1 py-4 rounded-xl bg-green-500/20 border-2 border-green-500 text-green-400 font-medium transition-all" data-risk="low">
+                🛡️ Low Risk
+                <p class="text-xs text-gray-400 mt-1">Capital Protection</p>
+              </button>
+              <button onclick="selectRisk('medium')" class="risk-btn flex-1 py-4 rounded-xl bg-[#1a1a2e] border-2 border-transparent text-gray-400 font-medium hover:border-amber-500 hover:text-amber-400 transition-all" data-risk="medium">
+                ⚖️ Medium Risk
+                <p class="text-xs text-gray-400 mt-1">Balanced Growth</p>
+              </button>
+              <button onclick="selectRisk('high')" class="risk-btn flex-1 py-4 rounded-xl bg-[#1a1a2e] border-2 border-transparent text-gray-400 font-medium hover:border-red-500 hover:text-red-400 transition-all" data-risk="high">
+                🚀 High Risk
+                <p class="text-xs text-gray-400 mt-1">Aggressive Growth</p>
+              </button>
+            </div>
+          </div>
+          
+          <!-- Investment Suggestions -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="glass-card rounded-2xl p-6 border border-green-500/30">
+              <div class="flex items-center gap-4 mb-4">
+                <div class="w-14 h-14 rounded-2xl bg-green-500/20 flex items-center justify-center">
+                  <span class="text-3xl">🏦</span>
+                </div>
+                <div>
+                  <h4 class="text-lg font-semibold text-white">Fixed Deposits</h4>
+                  <span class="px-2 py-1 rounded-full bg-green-500/20 text-green-400 text-xs">Low Risk</span>
+                </div>
+              </div>
+              <p class="text-gray-400 text-sm mb-4">Bank FDs offer guaranteed returns with complete capital protection. Ideal for conservative investors.</p>
+              <div class="flex justify-between text-sm">
+                <div>
+                  <p class="text-gray-500">Expected Returns</p>
+                  <p class="text-green-400 font-semibold">6-7% p.a.</p>
+                </div>
+                <div>
+                  <p class="text-gray-500">Lock-in Period</p>
+                  <p class="text-white font-semibold">1-5 years</p>
+                </div>
+                <div>
+                  <p class="text-gray-500">Min. Investment</p>
+                  <p class="text-white font-semibold">₹1,000</p>
+                </div>
+              </div>
+            </div>
+            
+            <div class="glass-card rounded-2xl p-6 border border-blue-500/30">
+              <div class="flex items-center gap-4 mb-4">
+                <div class="w-14 h-14 rounded-2xl bg-blue-500/20 flex items-center justify-center">
+                  <span class="text-3xl">📊</span>
+                </div>
+                <div>
+                  <h4 class="text-lg font-semibold text-white">Debt Funds</h4>
+                  <span class="px-2 py-1 rounded-full bg-blue-500/20 text-blue-400 text-xs">Low-Medium Risk</span>
+                </div>
+              </div>
+              <p class="text-gray-400 text-sm mb-4">Invest in government and corporate bonds through mutual funds. Better liquidity than FDs.</p>
+              <div class="flex justify-between text-sm">
+                <div>
+                  <p class="text-gray-500">Expected Returns</p>
+                  <p class="text-blue-400 font-semibold">7-9% p.a.</p>
+                </div>
+                <div>
+                  <p class="text-gray-500">Lock-in Period</p>
+                  <p class="text-white font-semibold">None</p>
+                </div>
+                <div>
+                  <p class="text-gray-500">Min. Investment</p>
+                  <p class="text-white font-semibold">₹500</p>
+                </div>
+              </div>
+            </div>
+            
+            <div class="glass-card rounded-2xl p-6 border border-amber-500/30">
+              <div class="flex items-center gap-4 mb-4">
+                <div class="w-14 h-14 rounded-2xl bg-amber-500/20 flex items-center justify-center">
+                  <span class="text-3xl">⚖️</span>
+                </div>
+                <div>
+                  <h4 class="text-lg font-semibold text-white">Balanced Mutual Funds</h4>
+                  <span class="px-2 py-1 rounded-full bg-amber-500/20 text-amber-400 text-xs">Medium Risk</span>
+                </div>
+              </div>
+              <p class="text-gray-400 text-sm mb-4">Mix of equity and debt providing balanced growth with moderate risk exposure.</p>
+              <div class="flex justify-between text-sm">
+                <div>
+                  <p class="text-gray-500">Expected Returns</p>
+                  <p class="text-amber-400 font-semibold">10-12% p.a.</p>
+                </div>
+                <div>
+                  <p class="text-gray-500">Lock-in Period</p>
+                  <p class="text-white font-semibold">None</p>
+                </div>
+                <div>
+                  <p class="text-gray-500">Min. Investment</p>
+                  <p class="text-white font-semibold">₹500</p>
+                </div>
+              </div>
+            </div>
+            
+            <div class="glass-card rounded-2xl p-6 border border-red-500/30">
+              <div class="flex items-center gap-4 mb-4">
+                <div class="w-14 h-14 rounded-2xl bg-red-500/20 flex items-center justify-center">
+                  <span class="text-3xl">📈</span>
+                </div>
+                <div>
+                  <h4 class="text-lg font-semibold text-white">Equity Funds</h4>
+                  <span class="px-2 py-1 rounded-full bg-red-500/20 text-red-400 text-xs">High Risk</span>
+                </div>
+              </div>
+              <p class="text-gray-400 text-sm mb-4">Direct equity exposure through diversified stock portfolios. Best for long-term wealth creation.</p>
+              <div class="flex justify-between text-sm">
+                <div>
+                  <p class="text-gray-500">Expected Returns</p>
+                  <p class="text-red-400 font-semibold">12-15% p.a.</p>
+                </div>
+                <div>
+                  <p class="text-gray-500">Lock-in Period</p>
+                  <p class="text-white font-semibold">None*</p>
+                </div>
+                <div>
+                  <p class="text-gray-500">Min. Investment</p>
+                  <p class="text-white font-semibold">₹500</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <p class="text-gray-500 text-xs text-center mt-6">*ELSS funds have 3-year lock-in. Mutual fund investments are subject to market risks. Past performance is not indicative of future returns.</p>
+        </section>
+        
+        <!-- Insights Section -->
+        <section id="section-insights" class="p-6 hidden">
+          <div class="flex items-center justify-between mb-8">
+            <div>
+              <h1 class="text-2xl font-bold text-white">Smart Insights</h1>
+              <p class="text-gray-400 mt-1">AI-powered financial analysis</p>
+            </div>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Overspending Alert -->
+            <div class="glass-card rounded-2xl p-6 border-l-4 border-red-500">
+              <div class="flex items-start gap-4">
+                <div class="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center flex-shrink-0">
+                  <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                  </svg>
+                </div>
+                <div>
+                  <h3 class="font-semibold text-white mb-2">⚠️ Overspending Alert</h3>
+                  <p class="text-gray-400 text-sm">Your <strong class="text-white">Shopping</strong> expenses have exceeded the budget by ₹1,000 this month. Consider reviewing your purchases.</p>
+                  <button class="mt-3 text-red-400 text-sm hover:text-red-300">Review Shopping →</button>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Weekend Pattern -->
+            <div class="glass-card rounded-2xl p-6 border-l-4 border-amber-500">
+              <div class="flex items-start gap-4">
+                <div class="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                  <span class="text-2xl">📅</span>
+                </div>
+                <div>
+                  <h3 class="font-semibold text-white mb-2">Weekend Spending Pattern</h3>
+                  <p class="text-gray-400 text-sm">You spend <strong class="text-amber-400">45% more</strong> on weekends compared to weekdays. Food & Entertainment see the highest weekend spikes.</p>
+                  <div class="flex gap-2 mt-3">
+                    <span class="px-2 py-1 rounded bg-[#1a1a2e] text-xs text-gray-400">Sat: ₹2,450 avg</span>
+                    <span class="px-2 py-1 rounded bg-[#1a1a2e] text-xs text-gray-400">Sun: ₹2,100 avg</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Savings Recommendation -->
+            <div class="glass-card rounded-2xl p-6 border-l-4 border-green-500">
+              <div class="flex items-start gap-4">
+                <div class="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                  <span class="text-2xl">💡</span>
+                </div>
+                <div>
+                  <h3 class="font-semibold text-white mb-2">Savings Recommendation</h3>
+                  <p class="text-gray-400 text-sm">Based on your income pattern, you can save an additional <strong class="text-green-400">₹8,000/month</strong> by reducing dining-out expenses by 30%.</p>
+                  <button class="mt-3 text-green-400 text-sm hover:text-green-300">Create Savings Goal →</button>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Subscription Alert -->
+            <div class="glass-card rounded-2xl p-6 border-l-4 border-purple-500">
+              <div class="flex items-start gap-4">
+                <div class="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                  <span class="text-2xl">🔄</span>
+                </div>
+                <div>
+                  <h3 class="font-semibold text-white mb-2">Recurring Subscriptions</h3>
+                  <p class="text-gray-400 text-sm">You have <strong class="text-purple-400">5 active subscriptions</strong> totaling ₹2,847/month. Review if all are being utilized.</p>
+                  <div class="flex flex-wrap gap-2 mt-3">
+                    <span class="px-2 py-1 rounded bg-[#1a1a2e] text-xs text-gray-400">Netflix ₹649</span>
+                    <span class="px-2 py-1 rounded bg-[#1a1a2e] text-xs text-gray-400">Spotify ₹119</span>
+                    <span class="px-2 py-1 rounded bg-[#1a1a2e] text-xs text-gray-400">Prime ₹1,499</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- AI Assistant Card -->
+          <div class="glass-card rounded-2xl p-6 mt-6 gradient-border">
+            <div class="flex items-center gap-4">
+              <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center glow-teal">
+                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+              </div>
+              <div class="flex-1">
+                <h3 class="font-semibold text-white text-lg">AI Financial Assistant</h3>
+                <p class="text-gray-400 text-sm">Get personalized insights and answers to your financial queries.</p>
+              </div>
+              <button onclick="showSection('chatbot')" class="px-6 py-3 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-semibold hover:from-teal-600 hover:to-cyan-600 transition-all">
+                Ask Now →
+              </button>
+            </div>
+          </div>
+        </section>
+        
+        <!-- Chatbot Section -->
+        <section id="section-chatbot" class="p-6 hidden">
+          <div class="flex items-center justify-between mb-8">
+            <div>
+              <h1 class="text-2xl font-bold text-white">Financial Assistant</h1>
+              <p class="text-gray-400 mt-1">Ask anything about your finances</p>
+            </div>
+          </div>
+          
+          <div class="glass-card rounded-2xl overflow-hidden" style="height: calc(100% - 120px)">
+            <!-- Chat Header -->
+            <div class="p-4 bg-gradient-to-r from-teal-500/20 to-cyan-500/20 border-b border-gray-800">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center">
+                  <span class="text-white">🤖</span>
+                </div>
+                <div>
+                  <p class="font-semibold text-white">FinanceHub AI</p>
+                  <p class="text-xs text-green-400 flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                    Online
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Chat Messages -->
+            <div class="p-4 h-80 overflow-y-auto space-y-4" id="chat-messages">
+              <!-- Bot Message -->
+              <div class="flex gap-3">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center flex-shrink-0">
+                  <span class="text-sm">🤖</span>
+                </div>
+                <div class="glass-card rounded-2xl rounded-tl-none p-4 max-w-md">
+                  <p class="text-gray-300">Hello Rahul! 👋 I'm your personal financial assistant. I can help you with:</p>
+                  <ul class="mt-2 text-gray-400 text-sm space-y-1">
+                    <li>• Spending analysis</li>
+                    <li>• Budget recommendations</li>
+                    <li>• Investment suggestions</li>
+                    <li>• Financial queries</li>
+                  </ul>
+                  <p class="mt-2 text-gray-300">What would you like to know?</p>
+                </div>
+              </div>
+              
+              <!-- User Message -->
+              <div class="flex gap-3 justify-end">
+                <div class="bg-gradient-to-r from-teal-500 to-cyan-500 rounded-2xl rounded-tr-none p-4 max-w-md">
+                  <p class="text-white">How much did I spend this month?</p>
+                </div>
+                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0 text-white text-sm font-semibold">
+                  RS
+                </div>
+              </div>
+              
+              <!-- Bot Response -->
+              <div class="flex gap-3">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center flex-shrink-0">
+                  <span class="text-sm">🤖</span>
+                </div>
+                <div class="glass-card rounded-2xl rounded-tl-none p-4 max-w-md">
+                  <p class="text-gray-300">Here's your spending summary for <strong class="text-white">January 2025</strong>:</p>
+                  <div class="mt-3 space-y-2">
+                    <div class="flex justify-between">
+                      <span class="text-gray-400">Total Spent:</span>
+                      <span class="text-red-400 font-semibold">₹67,250</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span class="text-gray-400">Top Category:</span>
+                      <span class="text-white">Food (₹20,175)</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span class="text-gray-400">vs Last Month:</span>
+                      <span class="text-amber-400">↑ 8% higher</span>
+                    </div>
+                  </div>
+                  <p class="mt-3 text-teal-400 text-sm">💡 Tip: Reducing food delivery orders could save ₹5,000/month</p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Quick Queries -->
+            <div class="p-4 border-t border-gray-800">
+              <p class="text-gray-500 text-xs mb-3">Quick queries:</p>
+              <div class="flex flex-wrap gap-2 mb-4">
+                <button onclick="addChatMessage('Show food expenses')" class="px-3 py-1 rounded-full bg-[#1a1a2e] text-gray-400 text-sm hover:text-white hover:bg-[#252540] transition-colors">
+                  Show food expenses
+                </button>
+                <button onclick="addChatMessage('Monthly savings rate')" class="px-3 py-1 rounded-full bg-[#1a1a2e] text-gray-400 text-sm hover:text-white hover:bg-[#252540] transition-colors">
+                  Monthly savings rate
+                </button>
+                <button onclick="addChatMessage('Budget status')" class="px-3 py-1 rounded-full bg-[#1a1a2e] text-gray-400 text-sm hover:text-white hover:bg-[#252540] transition-colors">
+                  Budget status
+                </button>
+              </div>
+              
+              <!-- Input -->
+              <div class="flex gap-3">
+                <input type="text" id="chat-input" placeholder="Type your question..." class="flex-1 px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-teal-500 transition-colors">
+                <button onclick="sendMessage()" class="px-6 py-3 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-semibold hover:from-teal-600 hover:to-cyan-600 transition-all">
+                  Send
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+        
+        <!-- Settings Section -->
+        <section id="section-settings" class="p-6 hidden">
+          <div class="flex items-center justify-between mb-8">
+            <div>
+              <h1 class="text-2xl font-bold text-white">Settings</h1>
+              <p class="text-gray-400 mt-1">Manage your account and preferences</p>
+            </div>
+          </div>
+          
+          <div class="max-w-2xl space-y-6">
+            <!-- Profile Settings -->
+            <div class="glass-card rounded-2xl p-6">
+              <h3 class="text-lg font-semibold text-white mb-6">Profile Settings</h3>
+              <div class="flex items-center gap-6 mb-6">
+                <div class="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-2xl font-semibold">
+                  RS
+                </div>
+                <div>
+                  <button class="px-4 py-2 rounded-lg bg-teal-500/20 text-teal-400 text-sm hover:bg-teal-500/30 transition-colors">
+                    Change Photo
+                  </button>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-300 mb-2">Full Name</label>
+                  <input type="text" value="Rahul Sharma" class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white focus:outline-none focus:border-teal-500 transition-colors">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-300 mb-2">Email</label>
+                  <input type="email" value="rahul.sharma@email.com" class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white focus:outline-none focus:border-teal-500 transition-colors">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-300 mb-2">Phone</label>
+                  <input type="tel" value="+91 98765 43210" class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white focus:outline-none focus:border-teal-500 transition-colors">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-300 mb-2">Currency</label>
+                  <select class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white focus:outline-none focus:border-teal-500 transition-colors">
+                    <option>₹ INR - Indian Rupee</option>
+                    <option>$ USD - US Dollar</option>
+                    <option>€ EUR - Euro</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Notifications -->
+            <div class="glass-card rounded-2xl p-6">
+              <h3 class="text-lg font-semibold text-white mb-6">Notifications</h3>
+              <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-white">Budget Alerts</p>
+                    <p class="text-gray-500 text-sm">Get notified when approaching budget limits</p>
+                  </div>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" checked class="sr-only peer">
+                    <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-500"></div>
+                  </label>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-white">Transaction Alerts</p>
+                    <p class="text-gray-500 text-sm">Notify for large transactions</p>
+                  </div>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" checked class="sr-only peer">
+                    <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-500"></div>
+                  </label>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-white">Weekly Summary</p>
+                    <p class="text-gray-500 text-sm">Receive weekly financial reports</p>
+                  </div>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" class="sr-only peer">
+                    <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-500"></div>
+                  </label>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Security -->
+            <div class="glass-card rounded-2xl p-6">
+              <h3 class="text-lg font-semibold text-white mb-6">Security</h3>
+              <div class="space-y-4">
+                <button class="w-full flex items-center justify-between p-4 rounded-xl bg-[#1a1a2e] hover:bg-[#252540] transition-colors">
+                  <div class="flex items-center gap-3">
+                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                    </svg>
+                    <span class="text-white">Change Password</span>
+                  </div>
+                  <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                  </svg>
+                </button>
+                <button class="w-full flex items-center justify-between p-4 rounded-xl bg-[#1a1a2e] hover:bg-[#252540] transition-colors">
+                  <div class="flex items-center gap-3">
+                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4"/>
+                    </svg>
+                    <span class="text-white">Enable Biometrics</span>
+                  </div>
+                  <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                  </svg>
+                </button>
+                <button class="w-full flex items-center justify-between p-4 rounded-xl bg-[#1a1a2e] hover:bg-[#252540] transition-colors">
+                  <div class="flex items-center gap-3">
+                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                    </svg>
+                    <span class="text-white">Two-Factor Authentication</span>
+                  </div>
+                  <span class="px-2 py-1 rounded bg-green-500/20 text-green-400 text-xs">Enabled</span>
+                </button>
+              </div>
+            </div>
+            
+            <!-- Danger Zone -->
+            <div class="glass-card rounded-2xl p-6 border border-red-500/30">
+              <h3 class="text-lg font-semibold text-red-400 mb-4">Danger Zone</h3>
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-white">Delete Account</p>
+                  <p class="text-gray-500 text-sm">Permanently delete your account and all data</p>
+                </div>
+                <button class="px-4 py-2 rounded-lg bg-red-500/20 text-red-400 text-sm hover:bg-red-500/30 transition-colors">
+                  Delete Account
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+        
+      </main>
+      
+      <!-- Floating Add Expense Button -->
+      <button onclick="showSection('expenses')" class="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg hover:shadow-xl transform hover:scale-110 transition-all flex items-center justify-center glow-teal z-50">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+        </svg>
+      </button>
+      
+      <!-- Floating Chatbot Button -->
+      <button onclick="showSection('chatbot')" class="fixed bottom-6 right-24 w-14 h-14 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg hover:shadow-xl transform hover:scale-110 transition-all flex items-center justify-center z-50">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+        </svg>
+      </button>
+    </div>
+    
+  </div>
+
+  <script>
+    // Default config
+    const defaultConfig = {
+      app_title: 'FinanceHub',
+      welcome_message: 'Welcome back, Rahul! 👋'
+    };
+
+    let config = { ...defaultConfig };
+
+    // Element SDK initialization
+    if (window.elementSdk) {
+      window.elementSdk.init({
+        defaultConfig,
+        onConfigChange: async (newConfig) => {
+          config = newConfig;
+          
+          // Update app title
+          const title = config.app_title || defaultConfig.app_title;
+          document.getElementById('app-title-login').textContent = title;
+          document.getElementById('app-title-sidebar').textContent = title;
+          
+          // Update welcome message
+          const welcome = config.welcome_message || defaultConfig.welcome_message;
+          document.getElementById('welcome-message').textContent = welcome;
+        },
+        mapToCapabilities: (config) => ({
+          recolorables: [],
+          borderables: [],
+          fontEditable: undefined,
+          fontSizeable: undefined
+        }),
+        mapToEditPanelValues: (config) => new Map([
+          ['app_title', config.app_title || defaultConfig.app_title],
+          ['welcome_message', config.welcome_message || defaultConfig.welcome_message]
+        ])
+      });
+    }
+
+    // Screen navigation
+    function showLogin() {
+      document.getElementById('login-screen').classList.remove('hidden');
+      document.getElementById('signup-screen').classList.add('hidden');
+      document.getElementById('main-app').classList.add('hidden');
+    }
+
+    function showSignup() {
+      document.getElementById('login-screen').classList.add('hidden');
+      document.getElementById('signup-screen').classList.remove('hidden');
+      document.getElementById('main-app').classList.add('hidden');
+    }
+
+    function showDashboard() {
+      document.getElementById('login-screen').classList.add('hidden');
+      document.getElementById('signup-screen').classList.add('hidden');
+      document.getElementById('main-app').classList.remove('hidden');
+      document.getElementById('main-app').classList.add('flex');
+    }
+
+    // Section navigation
+    function showSection(sectionId) {
+      // Hide all sections
+      document.querySelectorAll('main section').forEach(section => {
+        section.classList.add('hidden');
+      });
+      
+      // Show selected section
+      document.getElementById('section-' + sectionId).classList.remove('hidden');
+      
+      // Update nav items
+      document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+        if (item.dataset.section === sectionId) {
+          item.classList.add('active');
+        }
+      });
+    }
+
+    // Loan tabs
+    function showLoanTab(tab) {
+      document.querySelectorAll('.loan-tab').forEach(btn => {
+        btn.classList.remove('active', 'bg-green-500/20', 'text-green-400', 'bg-red-500/20', 'text-red-400');
+        btn.classList.add('bg-[#1a1a2e]', 'text-gray-400');
+      });
+      
+      const activeBtn = document.querySelector(`.loan-tab[data-tab="${tab}"]`);
+      activeBtn.classList.remove('bg-[#1a1a2e]', 'text-gray-400');
+      
+      if (tab === 'lent') {
+        activeBtn.classList.add('bg-green-500/20', 'text-green-400');
+        document.getElementById('loan-lent').classList.remove('hidden');
+        document.getElementById('loan-borrowed').classList.add('hidden');
+      } else {
+        activeBtn.classList.add('bg-red-500/20', 'text-red-400');
+        document.getElementById('loan-lent').classList.add('hidden');
+        document.getElementById('loan-borrowed').classList.remove('hidden');
+      }
+    }
+
+    // Risk selection
+    function selectRisk(risk) {
+      document.querySelectorAll('.risk-btn').forEach(btn => {
+        btn.classList.remove('border-green-500', 'text-green-400', 'bg-green-500/20');
+        btn.classList.remove('border-amber-500', 'text-amber-400', 'bg-amber-500/20');
+        btn.classList.remove('border-red-500', 'text-red-400', 'bg-red-500/20');
+        btn.classList.add('bg-[#1a1a2e]', 'border-transparent', 'text-gray-400');
+      });
+      
+      const activeBtn = document.querySelector(`.risk-btn[data-risk="${risk}"]`);
+      activeBtn.classList.remove('bg-[#1a1a2e]', 'border-transparent', 'text-gray-400');
+      
+      if (risk === 'low') {
+        activeBtn.classList.add('border-green-500', 'text-green-400', 'bg-green-500/20');
+      } else if (risk === 'medium') {
+        activeBtn.classList.add('border-amber-500', 'text-amber-400', 'bg-amber-500/20');
+      } else {
+        activeBtn.classList.add('border-red-500', 'text-red-400', 'bg-red-500/20');
+      }
+    }
+
+    // Chat functions
+    function addChatMessage(text) {
+      const chatMessages = document.getElementById('chat-messages');
+      
+      // Add user message
+      const userMsg = document.createElement('div');
+      userMsg.className = 'flex gap-3 justify-end slide-in';
+      userMsg.innerHTML = `
+        <div class="bg-gradient-to-r from-teal-500 to-cyan-500 rounded-2xl rounded-tr-none p-4 max-w-md">
+          <p class="text-white">${text}</p>
+        </div>
+        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0 text-white text-sm font-semibold">
+          RS
+        </div>
+      `;
+      chatMessages.appendChild(userMsg);
+      
+      // Simulate bot response
+      setTimeout(() => {
+        const botMsg = document.createElement('div');
+        botMsg.className = 'flex gap-3 slide-in';
+        botMsg.innerHTML = `
+          <div class="w-8 h-8 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center flex-shrink-0">
+            <span class="text-sm">🤖</span>
+          </div>
+          <div class="glass-card rounded-2xl rounded-tl-none p-4 max-w-md">
+            <p class="text-gray-300">I'm analyzing your query: "${text}". Let me pull up the relevant data for you...</p>
+            <p class="mt-2 text-teal-400 text-sm">📊 Processing your request...</p>
+          </div>
+        `;
+        chatMessages.appendChild(botMsg);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }, 500);
+      
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function sendMessage() {
+      const input = document.getElementById('chat-input');
+      if (input.value.trim()) {
+        addChatMessage(input.value);
+        input.value = '';
+      }
+    }
+
+    // Enter key for chat
+    document.getElementById('chat-input').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        sendMessage();
+      }
+    });
+
+    // Form submissions
+    document.getElementById('expense-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      // Show success message inline
+      const form = this;
+      const btn = form.querySelector('button[type="submit"]');
+      const originalText = btn.textContent;
+      btn.textContent = '✓ Expense Added!';
+      btn.classList.add('bg-green-500');
+      setTimeout(() => {
+        btn.textContent = originalText;
+        btn.classList.remove('bg-green-500');
+        form.reset();
+      }, 2000);
+    });
+  </script>
+</body>
+</html>

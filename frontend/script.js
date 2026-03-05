@@ -30,49 +30,71 @@ bioBtn.addEventListener("click", () => {
   setMsg("Biometric authentication triggered (UI simulation).", "ok");
 });
 
-const API = "http://localhost:5000";
+const API = "http://127.0.0.1:8000";
+
 
 // LOGIN -> backend
 loginForm.addEventListener("submit", async (e) => {
   e.preventDefault();
-  setMsg("Logging in...", "");
+  setMsg("Logging in...");
 
   const email = document.getElementById("loginEmail").value.trim();
   const password = document.getElementById("loginPass").value;
 
+  const formData = new URLSearchParams();
+  formData.append("username", email);
+  formData.append("password", password);
+
   try {
-    const res = await fetch(`${API}/login`, {
+    const res = await fetch(`${API}/auth/login`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password })
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: formData
     });
 
-    const text = await res.text();
-    setMsg(text, text.toLowerCase().includes("successful") ? "ok" : "bad");
+    const data = await res.json();
+
+    if (res.ok) {
+      setMsg("Login successful!", "ok");
+      console.log("Token:", data.access_token);
+    } else {
+      setMsg(data.detail || "Login failed", "bad");
+    }
+
   } catch (err) {
-    setMsg("Backend not reachable  (is server.js running?)", "bad");
+    setMsg("Backend not reachable", "bad");
   }
 });
+
 
 // REGISTER -> backend
 registerForm.addEventListener("submit", async (e) => {
   e.preventDefault();
-  setMsg("Registering...", "");
+  setMsg("Registering...");
 
   const email = document.getElementById("regEmail").value.trim();
   const password = document.getElementById("regPass").value;
 
   try {
-    const res = await fetch(`${API}/register`, {
+    const res = await fetch(`${API}/auth/signup`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json"
+      },
       body: JSON.stringify({ email, password })
     });
 
-    const text = await res.text();
-    setMsg(text, text.toLowerCase().includes("registered") ? "ok" : "bad");
+    const data = await res.json();
+
+    if (res.ok) {
+      setMsg("Account created successfully!", "ok");
+    } else {
+      setMsg(data.detail || "Registration failed", "bad");
+    }
+
   } catch (err) {
-    setMsg("Backend not reachable (is server.js running?)", "bad");
+    setMsg("Backend not reachable", "bad");
   }
 });
-
