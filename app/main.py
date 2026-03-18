@@ -14,7 +14,7 @@ app = FastAPI(title="FinTrack", description="A financial tracking application", 
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # for dev only
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

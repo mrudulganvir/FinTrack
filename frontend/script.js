@@ -1,9 +1,13 @@
+console.log("Script loaded");
+
 const tabLogin = document.getElementById("tabLogin");
 const tabRegister = document.getElementById("tabRegister");
 const loginForm = document.getElementById("loginForm");
 const registerForm = document.getElementById("registerForm");
 const msg = document.getElementById("msg");
 const bioBtn = document.getElementById("bioBtn");
+
+
 
 function setMsg(text, type="") {
   msg.className = "msg " + type;
@@ -26,50 +30,48 @@ tabRegister.addEventListener("click", () => {
   setMsg("");
 });
 
+if (bioBtn) {
 bioBtn.addEventListener("click", () => {
   setMsg("Biometric authentication triggered (UI simulation).", "ok");
 });
+}
 
 const API = "http://127.0.0.1:8000";
 
 
 // LOGIN -> backend
+if(loginForm){
 loginForm.addEventListener("submit", async (e) => {
   e.preventDefault();
-  setMsg("Logging in...");
 
-  const email = document.getElementById("loginEmail").value.trim();
+  const email = document.getElementById("loginEmail").value;
   const password = document.getElementById("loginPass").value;
 
   const formData = new URLSearchParams();
   formData.append("username", email);
   formData.append("password", password);
 
-  try {
-    const res = await fetch(`${API}/auth/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
-      },
-      body: formData
-    });
+  const res = await fetch("http://127.0.0.1:8000/auth/login", {
+    method: "POST",
+    body: formData
+  });
 
-    const data = await res.json();
+  const data = await res.json();
 
-    if (res.ok) {
-      setMsg("Login successful!", "ok");
-      console.log("Token:", data.access_token);
-    } else {
-      setMsg(data.detail || "Login failed", "bad");
-    }
+  if (res.ok) {
+    localStorage.setItem("token", data.access_token);
 
-  } catch (err) {
-    setMsg("Backend not reachable", "bad");
+    console.log("Redirecting...");
+    window.location.href = "dashboard.html"; 
+  } else {
+    console.error(data);
   }
 });
+}
 
 
 // REGISTER -> backend
+if(registerForm){
 registerForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   setMsg("Registering...");
@@ -98,3 +100,5 @@ registerForm.addEventListener("submit", async (e) => {
     setMsg("Backend not reachable", "bad");
   }
 });
+}
+

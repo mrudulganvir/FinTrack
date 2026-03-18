@@ -1,0 +1,94 @@
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, #0f172a, #020617);
+  color: white;
+}
+
+.dashboard {
+  padding: 30px;
+  max-width: 1200px;
+  margin: auto;
+}
+
+.dash-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.summary {
+  display: flex;
+  gap: 20px;
+  margin: 20px 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.card {
+  background: rgba(255,255,255,0.05);
+  padding: 20px;
+  border-radius: 15px;
+  backdrop-filter: blur(10px);
+}
+
+input, select {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 10px;
+  border: none;
+  background: #1e293b;
+  color: white;
+}
+
+.btn {
+  padding: 10px 15px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+}
+
+.btn.primary {
+  background: linear-gradient(90deg, #22c55e, #06b6d4);
+  color: black;
+}
+
+.btn.secondary {
+  background: #334155;
+  color: white;
+}
+
+.btn.ghost {
+  background: transparent;
+  border: 1px solid #475569;
+  color: white;
+}
+
+.btn.full {
+  width: 100%;
+}
+
+.list {
+  margin-top: 10px;
+}
+
+.tx {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px;
+  margin: 5px 0;
+  border-radius: 8px;
+}
+
+.tx.income {
+  background: rgba(34,197,94,0.2);
+}
+
+.tx.expense {
+  background: rgba(239,68,68,0.2);
+}
