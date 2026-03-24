@@ -8,11 +8,12 @@ from app.core.security import get_current_user
 
 router = APIRouter(prefix="/transactions", tags=["Transactions"])
 
+
 @router.post("/", response_model=dict)
 def create_transaction(
     transaction: TransactionCreate,
     db: Session = Depends(get_db_connection),
-    current_user = Depends(get_current_user)
+    current_user=Depends(get_current_user)
 ):
     new_transaction = Transaction(
         amount=transaction.amount,
@@ -20,6 +21,7 @@ def create_transaction(
         category=transaction.category,
         description=transaction.description,
         user_id=current_user.id,
+        transaction_date=transaction.transaction_date,
     )
 
     db.add(new_transaction)
@@ -31,13 +33,14 @@ def create_transaction(
     return {
         "message": "Transaction added successfully",
         "transaction": TransactionResponse.model_validate(new_transaction),
-        "current_balance": balance
+        "current_balance": balance,
     }
-    
+
+
 @router.get("/")
 def get_transactions(
     db: Session = Depends(get_db_connection),
-    current_user = Depends(get_current_user)
+    current_user=Depends(get_current_user)
 ):
     transactions = (
         db.query(Transaction)
@@ -50,21 +53,24 @@ def get_transactions(
 
     return {
         "transactions": [
-            TransactionResponse.model_validate(tx)
-            for tx in transactions
+            TransactionResponse.model_validate(tx) for tx in transactions
         ],
-        "current_balance": balance
+        "current_balance": balance,
     }
-    
+
+
 @router.get("/{transaction_id}")
 def get_transaction_by_id(
     transaction_id: int,
     db: Session = Depends(get_db_connection),
-    current_user = Depends(get_current_user)
+    current_user=Depends(get_current_user)
 ):
     transaction = (
         db.query(Transaction)
-        .filter(Transaction.id == transaction_id, Transaction.user_id == current_user.id)
+        .filter(
+            Transaction.id == transaction_id,
+            Transaction.user_id == current_user.id
+        )
         .first()
     )
 

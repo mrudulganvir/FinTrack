@@ -7,8 +7,6 @@ const registerForm = document.getElementById("registerForm");
 const msg = document.getElementById("msg");
 const bioBtn = document.getElementById("bioBtn");
 
-
-
 function setMsg(text, type="") {
   msg.className = "msg " + type;
   msg.textContent = text;
@@ -31,74 +29,77 @@ tabRegister.addEventListener("click", () => {
 });
 
 if (bioBtn) {
-bioBtn.addEventListener("click", () => {
-  setMsg("Biometric authentication triggered (UI simulation).", "ok");
-});
+  bioBtn.addEventListener("click", () => {
+    setMsg("Biometric authentication triggered (UI simulation).", "ok");
+  });
 }
 
 const API = "http://127.0.0.1:8000";
 
+// FIX 1: Login now has try/catch for network errors
+// FIX 2: Login errors are now shown to the user via setMsg instead of only console.error
+if (loginForm) {
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-// LOGIN -> backend
-if(loginForm){
-loginForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
+    const email = document.getElementById("loginEmail").value;
+    const password = document.getElementById("loginPass").value;
 
-  const email = document.getElementById("loginEmail").value;
-  const password = document.getElementById("loginPass").value;
+    const formData = new URLSearchParams();
+    formData.append("username", email);
+    formData.append("password", password);
 
-  const formData = new URLSearchParams();
-  formData.append("username", email);
-  formData.append("password", password);
+    try {
+      const res = await fetch(`${API}/auth/login`, {
+        method: "POST",
+        body: formData
+      });
 
-  const res = await fetch("http://127.0.0.1:8000/auth/login", {
-    method: "POST",
-    body: formData
+      const data = await res.json();
+
+      if (res.ok) {
+        localStorage.setItem("token", data.access_token);
+        console.log("Redirecting...");
+        window.location.href = "prototype.html";
+      } else {
+        // FIX 2: Show the error to the user instead of silently logging it
+        setMsg(data.detail || "Invalid email or password.", "bad");
+      }
+    } catch (err) {
+      // FIX 1: Catch network failures and show a message
+      setMsg("Backend not reachable. Please try again.", "bad");
+    }
   });
-
-  const data = await res.json();
-
-  if (res.ok) {
-    localStorage.setItem("token", data.access_token);
-
-    console.log("Redirecting...");
-    window.location.href = "dashboard.html"; 
-  } else {
-    console.error(data);
-  }
-});
 }
-
 
 // REGISTER -> backend
-if(registerForm){
-registerForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  setMsg("Registering...");
+if (registerForm) {
+  registerForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    setMsg("Registering...");
 
-  const email = document.getElementById("regEmail").value.trim();
-  const password = document.getElementById("regPass").value;
+    const email = document.getElementById("regEmail").value.trim();
+    const password = document.getElementById("regPass").value;
 
-  try {
-    const res = await fetch(`${API}/auth/signup`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ email, password })
-    });
+    try {
+      const res = await fetch(`${API}/auth/signup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ email, password })
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (res.ok) {
-      setMsg("Account created successfully!", "ok");
-    } else {
-      setMsg(data.detail || "Registration failed", "bad");
+      if (res.ok) {
+        setMsg("Account created successfully!", "ok");
+      } else {
+        setMsg(data.detail || "Registration failed", "bad");
+      }
+
+    } catch (err) {
+      setMsg("Backend not reachable", "bad");
     }
-
-  } catch (err) {
-    setMsg("Backend not reachable", "bad");
-  }
-});
+  });
 }
-

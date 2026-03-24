@@ -1,9 +1,9 @@
 fastapi==0.115.0
 uvicorn[standard]==0.30.6
 
-# Database
+# Database — PostgreSQL (Neon)
 sqlalchemy==2.0.35
-pymysql==1.1.1
+psycopg2-binary==2.9.9   # FIX: was pymysql (MySQL driver) — project uses PostgreSQL
 
 # Authentication
 python-jose==3.3.0
@@ -11,7 +11,9 @@ passlib[bcrypt]==1.7.4
 
 # Validation & Settings
 pydantic==2.9.2
+pydantic[email]          # required for EmailStr validation in user_schema.py
 python-dotenv==1.0.1
 
 # Optional but recommended
 alembic==1.13.2
+python-multipart==0.0.9  # required for OAuth2PasswordRequestForm (login endpoint)
