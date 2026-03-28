@@ -3,1248 +3,1294 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FinanceHub - Personal Finance Manager</title>
+  <title>FinTrack — Personal Finance Manager</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    body { box-sizing: border-box; }
-    * { font-family: 'Plus Jakarta Sans', sans-serif; }
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    * { font-family: 'Plus Jakarta Sans', sans-serif; box-sizing: border-box; }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
     ::-webkit-scrollbar-track { background: #1a1a2e; }
     ::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
-    .glass-card {
-      background: rgba(30, 41, 59, 0.7);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.05);
+    .glass { background: rgba(30,41,59,0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.06); }
+    .glow  { box-shadow: 0 0 20px rgba(20,184,166,0.3); }
+    .nav-item { transition: all 0.25s; }
+    .nav-item:hover  { background: rgba(20,184,166,0.1); border-left: 3px solid #14b8a6; }
+    .nav-item.active { background: rgba(20,184,166,0.15); border-left: 3px solid #14b8a6; }
+    @keyframes slideIn { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+    .slide-in { animation: slideIn 0.4s ease-out forwards; }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
+    .float { animation: float 3s ease-in-out infinite; }
+    .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); transition:transform 0.3s; z-index:9999; pointer-events:none; }
+    .toast.show { transform:translateX(-50%) translateY(0); }
+    /* Chat bubbles */
+    .bubble-user { background: linear-gradient(135deg,#14b8a6,#0ea5e9); border-radius:18px 18px 4px 18px; }
+    .bubble-ai   { background: rgba(30,41,59,0.9); border:1px solid rgba(255,255,255,0.08); border-radius:18px 18px 18px 4px; }
+    /* Typing indicator */
+    @keyframes blink { 0%,100%{opacity:0.2} 50%{opacity:1} }
+    .dot1{animation:blink 1.2s infinite 0s}
+    .dot2{animation:blink 1.2s infinite 0.2s}
+    .dot3{animation:blink 1.2s infinite 0.4s}
+    /* Print */
+    @media print {
+      aside,.no-print { display:none !important; }
+      main { padding:16px !important; }
+      .glass { background:white !important; border:1px solid #ddd !important; color:black !important; }
+      body  { background:white !important; color:black !important; }
     }
-    .glow-teal { box-shadow: 0 0 20px rgba(20, 184, 166, 0.3); }
-    .gradient-border { position: relative; }
-    .gradient-border::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-      padding: 1px;
-      background: linear-gradient(135deg, #14b8a6, #0ea5e9);
-      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      -webkit-mask-composite: xor;
-      mask-composite: exclude;
-    }
-    .nav-item { transition: all 0.3s ease; }
-    .nav-item:hover { background: rgba(20, 184, 166, 0.1); border-left: 3px solid #14b8a6; }
-    .nav-item.active { background: rgba(20, 184, 166, 0.15); border-left: 3px solid #14b8a6; }
-    @keyframes pulse-glow {
-      0%, 100% { box-shadow: 0 0 5px rgba(20, 184, 166, 0.5); }
-      50% { box-shadow: 0 0 20px rgba(20, 184, 166, 0.8); }
-    }
-    .pulse-animation { animation: pulse-glow 2s infinite; }
-    @keyframes slideIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .slide-in { animation: slideIn 0.5s ease-out forwards; }
-    @keyframes float {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-5px); }
-    }
-    .float-animation { animation: float 3s ease-in-out infinite; }
-    .toast {
-      position: fixed;
-      bottom: 24px;
-      left: 50%;
-      transform: translateX(-50%) translateY(100px);
-      transition: transform 0.3s ease;
-      z-index: 9999;
-    }
-    .toast.show { transform: translateX(-50%) translateY(0); }
   </style>
 </head>
 <body class="h-full bg-[#0f0f1a] text-gray-100 overflow-auto">
 
-  <!-- Toast Notification -->
-  <div id="toast" class="toast glass-card px-6 py-3 rounded-xl text-sm font-medium"></div>
+<div id="toast" class="toast glass px-5 py-2.5 rounded-xl text-sm font-medium"></div>
 
-  <div id="app" class="h-full w-full">
+<div id="app" class="h-full w-full">
 
-    <!-- ═══════════════════════════════════════════
-         LOGIN SCREEN
-    ═══════════════════════════════════════════ -->
-    <div id="login-screen" class="h-full w-full flex items-center justify-center p-4">
-      <div class="w-full max-w-md">
-        <div class="glass-card rounded-2xl p-8 slide-in">
-          <div class="text-center mb-8">
-            <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center glow-teal">
-              <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
-            </div>
-            <h1 class="text-2xl font-bold text-white">FinanceHub</h1>
-            <p class="text-gray-400 mt-2">Manage your finances smartly</p>
+  <!-- ═══════════════════  LOGIN  ═══════════════════ -->
+  <div id="login-screen" class="h-full w-full flex items-center justify-center p-4">
+    <div class="w-full max-w-md slide-in">
+      <div class="glass rounded-2xl p-8">
+        <div class="text-center mb-8">
+          <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center glow">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           </div>
-
-          <div class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-300 mb-2">Email Address</label>
-              <input type="email" id="login-email" placeholder="Enter your email"
-                class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-teal-500 transition-colors">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-300 mb-2">Password</label>
-              <input type="password" id="login-password" placeholder="Enter your password"
-                class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-teal-500 transition-colors">
-            </div>
-
-            <div id="login-error" class="hidden text-red-400 text-sm px-1"></div>
-
-            <button id="login-btn" onclick="handleLogin()"
-              class="w-full py-3 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-semibold hover:from-teal-600 hover:to-cyan-600 transition-all transform hover:scale-[1.02] active:scale-[0.98]">
-              Sign In
-            </button>
-          </div>
-
-          <div class="mt-6 text-center">
-            <p class="text-gray-400">Don't have an account?
-              <button onclick="showSignup()" class="text-teal-400 hover:text-teal-300 font-medium">Sign up</button>
-            </p>
-          </div>
-
-          <div class="mt-4 flex items-center justify-center gap-2 text-xs text-gray-500">
-            <span class="w-2 h-2 rounded-full bg-green-500"></span>
-            Session secure • 256-bit encryption
-          </div>
+          <h1 class="text-2xl font-bold text-white">FinTrack</h1>
+          <p class="text-gray-400 mt-1 text-sm">AI-Powered Personal Finance</p>
         </div>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-1">Email</label>
+            <input id="login-email" type="email" placeholder="you@example.com" class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-teal-500 transition-colors">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-1">Password</label>
+            <input id="login-password" type="password" placeholder="••••••••" class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-teal-500 transition-colors">
+          </div>
+          <div id="login-error" class="hidden text-red-400 text-sm px-1"></div>
+          <button id="login-btn" onclick="handleLogin()" class="w-full py-3 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-semibold hover:opacity-90 transition-all">Sign In</button>
+        </div>
+        <p class="mt-6 text-center text-gray-400 text-sm">No account? <button onclick="showSignup()" class="text-teal-400 hover:text-teal-300 font-medium">Sign up</button></p>
       </div>
     </div>
+  </div>
 
-    <!-- ═══════════════════════════════════════════
-         SIGNUP SCREEN
-    ═══════════════════════════════════════════ -->
-    <div id="signup-screen" class="h-full w-full hidden items-center justify-center p-4">
-      <div class="w-full max-w-md">
-        <div class="glass-card rounded-2xl p-8 slide-in">
-          <div class="text-center mb-8">
-            <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center glow-teal">
-              <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
-              </svg>
-            </div>
-            <h1 class="text-2xl font-bold text-white">Create Account</h1>
-            <p class="text-gray-400 mt-2">Start your financial journey</p>
-          </div>
-
-          <div class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-300 mb-2">Email Address</label>
-              <input type="email" id="signup-email" placeholder="Enter your email"
-                class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-teal-500 transition-colors">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-300 mb-2">Password</label>
-              <input type="password" id="signup-password" placeholder="Create a strong password"
-                class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-teal-500 transition-colors">
-            </div>
-
-            <div id="signup-error" class="hidden text-red-400 text-sm px-1"></div>
-
-            <button id="signup-btn" onclick="handleSignup()"
-              class="w-full py-3 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-semibold hover:from-teal-600 hover:to-cyan-600 transition-all transform hover:scale-[1.02] active:scale-[0.98]">
-              Create Account
-            </button>
-          </div>
-
-          <div class="mt-6 text-center">
-            <p class="text-gray-400">Already have an account?
-              <button onclick="showLogin()" class="text-teal-400 hover:text-teal-300 font-medium">Sign in</button>
-            </p>
-          </div>
+  <!-- ═══════════════════  SIGNUP  ═══════════════════ -->
+  <div id="signup-screen" class="h-full w-full hidden items-center justify-center p-4">
+    <div class="w-full max-w-md slide-in">
+      <div class="glass rounded-2xl p-8">
+        <div class="text-center mb-8">
+          <h1 class="text-2xl font-bold text-white">Create Account</h1>
+          <p class="text-gray-400 mt-1 text-sm">Start tracking your finances</p>
         </div>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-1">Email</label>
+            <input id="signup-email" type="email" placeholder="you@example.com" class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-teal-500 transition-colors">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-1">Password</label>
+            <input id="signup-password" type="password" placeholder="Min. 6 characters" class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-teal-500 transition-colors">
+          </div>
+          <div id="signup-error" class="hidden text-red-400 text-sm px-1"></div>
+          <button id="signup-btn" onclick="handleSignup()" class="w-full py-3 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-semibold hover:opacity-90 transition-all">Create Account</button>
+        </div>
+        <p class="mt-6 text-center text-gray-400 text-sm">Have an account? <button onclick="showLogin()" class="text-teal-400 hover:text-teal-300 font-medium">Sign in</button></p>
       </div>
     </div>
+  </div>
 
-    <!-- ═══════════════════════════════════════════
-         MAIN DASHBOARD
-    ═══════════════════════════════════════════ -->
-    <div id="main-app" class="h-full w-full hidden">
+  <!-- ═══════════════════  MAIN APP  ═══════════════════ -->
+  <div id="main-app" class="h-full w-full hidden">
 
-      <!-- Sidebar -->
-      <aside class="w-64 bg-[#12121f] border-r border-gray-800 flex flex-col flex-shrink-0">
-        <div class="p-6 border-b border-gray-800">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center">
-              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
+    <!-- Sidebar -->
+    <aside class="w-60 bg-[#12121f] border-r border-gray-800 flex flex-col flex-shrink-0 no-print">
+      <div class="p-5 border-b border-gray-800">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <span class="text-lg font-bold text-white">FinTrack</span>
+        </div>
+      </div>
+
+      <nav class="flex-1 py-3 overflow-y-auto text-sm">
+        <p class="px-4 mb-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">Main</p>
+        <button onclick="showSection('dashboard')"   class="nav-item active w-full flex items-center gap-3 px-5 py-2.5 text-gray-300 hover:text-white" data-section="dashboard">
+          <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>Dashboard
+        </button>
+        <button onclick="showSection('expenses')"    class="nav-item w-full flex items-center gap-3 px-5 py-2.5 text-gray-300 hover:text-white" data-section="expenses">
+          <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Expenses
+        </button>
+        <button onclick="showSection('income')"      class="nav-item w-full flex items-center gap-3 px-5 py-2.5 text-gray-300 hover:text-white" data-section="income">
+          <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Income
+        </button>
+        <button onclick="showSection('budgets')"     class="nav-item w-full flex items-center gap-3 px-5 py-2.5 text-gray-300 hover:text-white" data-section="budgets">
+          <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>Budgets
+        </button>
+        <button onclick="showSection('loans')"       class="nav-item w-full flex items-center gap-3 px-5 py-2.5 text-gray-300 hover:text-white" data-section="loans">
+          <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>Loans
+        </button>
+
+        <p class="px-4 mt-4 mb-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">Analytics</p>
+        <button onclick="showSection('reports')"     class="nav-item w-full flex items-center gap-3 px-5 py-2.5 text-gray-300 hover:text-white" data-section="reports">
+          <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>Reports & Charts
+        </button>
+        <button onclick="showSection('insights')"    class="nav-item w-full flex items-center gap-3 px-5 py-2.5 text-gray-300 hover:text-white" data-section="insights">
+          <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>AI Insights
+        </button>
+        <button onclick="showSection('investments')" class="nav-item w-full flex items-center gap-3 px-5 py-2.5 text-gray-300 hover:text-white" data-section="investments">
+          <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>Investments
+        </button>
+        <button onclick="showSection('chatbot')"     class="nav-item w-full flex items-center gap-3 px-5 py-2.5 text-gray-300 hover:text-white" data-section="chatbot">
+          <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>AI Chatbot
+        </button>
+
+        <p class="px-4 mt-4 mb-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">Account</p>
+        <button onclick="showSection('settings')"    class="nav-item w-full flex items-center gap-3 px-5 py-2.5 text-gray-300 hover:text-white" data-section="settings">
+          <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Settings
+        </button>
+      </nav>
+
+      <div class="p-4 border-t border-gray-800">
+        <div class="glass rounded-xl p-3 flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold text-xs" id="user-avatar">--</div>
+          <div class="flex-1 min-w-0">
+            <p class="text-xs font-medium text-white truncate" id="sidebar-email">Loading...</p>
+            <p class="text-xs text-gray-500">Active</p>
+          </div>
+          <button onclick="handleLogout()" class="text-gray-500 hover:text-red-400 transition-colors" title="Logout">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ═══════════════  MAIN CONTENT  ═══════════════ -->
+    <main class="flex-1 overflow-y-auto">
+
+      <!-- ── DASHBOARD ── -->
+      <section id="section-dashboard" class="p-6">
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h1 class="text-2xl font-bold text-white">Dashboard 👋</h1>
+            <p class="text-gray-400 text-sm mt-1" id="dash-subtitle">Loading overview...</p>
+          </div>
+          <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#1a1a2e] text-xs text-gray-400">
+            <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>Live
+          </div>
+        </div>
+        <div class="glass rounded-2xl p-6 mb-5" style="border:1px solid rgba(20,184,166,0.3)">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-gray-400 text-sm mb-1">Total Balance</p>
+              <h2 class="text-4xl font-bold text-white" id="total-balance">₹—</h2>
+              <p class="text-gray-500 text-xs mt-2">All time income minus expenses</p>
             </div>
-            <span class="text-xl font-bold text-white">FinanceHub</span>
+            <div class="w-20 h-20 float">
+              <svg viewBox="0 0 100 100" class="w-full h-full"><circle cx="50" cy="50" r="40" fill="none" stroke="#1a1a2e" stroke-width="8"/><circle cx="50" cy="50" r="40" fill="none" stroke="url(#grad)" stroke-width="8" stroke-dasharray="200" stroke-dashoffset="50" stroke-linecap="round" transform="rotate(-90 50 50)"/><defs><linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#14b8a6"/><stop offset="100%" stop-color="#0ea5e9"/></linearGradient></defs></svg>
+            </div>
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-4 mb-5">
+          <div class="glass rounded-2xl p-5"><p class="text-gray-400 text-xs mb-1">Total Income</p><p class="text-xl font-bold text-green-400" id="stat-income">₹—</p></div>
+          <div class="glass rounded-2xl p-5"><p class="text-gray-400 text-xs mb-1">Total Expenses</p><p class="text-xl font-bold text-red-400" id="stat-expense">₹—</p></div>
+          <div class="glass rounded-2xl p-5"><p class="text-gray-400 text-xs mb-1">Transactions</p><p class="text-xl font-bold text-blue-400" id="stat-count">—</p></div>
+        </div>
+        <div class="glass rounded-2xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-semibold text-white text-sm">Recent Transactions</h3>
+            <button onclick="showSection('expenses')" class="text-teal-400 text-xs hover:text-teal-300">View All →</button>
+          </div>
+          <div id="recent-txs" class="space-y-3"><p class="text-gray-500 text-sm">Loading...</p></div>
+        </div>
+      </section>
+
+      <!-- ── EXPENSES ── -->
+      <section id="section-expenses" class="p-6 hidden">
+        <h1 class="text-2xl font-bold text-white mb-6">Expense Management</h1>
+        <div class="glass rounded-2xl p-5 mb-5">
+          <h3 class="font-semibold text-white mb-4 text-sm">Add New Expense <span class="text-xs text-teal-400 font-normal ml-2">— AI auto-categorizes from description</span></h3>
+          <form id="expense-form" class="grid grid-cols-2 gap-3 lg:grid-cols-3">
+            <div>
+              <label class="block text-xs font-medium text-gray-400 mb-1">Amount (₹) *</label>
+              <input id="exp-amount" type="number" min="0.01" step="0.01" placeholder="0.00" required class="w-full px-3 py-2.5 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white text-sm focus:outline-none focus:border-teal-500">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-400 mb-1">Date *</label>
+              <input id="exp-date" type="date" required class="w-full px-3 py-2.5 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white text-sm focus:outline-none focus:border-teal-500">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-400 mb-1">Description * <span class="text-teal-400">(AI predicts category)</span></label>
+              <input id="exp-desc" type="text" placeholder="e.g. swiggy biryani, uber cab..." required class="w-full px-3 py-2.5 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white text-sm focus:outline-none focus:border-teal-500">
+            </div>
+            <div class="col-span-2 lg:col-span-3 flex items-center gap-3">
+              <button type="submit" id="exp-btn" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 text-white text-sm font-semibold hover:opacity-90 transition-all">Add Expense</button>
+              <span id="exp-msg" class="text-xs"></span>
+            </div>
+          </form>
+        </div>
+        <div class="glass rounded-2xl overflow-hidden">
+          <table class="w-full text-sm">
+            <thead class="bg-[#1a1a2e]">
+              <tr>
+                <th class="px-5 py-3 text-left text-xs font-semibold text-gray-400">Description</th>
+                <th class="px-5 py-3 text-left text-xs font-semibold text-gray-400">Category (AI)</th>
+                <th class="px-5 py-3 text-left text-xs font-semibold text-gray-400">Date</th>
+                <th class="px-5 py-3 text-right text-xs font-semibold text-gray-400">Amount</th>
+                <th class="px-5 py-3 text-center text-xs font-semibold text-gray-400">Del</th>
+              </tr>
+            </thead>
+            <tbody id="exp-tbody" class="divide-y divide-gray-800">
+              <tr><td colspan="5" class="px-5 py-8 text-center text-gray-500 text-sm">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ── INCOME ── -->
+      <section id="section-income" class="p-6 hidden">
+        <h1 class="text-2xl font-bold text-white mb-6">Income Management</h1>
+        <div class="glass rounded-2xl p-5 mb-5">
+          <h3 class="font-semibold text-white mb-4 text-sm">Add New Income</h3>
+          <form id="income-form" class="grid grid-cols-2 gap-3 lg:grid-cols-3">
+            <div>
+              <label class="block text-xs font-medium text-gray-400 mb-1">Amount (₹) *</label>
+              <input id="inc-amount" type="number" min="0.01" step="0.01" placeholder="0.00" required class="w-full px-3 py-2.5 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white text-sm focus:outline-none focus:border-teal-500">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-400 mb-1">Date *</label>
+              <input id="inc-date" type="date" required class="w-full px-3 py-2.5 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white text-sm focus:outline-none focus:border-teal-500">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-400 mb-1">Description *</label>
+              <input id="inc-desc" type="text" placeholder="e.g. salary credited, freelance payment" required class="w-full px-3 py-2.5 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white text-sm focus:outline-none focus:border-teal-500">
+            </div>
+            <div class="col-span-2 lg:col-span-3 flex items-center gap-3">
+              <button type="submit" id="inc-btn" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white text-sm font-semibold hover:opacity-90 transition-all">Add Income</button>
+              <span id="inc-msg" class="text-xs"></span>
+            </div>
+          </form>
+        </div>
+        <div class="glass rounded-2xl overflow-hidden">
+          <table class="w-full text-sm">
+            <thead class="bg-[#1a1a2e]">
+              <tr>
+                <th class="px-5 py-3 text-left text-xs font-semibold text-gray-400">Description</th>
+                <th class="px-5 py-3 text-left text-xs font-semibold text-gray-400">Category</th>
+                <th class="px-5 py-3 text-left text-xs font-semibold text-gray-400">Date</th>
+                <th class="px-5 py-3 text-right text-xs font-semibold text-gray-400">Amount</th>
+                <th class="px-5 py-3 text-center text-xs font-semibold text-gray-400">Del</th>
+              </tr>
+            </thead>
+            <tbody id="inc-tbody" class="divide-y divide-gray-800">
+              <tr><td colspan="5" class="px-5 py-8 text-center text-gray-500 text-sm">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ── BUDGETS ── -->
+      <section id="section-budgets" class="p-6 hidden">
+        <h1 class="text-2xl font-bold text-white mb-6">Budget Management</h1>
+        <div class="glass rounded-2xl p-5 mb-5">
+          <h3 class="font-semibold text-white mb-4 text-sm">Set Monthly Budget</h3>
+          <form id="budget-form" class="flex flex-wrap gap-3 items-end">
+            <div>
+              <label class="block text-xs font-medium text-gray-400 mb-1">Monthly Limit (₹)</label>
+              <input id="budget-limit" type="number" min="1" placeholder="50000" class="px-3 py-2.5 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white text-sm focus:outline-none focus:border-teal-500 w-36">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-400 mb-1">Month</label>
+              <select id="budget-month" class="px-3 py-2.5 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white text-sm focus:outline-none focus:border-teal-500">
+                <option value="1">January</option><option value="2">February</option><option value="3">March</option><option value="4">April</option><option value="5">May</option><option value="6">June</option><option value="7">July</option><option value="8">August</option><option value="9">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-400 mb-1">Year</label>
+              <input id="budget-year" type="number" value="2026" class="px-3 py-2.5 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white text-sm focus:outline-none focus:border-teal-500 w-24">
+            </div>
+            <button type="submit" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 text-white text-sm font-semibold hover:opacity-90">Set Budget</button>
+            <button type="button" onclick="loadBudgetStatus()" class="px-5 py-2.5 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white text-sm hover:bg-[#252540]">Check Status</button>
+            <span id="budget-msg" class="text-xs self-end pb-0.5"></span>
+          </form>
+        </div>
+        <div id="budget-status" class="hidden glass rounded-2xl p-5">
+          <h3 class="font-semibold text-white mb-4 text-sm">Budget Status</h3>
+          <div class="grid grid-cols-3 gap-4 mb-4">
+            <div><p class="text-xs text-gray-400">Monthly Limit</p><p class="text-xl font-bold text-white mt-1" id="bs-limit">—</p></div>
+            <div><p class="text-xs text-gray-400">Total Spent</p><p class="text-xl font-bold text-red-400 mt-1" id="bs-spent">—</p></div>
+            <div><p class="text-xs text-gray-400">Remaining</p><p class="text-xl font-bold mt-1" id="bs-remaining">—</p></div>
+          </div>
+          <div class="w-full h-3 rounded-full bg-[#1a1a2e]"><div id="bs-bar" class="h-full rounded-full transition-all duration-700" style="width:0%"></div></div>
+          <p class="mt-2 text-sm" id="bs-text"></p>
+        </div>
+      </section>
+
+      <!-- ── LOANS ── -->
+      <section id="section-loans" class="p-6 hidden">
+        <h1 class="text-2xl font-bold text-white mb-6">Lending & Borrowing</h1>
+        <div class="grid grid-cols-3 gap-4 mb-5">
+          <div class="glass rounded-2xl p-4"><p class="text-xs text-gray-400">Total Lent</p><p class="text-xl font-bold text-green-400 mt-1" id="loan-total-lent">₹—</p></div>
+          <div class="glass rounded-2xl p-4"><p class="text-xs text-gray-400">Total Borrowed</p><p class="text-xl font-bold text-red-400 mt-1" id="loan-total-borrowed">₹—</p></div>
+          <div class="glass rounded-2xl p-4"><p class="text-xs text-gray-400">Pending Entries</p><p class="text-xl font-bold text-amber-400 mt-1" id="loan-pending">—</p></div>
+        </div>
+        <div class="glass rounded-2xl p-5 mb-5">
+          <h3 class="font-semibold text-white mb-4 text-sm">Add New Entry</h3>
+          <form id="loan-form" class="grid grid-cols-2 gap-3 lg:grid-cols-3">
+            <div>
+              <label class="block text-xs font-medium text-gray-400 mb-1">Type *</label>
+              <select id="loan-type" required class="w-full px-3 py-2.5 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white text-sm focus:outline-none focus:border-teal-500">
+                <option value="lent">💰 Money Lent (I gave)</option>
+                <option value="borrowed">💸 Money Borrowed (I owe)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-400 mb-1">Person Name *</label>
+              <input id="loan-person" type="text" placeholder="e.g. Rahul Sharma" required class="w-full px-3 py-2.5 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white text-sm focus:outline-none focus:border-teal-500">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-400 mb-1">Amount (₹) *</label>
+              <input id="loan-amount" type="number" min="0.01" placeholder="0.00" required class="w-full px-3 py-2.5 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white text-sm focus:outline-none focus:border-teal-500">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-400 mb-1">Loan Date *</label>
+              <input id="loan-date" type="date" required class="w-full px-3 py-2.5 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white text-sm focus:outline-none focus:border-teal-500">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-400 mb-1">Due Date</label>
+              <input id="loan-due" type="date" class="w-full px-3 py-2.5 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white text-sm focus:outline-none focus:border-teal-500">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-400 mb-1">Note</label>
+              <input id="loan-desc" type="text" placeholder="Reason / occasion" class="w-full px-3 py-2.5 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white text-sm focus:outline-none focus:border-teal-500">
+            </div>
+            <div class="col-span-2 lg:col-span-3 flex items-center gap-3">
+              <button type="submit" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 text-white text-sm font-semibold hover:opacity-90">Add Entry</button>
+              <span id="loan-msg" class="text-xs"></span>
+            </div>
+          </form>
+        </div>
+        <div class="flex gap-3 mb-4">
+          <button id="tab-lent"     onclick="setLoanTab('lent')"     class="px-5 py-2 rounded-xl text-sm font-medium bg-green-500/20 text-green-400 border border-green-500/30">💰 Lent</button>
+          <button id="tab-borrowed" onclick="setLoanTab('borrowed')" class="px-5 py-2 rounded-xl text-sm font-medium bg-[#1a1a2e] text-gray-400 border border-gray-700">💸 Borrowed</button>
+        </div>
+        <div id="loan-list" class="space-y-3"><p class="text-gray-500 text-sm">Loading...</p></div>
+      </section>
+
+      <!-- ── REPORTS & CHARTS ── -->
+      <section id="section-reports" class="p-6 hidden">
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h1 class="text-2xl font-bold text-white">Reports & Analytics 📊</h1>
+            <p class="text-gray-400 text-sm mt-1">Visual breakdown of your finances</p>
+          </div>
+          <div class="flex gap-3 no-print">
+            <button onclick="exportCSV()" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white text-sm hover:bg-[#252540] transition-colors">
+              <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>CSV
+            </button>
+            <button onclick="exportPDF()" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white text-sm hover:bg-[#252540] transition-colors">
+              <svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>PDF
+            </button>
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-4 mb-6">
+          <div class="glass rounded-2xl p-5"><p class="text-xs text-gray-400">Total Income</p><p class="text-2xl font-bold text-green-400 mt-1" id="rep-income">₹—</p></div>
+          <div class="glass rounded-2xl p-5"><p class="text-xs text-gray-400">Total Expenses</p><p class="text-2xl font-bold text-red-400 mt-1" id="rep-expense">₹—</p></div>
+          <div class="glass rounded-2xl p-5"><p class="text-xs text-gray-400">Net Savings</p><p class="text-2xl font-bold text-blue-400 mt-1" id="rep-savings">₹—</p></div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+          <div class="glass rounded-2xl p-5">
+            <h3 class="font-semibold text-white text-sm mb-4">Category-wise Expenses</h3>
+            <div class="relative h-56 flex items-center justify-center"><canvas id="pie-chart"></canvas></div>
+          </div>
+          <div class="glass rounded-2xl p-5">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-semibold text-white text-sm">Monthly Spending</h3>
+              <select id="bar-year" onchange="loadBarChart()" class="px-2 py-1 rounded-lg bg-[#1a1a2e] border border-gray-700 text-white text-xs focus:outline-none">
+                <option value="2024">2024</option><option value="2025">2025</option><option value="2026" selected>2026</option>
+              </select>
+            </div>
+            <div class="relative h-56"><canvas id="bar-chart"></canvas></div>
+          </div>
+        </div>
+        <div class="glass rounded-2xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-semibold text-white text-sm">Daily Spending Trend</h3>
+            <div class="flex items-center gap-2">
+              <select id="line-month" onchange="loadLineChart()" class="px-2 py-1 rounded-lg bg-[#1a1a2e] border border-gray-700 text-white text-xs focus:outline-none">
+                <option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option>
+              </select>
+              <select id="line-year" onchange="loadLineChart()" class="px-2 py-1 rounded-lg bg-[#1a1a2e] border border-gray-700 text-white text-xs focus:outline-none">
+                <option value="2024">2024</option><option value="2025">2025</option><option value="2026" selected>2026</option>
+              </select>
+            </div>
+          </div>
+          <div class="relative h-56"><canvas id="line-chart"></canvas></div>
+        </div>
+      </section>
+
+      <!-- ── AI INSIGHTS ── -->
+      <section id="section-insights" class="p-6 hidden">
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h1 class="text-2xl font-bold text-white">AI Insights 🧠</h1>
+            <p class="text-gray-400 text-sm mt-1">Pattern analysis of your spending behaviour</p>
+          </div>
+          <button onclick="loadInsights()" class="px-4 py-2 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white text-sm hover:bg-[#252540] transition-colors">↻ Refresh</button>
+        </div>
+
+        <!-- Key metrics -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div class="glass rounded-2xl p-4"><p class="text-xs text-gray-400">Top Category</p><p class="text-lg font-bold text-white mt-1" id="ins-top-category">—</p></div>
+          <div class="glass rounded-2xl p-4"><p class="text-xs text-gray-400">Largest Expense</p><p class="text-lg font-bold text-white mt-1" id="ins-largest-expense">—</p></div>
+          <div class="glass rounded-2xl p-4"><p class="text-xs text-gray-400">Avg. Expense</p><p class="text-lg font-bold text-white mt-1" id="ins-avg-expense">—</p></div>
+          <div class="glass rounded-2xl p-4"><p class="text-xs text-gray-400">Savings Rate</p><p class="text-lg font-bold text-teal-400 mt-1" id="ins-savings-rate">—</p></div>
+        </div>
+
+        <!-- Month comparison -->
+        <div class="grid grid-cols-2 gap-4 mb-6">
+          <div class="glass rounded-2xl p-4">
+            <p class="text-xs text-gray-400 mb-1">This Month Spend</p>
+            <p class="text-2xl font-bold text-red-400" id="ins-this-month">₹—</p>
+          </div>
+          <div class="glass rounded-2xl p-4">
+            <p class="text-xs text-gray-400 mb-1">Last Month Spend</p>
+            <p class="text-2xl font-bold text-gray-300" id="ins-last-month">₹—</p>
+            <p class="text-xs mt-1" id="ins-change"></p>
           </div>
         </div>
 
-        <nav class="flex-1 py-4 overflow-y-auto">
-          <div class="px-4 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Main</div>
-          <button onclick="showSection('dashboard')" class="nav-item active w-full flex items-center gap-3 px-6 py-3 text-gray-300 hover:text-white transition-colors" data-section="dashboard">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
-            Dashboard
-          </button>
-          <button onclick="showSection('expenses')" class="nav-item w-full flex items-center gap-3 px-6 py-3 text-gray-300 hover:text-white transition-colors" data-section="expenses">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            Expenses
-          </button>
-          <button onclick="showSection('income')" class="nav-item w-full flex items-center gap-3 px-6 py-3 text-gray-300 hover:text-white transition-colors" data-section="income">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            Income
-          </button>
-          <button onclick="showSection('budgets')" class="nav-item w-full flex items-center gap-3 px-6 py-3 text-gray-300 hover:text-white transition-colors" data-section="budgets">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-            Budgets
-          </button>
-
-          <div class="px-4 mt-6 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Analytics</div>
-          <button onclick="showSection('reports')" class="nav-item w-full flex items-center gap-3 px-6 py-3 text-gray-300 hover:text-white transition-colors" data-section="reports">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-            Reports
-          </button>
-          <button onclick="showSection('investments')" class="nav-item w-full flex items-center gap-3 px-6 py-3 text-gray-300 hover:text-white transition-colors" data-section="investments">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
-            Investments
-          </button>
-
-          <div class="px-4 mt-6 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Support</div>
-          <button onclick="showSection('settings')" class="nav-item w-full flex items-center gap-3 px-6 py-3 text-gray-300 hover:text-white transition-colors" data-section="settings">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-            Settings
-          </button>
-
-          <div class="px-4 mt-6 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Bot</div>
-          <button onclick="showSection('chatbot')" class="nav-item w-full flex items-center gap-3 px-6 py-3 text-gray-300 hover:text-white transition-colors" data-section="chatbot">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1。724 1。7２４ ０ Ｖ０００１。０６５－２。５７２ｃ－１。７５６－．４２６－１。７５６－２。９２４ Ｖ０ Ｖ０００１。０６６－２。５７３ｃ－．９４－１。５４３．８２６－３。３１ Ｖ２。３７－２。３７．９９６．６０８ Ｖ２。２９６．０７ Ｖ２。５７２－１。０６５ｚ"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="２" d="Ｍ１５ Ａ３ Ａ３ Ｖ１１－６ Ｖ０ Ａ３ Ａ３ Ｖ１２ａ３ Ａ３ Ｖ１１－６ Ｖ０ Ａ３ Ａ３ Ｖ１２ｚ"/></svg>
-            Chatbot
-          </button>
-        </nav>
-
-        <div class="p-4 border-t border-gray-800">
-          <div class="glass-card rounded-xl p-4">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold text-sm" id="user-avatar">--</div>
-              <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-white truncate" id="sidebar-user-email">Loading...</p>
-                <p class="text-xs text-gray-400">Active User</p>
-              </div>
-              <button onclick="handleLogout()" title="Logout" class="text-gray-400 hover:text-red-400 transition-colors flex-shrink-0">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                </svg>
-              </button>
-            </div>
+        <!-- Insight cards -->
+        <div class="glass rounded-2xl p-5">
+          <h3 class="font-semibold text-white text-sm mb-4">📋 AI-Generated Insights</h3>
+          <div id="insight-list" class="space-y-3 text-sm text-gray-300">
+            <p class="text-gray-500">Loading insights...</p>
           </div>
         </div>
-      </aside>
+      </section>
 
-      <!-- Main Content -->
-      <main class="flex-1 overflow-y-auto">
-
-        <!-- ─────────────────────────────────────
-             DASHBOARD SECTION
-        ───────────────────────────────────── -->
-        <section id="section-dashboard" class="p-6">
-          <div class="flex items-center justify-between mb-8">
-            <div>
-              <h1 class="text-2xl font-bold text-white">Welcome back! 👋</h1>
-              <p class="text-gray-400 mt-1" id="dashboard-subtitle">Loading your financial overview...</p>
-            </div>
-            <div class="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1a1a2e]">
-              <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-              <span class="text-sm text-gray-400">Live</span>
-            </div>
+      <!-- ── INVESTMENTS ── -->
+      <section id="section-investments" class="p-6 hidden">
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h1 class="text-2xl font-bold text-white">Investment Plan 💹</h1>
+            <p class="text-gray-400 text-sm mt-1">Personalised monthly allocation based on your savings pattern</p>
           </div>
+          <button onclick="loadInvestments()" class="px-4 py-2 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white text-sm hover:bg-[#252540] transition-colors">↻ Refresh</button>
+        </div>
 
-          <!-- Balance Card -->
-          <div class="glass-card rounded-2xl p-6 mb-6 gradient-border">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-gray-400 text-sm mb-1">Total Balance</p>
-                <h2 class="text-4xl font-bold text-white" id="total-balance">₹—</h2>
-                <p class="text-gray-500 text-sm mt-2">Income minus all expenses</p>
-              </div>
-              <div class="w-24 h-24 float-animation">
-                <svg viewBox="0 0 100 100" class="w-full h-full">
-                  <circle cx="50" cy="50" r="40" fill="none" stroke="#1a1a2e" stroke-width="8"/>
-                  <circle cx="50" cy="50" r="40" fill="none" stroke="url(#gradient)" stroke-width="8" stroke-dasharray="200" stroke-dashoffset="50" stroke-linecap="round" transform="rotate(-90 50 50)"/>
-                  <defs>
-                    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stop-color="#14b8a6"/>
-                      <stop offset="100%" stop-color="#0ea5e9"/>
-                    </linearGradient>
-                  </defs>
-                </svg>
-              </div>
-            </div>
+        <!-- Profile + investable amount -->
+        <div class="grid grid-cols-3 gap-4 mb-6">
+          <div class="glass rounded-2xl p-5" style="border:1px solid rgba(20,184,166,0.3)">
+            <p class="text-xs text-gray-400 mb-1">Risk Profile</p>
+            <p class="text-xl font-bold text-teal-400" id="inv-profile">—</p>
           </div>
-
-          <!-- Stats Cards -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <div class="glass-card rounded-2xl p-6">
-              <div class="flex items-center justify-between mb-4">
-                <div class="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center">
-                  <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
-                </div>
-              </div>
-              <p class="text-gray-400 text-sm">Total Income</p>
-              <h3 class="text-2xl font-bold text-white mt-1" id="stat-total-income">₹—</h3>
-            </div>
-            <div class="glass-card rounded-2xl p-6">
-              <div class="flex items-center justify-between mb-4">
-                <div class="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center">
-                  <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
-                </div>
-              </div>
-              <p class="text-gray-400 text-sm">Total Expenses</p>
-              <h3 class="text-2xl font-bold text-white mt-1" id="stat-total-expense">₹—</h3>
-            </div>
-            <div class="glass-card rounded-2xl p-6">
-              <div class="flex items-center justify-between mb-4">
-                <div class="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center">
-                  <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                </div>
-              </div>
-              <p class="text-gray-400 text-sm">Transactions</p>
-              <h3 class="text-2xl font-bold text-white mt-1" id="stat-tx-count">—</h3>
-            </div>
+          <div class="glass rounded-2xl p-5">
+            <p class="text-xs text-gray-400 mb-1">Monthly Investable</p>
+            <p class="text-xl font-bold text-green-400" id="inv-monthly">₹—</p>
           </div>
-
-          <!-- Recent Transactions -->
-          <div class="glass-card rounded-2xl p-6">
-            <div class="flex items-center justify-between mb-6">
-              <h3 class="text-lg font-semibold text-white">Recent Transactions</h3>
-              <button onclick="showSection('expenses')" class="text-teal-400 text-sm hover:text-teal-300">View All →</button>
-            </div>
-            <div id="recent-transactions" class="space-y-4">
-              <p class="text-gray-500 text-sm">Loading transactions...</p>
-            </div>
+          <div class="glass rounded-2xl p-5">
+            <p class="text-xs text-gray-400 mb-1">Savings Rate</p>
+            <p class="text-xl font-bold text-blue-400" id="inv-savings-rate">—%</p>
           </div>
-        </section>
+        </div>
 
-        <!-- ─────────────────────────────────────
-             EXPENSES SECTION
-        ───────────────────────────────────── -->
-        <section id="section-expenses" class="p-6 hidden">
-          <div class="flex items-center justify-between mb-8">
-            <div>
-              <h1 class="text-2xl font-bold text-white">Expense Management</h1>
-              <p class="text-gray-400 mt-1">Track and manage your daily expenses</p>
-            </div>
+        <!-- Message -->
+        <div class="glass rounded-2xl p-4 mb-6 border border-teal-500/20">
+          <p class="text-sm text-gray-300" id="inv-message">Loading your investment profile...</p>
+        </div>
+
+        <!-- Allocation pie + table side by side -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
+          <div class="glass rounded-2xl p-5">
+            <h3 class="font-semibold text-white text-sm mb-4">Monthly Allocation (Donut)</h3>
+            <div class="relative h-64 flex items-center justify-center"><canvas id="inv-pie-chart"></canvas></div>
           </div>
-
-          <!-- Add Expense Form -->
-          <div class="glass-card rounded-2xl p-6 mb-6">
-            <h3 class="text-lg font-semibold text-white mb-6">Add New Expense</h3>
-            <form id="expense-form" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-300 mb-2">Amount (₹)</label>
-                <input type="number" id="exp-amount" placeholder="Enter amount" min="0.01" step="0.01" required
-                  class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-teal-500 transition-colors">
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-300 mb-2">Category</label>
-                <select id="exp-category" required
-                  class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white focus:outline-none focus:border-teal-500 transition-colors">
-                  <option value="">Select category</option>
-                  <option value="Food">🍔 Food & Dining</option>
-                  <option value="Transport">🚕 Transport</option>
-                  <option value="Shopping">🛒 Shopping</option>
-                  <option value="Medical">💊 Medical</option>
-                  <option value="Entertainment">🎬 Entertainment</option>
-                  <option value="Taxes">📋 Taxes</option>
-                  <option value="Others">📦 Others</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-300 mb-2">Date</label>
-                <input type="date" id="exp-date" required
-                  class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white focus:outline-none focus:border-teal-500 transition-colors">
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-300 mb-2">Description</label>
-                <input type="text" id="exp-description" placeholder="Brief description"
-                  class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-teal-500 transition-colors">
-              </div>
-              <div class="md:col-span-2 lg:col-span-4 flex items-center gap-4">
-                <button type="submit" id="exp-submit-btn"
-                  class="px-8 py-3 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-semibold hover:from-teal-600 hover:to-cyan-600 transition-all">
-                  Add Expense
-                </button>
-                <span id="exp-form-msg" class="text-sm"></span>
-              </div>
-            </form>
-          </div>
-
-          <!-- Expense Table -->
-          <div class="glass-card rounded-2xl overflow-hidden">
-            <table class="w-full">
-              <thead class="bg-[#1a1a2e]">
-                <tr>
-                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-300">Description</th>
-                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-300">Category</th>
-                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-300">Date</th>
-                  <th class="px-6 py-4 text-right text-sm font-semibold text-gray-300">Amount</th>
-                </tr>
-              </thead>
-              <tbody id="expense-table-body" class="divide-y divide-gray-800">
-                <tr><td colspan="4" class="px-6 py-8 text-center text-gray-500">Loading expenses...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <!-- ─────────────────────────────────────
-             INCOME SECTION
-        ───────────────────────────────────── -->
-        <section id="section-income" class="p-6 hidden">
-          <div class="flex items-center justify-between mb-8">
-            <div>
-              <h1 class="text-2xl font-bold text-white">Income Management</h1>
-              <p class="text-gray-400 mt-1">Track all your income sources</p>
-            </div>
-          </div>
-
-          <!-- Add Income Form -->
-          <div class="glass-card rounded-2xl p-6 mb-6">
-            <h3 class="text-lg font-semibold text-white mb-6">Add New Income</h3>
-            <form id="income-form" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-300 mb-2">Amount (₹)</label>
-                <input type="number" id="inc-amount" placeholder="Enter amount" min="0.01" step="0.01" required
-                  class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-teal-500 transition-colors">
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-300 mb-2">Source Type</label>
-                <select id="inc-category"
-                  class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white focus:outline-none focus:border-teal-500 transition-colors">
-                  <option value="Salary">💼 Salary</option>
-                  <option value="Others">💻 Freelance / Others</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-300 mb-2">Date</label>
-                <input type="date" id="inc-date" required
-                  class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white focus:outline-none focus:border-teal-500 transition-colors">
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-300 mb-2">Description</label>
-                <input type="text" id="inc-description" placeholder="Brief description"
-                  class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-teal-500 transition-colors">
-              </div>
-              <div class="md:col-span-2 lg:col-span-4 flex items-center gap-4">
-                <button type="submit" id="inc-submit-btn"
-                  class="px-8 py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold hover:from-green-600 hover:to-emerald-600 transition-all">
-                  Add Income
-                </button>
-                <span id="inc-form-msg" class="text-sm"></span>
-              </div>
-            </form>
-          </div>
-
-          <!-- Income Table -->
-          <div class="glass-card rounded-2xl overflow-hidden">
-            <table class="w-full">
-              <thead class="bg-[#1a1a2e]">
-                <tr>
-                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-300">Description</th>
-                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-300">Source</th>
-                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-300">Date</th>
-                  <th class="px-6 py-4 text-right text-sm font-semibold text-gray-300">Amount</th>
-                </tr>
-              </thead>
-              <tbody id="income-table-body" class="divide-y divide-gray-800">
-                <tr><td colspan="4" class="px-6 py-8 text-center text-gray-500">Loading income...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <!-- ─────────────────────────────────────
-             BUDGETS SECTION
-        ───────────────────────────────────── -->
-        <section id="section-budgets" class="p-6 hidden">
-          <div class="flex items-center justify-between mb-8">
-            <div>
-              <h1 class="text-2xl font-bold text-white">Budget Management</h1>
-              <p class="text-gray-400 mt-1">Set and track your monthly spending limit</p>
-            </div>
-          </div>
-
-          <!-- Set Budget Form -->
-          <div class="glass-card rounded-2xl p-6 mb-6">
-            <h3 class="text-lg font-semibold text-white mb-4">Set Monthly Budget</h3>
-            <form id="budget-form" class="flex flex-wrap gap-4 items-end">
-              <div>
-                <label class="block text-sm font-medium text-gray-300 mb-2">Monthly Limit (₹)</label>
-                <input type="number" id="budget-limit" placeholder="e.g. 50000" min="1" step="1" required
-                  class="px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-teal-500 transition-colors w-48">
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-300 mb-2">Month</label>
-                <select id="budget-month" class="px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white focus:outline-none focus:border-teal-500 transition-colors">
-                  <option value="1">January</option><option value="2">February</option><option value="3">March</option>
-                  <option value="4">April</option><option value="5">May</option><option value="6">June</option>
-                  <option value="7">July</option><option value="8">August</option><option value="9">September</option>
-                  <option value="10">October</option><option value="11">November</option><option value="12">December</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-300 mb-2">Year</label>
-                <input type="number" id="budget-year" value="2026" min="2020" max="2099" required
-                  class="px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white focus:outline-none focus:border-teal-500 transition-colors w-28">
-              </div>
-              <button type="submit" class="px-6 py-3 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-semibold hover:from-teal-600 hover:to-cyan-600 transition-all self-end">
-                Set Budget
-              </button>
-              <button type="button" onclick="loadBudgetStatus()" class="px-6 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white font-semibold hover:bg-[#252540] transition-all self-end">
-                Check Status
-              </button>
-              <span id="budget-form-msg" class="text-sm self-end pb-1"></span>
-            </form>
-          </div>
-
-          <!-- Budget Status -->
-          <div id="budget-status-card" class="hidden glass-card rounded-2xl p-6">
-            <h3 class="text-lg font-semibold text-white mb-6">Budget Status</h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-              <div>
-                <p class="text-gray-400 text-sm">Monthly Limit</p>
-                <p class="text-2xl font-bold text-white mt-1" id="bs-limit">—</p>
-              </div>
-              <div>
-                <p class="text-gray-400 text-sm">Total Spent</p>
-                <p class="text-2xl font-bold text-red-400 mt-1" id="bs-spent">—</p>
-              </div>
-              <div>
-                <p class="text-gray-400 text-sm">Remaining</p>
-                <p class="text-2xl font-bold mt-1" id="bs-remaining">—</p>
-              </div>
-            </div>
-            <div class="w-full h-4 rounded-full bg-[#1a1a2e]">
-              <div id="bs-bar" class="h-full rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 transition-all duration-700" style="width: 0%"></div>
-            </div>
-            <p class="mt-3 text-sm" id="bs-status-text"></p>
-          </div>
-        </section>
-
-        <!-- ─────────────────────────────────────
-             REPORTS SECTION
-        ───────────────────────────────────── -->
-        <section id="section-reports" class="p-6 hidden">
-          <div class="flex items-center justify-between mb-8">
-            <div>
-              <h1 class="text-2xl font-bold text-white">Reports & Analytics</h1>
-              <p class="text-gray-400 mt-1">Your financial summary from live data</p>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <div class="glass-card rounded-2xl p-6">
-              <p class="text-gray-400 text-sm">Total Income</p>
-              <p class="text-2xl font-bold text-green-400 mt-2" id="report-income">₹—</p>
-            </div>
-            <div class="glass-card rounded-2xl p-6">
-              <p class="text-gray-400 text-sm">Total Expenses</p>
-              <p class="text-2xl font-bold text-red-400 mt-2" id="report-expense">₹—</p>
-            </div>
-            <div class="glass-card rounded-2xl p-6">
-              <p class="text-gray-400 text-sm">Net Savings</p>
-              <p class="text-2xl font-bold text-blue-400 mt-2" id="report-savings">₹—</p>
-            </div>
-          </div>
-
-          <!-- Category Breakdown -->
-          <div class="glass-card rounded-2xl p-6">
-            <h3 class="text-lg font-semibold text-white mb-6">Spending by Category</h3>
-            <div id="category-breakdown" class="space-y-4">
+          <div class="glass rounded-2xl p-5">
+            <h3 class="font-semibold text-white text-sm mb-4">Breakdown</h3>
+            <div id="inv-allocations" class="space-y-3">
               <p class="text-gray-500 text-sm">Loading...</p>
             </div>
           </div>
-        </section>
+        </div>
 
-        <!-- ─────────────────────────────────────
-             INVESTMENTS SECTION (static)
-        ───────────────────────────────────── -->
-        <section id="section-investments" class="p-6 hidden">
-          <div class="mb-8">
-            <h1 class="text-2xl font-bold text-white">Investment Suggestions</h1>
-            <p class="text-gray-400 mt-1">Smart recommendations based on your savings</p>
+        <!-- Emergency fund note -->
+        <div class="glass rounded-2xl p-4 border border-amber-500/20 mb-4">
+          <p class="text-amber-400 text-xs font-semibold mb-1">⚠️ Emergency Fund First</p>
+          <p class="text-gray-400 text-xs" id="inv-emergency">Ensure you have 3–6 months of expenses in a liquid fund before investing.</p>
+        </div>
+
+        <!-- Disclaimer -->
+        <p class="text-gray-600 text-xs text-center" id="inv-disclaimer">These are algorithmic suggestions based on your spending patterns. Consult a SEBI-registered advisor before investing.</p>
+      </section>
+
+      <!-- ── AI CHATBOT ── -->
+      <section id="section-chatbot" class="p-6 hidden" style="height:calc(100vh - 0px)">
+        <div class="flex flex-col h-full">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h1 class="text-2xl font-bold text-white">FinTrack AI 🤖</h1>
+              <p class="text-gray-400 text-sm mt-1">Ask anything about your finances</p>
+            </div>
+            <button onclick="clearChat()" class="px-3 py-1.5 rounded-lg bg-[#1a1a2e] border border-gray-700 text-gray-400 text-xs hover:text-white transition-colors">Clear</button>
           </div>
 
-          <div class="glass-card rounded-2xl p-6 mb-6">
-            <h3 class="text-lg font-semibold text-white mb-4">Your Investable Surplus</h3>
-            <p class="text-gray-400">Based on your current balance: <span class="text-white font-semibold" id="invest-balance">₹—</span></p>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="glass-card rounded-2xl p-6 border border-green-500/30">
-              <div class="flex items-center gap-4 mb-4">
-                <div class="w-14 h-14 rounded-2xl bg-green-500/20 flex items-center justify-center"><span class="text-3xl">🏦</span></div>
-                <div><h4 class="text-lg font-semibold text-white">Fixed Deposits</h4><span class="px-2 py-1 rounded-full bg-green-500/20 text-green-400 text-xs">Low Risk</span></div>
-              </div>
-              <p class="text-gray-400 text-sm mb-4">Guaranteed returns with complete capital protection.</p>
-              <div class="flex justify-between text-sm">
-                <div><p class="text-gray-500">Returns</p><p class="text-green-400 font-semibold">6–7% p.a.</p></div>
-                <div><p class="text-gray-500">Lock-in</p><p class="text-white font-semibold">1–5 years</p></div>
-                <div><p class="text-gray-500">Min.</p><p class="text-white font-semibold">₹1,000</p></div>
-              </div>
-            </div>
-            <div class="glass-card rounded-2xl p-6 border border-amber-500/30">
-              <div class="flex items-center gap-4 mb-4">
-                <div class="w-14 h-14 rounded-2xl bg-amber-500/20 flex items-center justify-center"><span class="text-3xl">⚖️</span></div>
-                <div><h4 class="text-lg font-semibold text-white">Balanced Mutual Funds</h4><span class="px-2 py-1 rounded-full bg-amber-500/20 text-amber-400 text-xs">Medium Risk</span></div>
-              </div>
-              <p class="text-gray-400 text-sm mb-4">Mix of equity and debt for balanced growth.</p>
-              <div class="flex justify-between text-sm">
-                <div><p class="text-gray-500">Returns</p><p class="text-amber-400 font-semibold">10–12% p.a.</p></div>
-                <div><p class="text-gray-500">Lock-in</p><p class="text-white font-semibold">None</p></div>
-                <div><p class="text-gray-500">Min.</p><p class="text-white font-semibold">₹500</p></div>
-              </div>
-            </div>
-            <div class="glass-card rounded-2xl p-6 border border-red-500/30">
-              <div class="flex items-center gap-4 mb-4">
-                <div class="w-14 h-14 rounded-2xl bg-red-500/20 flex items-center justify-center"><span class="text-3xl">📈</span></div>
-                <div><h4 class="text-lg font-semibold text-white">Equity Funds</h4><span class="px-2 py-1 rounded-full bg-red-500/20 text-red-400 text-xs">High Risk</span></div>
-              </div>
-              <p class="text-gray-400 text-sm mb-4">Direct equity exposure for long-term wealth creation.</p>
-              <div class="flex justify-between text-sm">
-                <div><p class="text-gray-500">Returns</p><p class="text-red-400 font-semibold">12–15% p.a.</p></div>
-                <div><p class="text-gray-500">Lock-in</p><p class="text-white font-semibold">None*</p></div>
-                <div><p class="text-gray-500">Min.</p><p class="text-white font-semibold">₹500</p></div>
-              </div>
-            </div>
-            <div class="glass-card rounded-2xl p-6 border border-blue-500/30">
-              <div class="flex items-center gap-4 mb-4">
-                <div class="w-14 h-14 rounded-2xl bg-blue-500/20 flex items-center justify-center"><span class="text-3xl">📊</span></div>
-                <div><h4 class="text-lg font-semibold text-white">Debt Funds</h4><span class="px-2 py-1 rounded-full bg-blue-500/20 text-blue-400 text-xs">Low-Medium Risk</span></div>
-              </div>
-              <p class="text-gray-400 text-sm mb-4">Government and corporate bonds via mutual funds.</p>
-              <div class="flex justify-between text-sm">
-                <div><p class="text-gray-500">Returns</p><p class="text-blue-400 font-semibold">7–9% p.a.</p></div>
-                <div><p class="text-gray-500">Lock-in</p><p class="text-white font-semibold">None</p></div>
-                <div><p class="text-gray-500">Min.</p><p class="text-white font-semibold">₹500</p></div>
-              </div>
-            </div>
-          </div>
-          <p class="text-gray-500 text-xs text-center mt-6">*ELSS funds have 3-year lock-in. Investments are subject to market risks.</p>
-        </section>
-
-        <!-- ─────────────────────────────────────
-             SETTINGS SECTION
-        ───────────────────────────────────── -->
-        <section id="section-settings" class="p-6 hidden">
-          <div class="mb-8">
-            <h1 class="text-2xl font-bold text-white">Settings</h1>
-            <p class="text-gray-400 mt-1">Manage your account</p>
-          </div>
-          <div class="max-w-2xl space-y-6">
-            <div class="glass-card rounded-2xl p-6">
-              <h3 class="text-lg font-semibold text-white mb-4">Account</h3>
-              <div class="flex items-center gap-4 p-4 rounded-xl bg-[#1a1a2e]">
-                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold" id="settings-avatar">--</div>
-                <div>
-                  <p class="text-white font-medium" id="settings-email">—</p>
-                  <p class="text-gray-400 text-sm">Logged in user</p>
+          <!-- Chat window -->
+          <div class="glass rounded-2xl flex-1 flex flex-col overflow-hidden" style="min-height:0">
+            <!-- Messages -->
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-5 space-y-4">
+              <!-- Welcome message -->
+              <div class="flex gap-3">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center flex-shrink-0 text-sm">🤖</div>
+                <div class="bubble-ai px-4 py-3 max-w-lg">
+                  <p class="text-gray-200 text-sm">Hi! I'm FinTrack AI, your personal finance assistant. I have access to your actual transaction data and can answer questions like:</p>
+                  <ul class="mt-2 text-gray-400 text-xs space-y-1">
+                    <li>• "How much did I spend on food this month?"</li>
+                    <li>• "What's my savings rate?"</li>
+                    <li>• "How should I invest ₹10,000?"</li>
+                    <li>• "Which category am I overspending on?"</li>
+                    <li>• "Give me a budget plan for next month"</li>
+                  </ul>
                 </div>
               </div>
             </div>
-            <div class="glass-card rounded-2xl p-6 border border-red-500/30">
-              <h3 class="text-lg font-semibold text-red-400 mb-4">Session</h3>
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-white">Sign Out</p>
-                  <p class="text-gray-500 text-sm">End your current session</p>
-                </div>
-                <button onclick="handleLogout()" class="px-4 py-2 rounded-lg bg-red-500/20 text-red-400 text-sm hover:bg-red-500/30 transition-colors">
-                  Logout
-                </button>
+
+            <!-- Quick prompts -->
+            <div class="px-5 py-3 border-t border-gray-800">
+              <div class="flex flex-wrap gap-2 mb-3">
+                <button onclick="sendQuickPrompt('How much did I spend this month?')"          class="px-3 py-1 rounded-full bg-[#1a1a2e] text-gray-400 text-xs hover:text-white hover:bg-[#252540] transition-colors">This month spend?</button>
+                <button onclick="sendQuickPrompt('What is my savings rate?')"                  class="px-3 py-1 rounded-full bg-[#1a1a2e] text-gray-400 text-xs hover:text-white hover:bg-[#252540] transition-colors">Savings rate?</button>
+                <button onclick="sendQuickPrompt('Which category am I spending most on?')"     class="px-3 py-1 rounded-full bg-[#1a1a2e] text-gray-400 text-xs hover:text-white hover:bg-[#252540] transition-colors">Top category?</button>
+                <button onclick="sendQuickPrompt('How can I reduce my expenses?')"             class="px-3 py-1 rounded-full bg-[#1a1a2e] text-gray-400 text-xs hover:text-white hover:bg-[#252540] transition-colors">Reduce expenses?</button>
+                <button onclick="sendQuickPrompt('Give me an investment plan based on my savings')" class="px-3 py-1 rounded-full bg-[#1a1a2e] text-gray-400 text-xs hover:text-white hover:bg-[#252540] transition-colors">Investment plan?</button>
+              </div>
+              <div class="flex gap-3">
+                <input id="chat-input" type="text" placeholder="Ask anything about your finances..." class="flex-1 px-4 py-2.5 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-teal-500 transition-colors">
+                <button id="chat-send" onclick="sendChatMessage()" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 text-white text-sm font-semibold hover:opacity-90 transition-all">Send</button>
               </div>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-      </main>
-
-      <!-- Floating Add Button -->
-      <button onclick="showSection('expenses')" class="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg hover:shadow-xl transform hover:scale-110 transition-all flex items-center justify-center glow-teal z-50">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
-      </button>
-    </div><!-- /#main-app -->
-
-  </div><!-- /#app -->
-
-  <!-- ═══════════════════════════════════════════════════════════════
-       JAVASCRIPT — All API integration
-  ═══════════════════════════════════════════════════════════════ -->
-  <script>
-    // ── CONFIG ────────────────────────────────────────────────────
-    const API = 'http://127.0.0.1:8000';
-
-    // ── TOKEN HELPERS ─────────────────────────────────────────────
-    const getToken = () => localStorage.getItem('token');
-    const setToken = (t) => localStorage.setItem('token', t);
-    const clearToken = () => localStorage.removeItem('token');
-
-    function authHeaders() {
-      return {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${getToken()}`
-      };
-    }
-
-    // ── TOAST ─────────────────────────────────────────────────────
-    function showToast(msg, type = 'ok') {
-      const el = document.getElementById('toast');
-      el.textContent = msg;
-      el.className = `toast glass-card px-6 py-3 rounded-xl text-sm font-medium show ${type === 'ok' ? 'text-teal-400' : 'text-red-400'}`;
-      setTimeout(() => el.classList.remove('show'), 3000);
-    }
-
-    // ── FORMAT CURRENCY ───────────────────────────────────────────
-    function fmt(amount) {
-      return '₹' + Number(amount).toLocaleString('en-IN', { maximumFractionDigits: 0 });
-    }
-
-    function fmtDate(iso) {
-      if (!iso) return '—';
-      return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-    }
-
-    // Category emoji map
-    const catEmoji = {
-      Food: '🍔', Transport: '🚕', Shopping: '🛒', Medical: '💊',
-      Entertainment: '🎬', Taxes: '📋', Salary: '💼', Others: '📦'
-    };
-
-    // ── SCREEN NAVIGATION ─────────────────────────────────────────
-    function showLogin() {
-      document.getElementById('login-screen').classList.remove('hidden');
-      document.getElementById('signup-screen').classList.add('hidden');
-      document.getElementById('signup-screen').classList.remove('flex');
-      document.getElementById('main-app').classList.add('hidden');
-      document.getElementById('main-app').classList.remove('flex');
-    }
-
-    function showSignup() {
-      document.getElementById('login-screen').classList.add('hidden');
-      document.getElementById('signup-screen').classList.remove('hidden');
-      document.getElementById('signup-screen').classList.add('flex');
-      document.getElementById('main-app').classList.add('hidden');
-      document.getElementById('main-app').classList.remove('flex');
-    }
-
-    function showDashboard() {
-      document.getElementById('login-screen').classList.add('hidden');
-      document.getElementById('signup-screen').classList.add('hidden');
-      document.getElementById('signup-screen').classList.remove('flex');
-      document.getElementById('main-app').classList.remove('hidden');
-      document.getElementById('main-app').classList.add('flex');
-    }
-
-    function showSection(id) {
-      document.querySelectorAll('main section').forEach(s => s.classList.add('hidden'));
-      document.getElementById('section-' + id).classList.remove('hidden');
-      document.querySelectorAll('.nav-item').forEach(item => {
-        item.classList.toggle('active', item.dataset.section === id);
-      });
-      // Lazy-load data when switching to section
-      if (id === 'expenses') loadExpenses();
-      if (id === 'income') loadIncome();
-      if (id === 'reports') loadReports();
-      if (id === 'investments') {
-        const bal = document.getElementById('total-balance').textContent;
-        document.getElementById('invest-balance').textContent = bal;
-      }
-    }
-
-    // ── AUTH: LOGIN ───────────────────────────────────────────────
-    async function handleLogin() {
-      const email = document.getElementById('login-email').value.trim();
-      const password = document.getElementById('login-password').value;
-      const errEl = document.getElementById('login-error');
-      const btn = document.getElementById('login-btn');
-
-      errEl.classList.add('hidden');
-      if (!email || !password) { errEl.textContent = 'Please fill in all fields.'; errEl.classList.remove('hidden'); return; }
-
-      btn.disabled = true;
-      btn.textContent = 'Signing in...';
-
-      try {
-        const form = new URLSearchParams();
-        form.append('username', email);
-        form.append('password', password);
-
-        const res = await fetch(`${API}/auth/login`, { method: 'POST', body: form });
-        const data = await res.json();
-
-        if (res.ok) {
-          setToken(data.access_token);
-          await initDashboard();
-          showDashboard();
-        } else {
-          errEl.textContent = data.detail || 'Invalid credentials.';
-          errEl.classList.remove('hidden');
-        }
-      } catch {
-        errEl.textContent = 'Cannot reach server. Is the backend running?';
-        errEl.classList.remove('hidden');
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Sign In';
-      }
-    }
-
-    // ── AUTH: SIGNUP ──────────────────────────────────────────────
-    async function handleSignup() {
-      const email = document.getElementById('signup-email').value.trim();
-      const password = document.getElementById('signup-password').value;
-      const errEl = document.getElementById('signup-error');
-      const btn = document.getElementById('signup-btn');
-
-      errEl.classList.add('hidden');
-      if (!email || !password) { errEl.textContent = 'Please fill in all fields.'; errEl.classList.remove('hidden'); return; }
-      if (password.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; errEl.classList.remove('hidden'); return; }
-
-      btn.disabled = true;
-      btn.textContent = 'Creating account...';
-
-      try {
-        const res = await fetch(`${API}/auth/signup`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
-        });
-        const data = await res.json();
-
-        if (res.ok) {
-          showToast('Account created! Please sign in.', 'ok');
-          showLogin();
-          document.getElementById('login-email').value = email;
-        } else {
-          errEl.textContent = data.detail || 'Registration failed.';
-          errEl.classList.remove('hidden');
-        }
-      } catch {
-        errEl.textContent = 'Cannot reach server. Is the backend running?';
-        errEl.classList.remove('hidden');
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Create Account';
-      }
-    }
-
-    // ── AUTH: LOGOUT ──────────────────────────────────────────────
-    function handleLogout() {
-      clearToken();
-      showLogin();
-      document.getElementById('login-email').value = '';
-      document.getElementById('login-password').value = '';
-    }
-
-    // ── INIT DASHBOARD ────────────────────────────────────────────
-    async function initDashboard() {
-      await loadTransactionsData(); // loads everything for dashboard
-    }
-
-    // ── LOAD ALL TRANSACTIONS (shared data source) ────────────────
-    let _allTransactions = [];
-
-    async function loadTransactionsData() {
-      try {
-        const res = await fetch(`${API}/transactions/`, { headers: authHeaders() });
-        if (res.status === 401) { handleLogout(); return; }
-        const data = await res.json();
-
-        _allTransactions = data.transactions || [];
-        const balance = data.current_balance ?? 0;
-
-        // Update balance card
-        document.getElementById('total-balance').textContent = fmt(balance);
-        document.getElementById('total-balance').className =
-          `text-4xl font-bold mt-1 ${balance >= 0 ? 'text-white' : 'text-red-400'}`;
-
-        // Stats
-        const income = _allTransactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-        const expense = _allTransactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
-        document.getElementById('stat-total-income').textContent = fmt(income);
-        document.getElementById('stat-total-expense').textContent = fmt(expense);
-        document.getElementById('stat-tx-count').textContent = _allTransactions.length;
-
-        // Subtitle
-        const now = new Date();
-        document.getElementById('dashboard-subtitle').textContent =
-          `Financial overview for ${now.toLocaleString('en-IN', { month: 'long', year: 'numeric' })}`;
-
-        // User email in sidebar
-        const token = getToken();
-        if (token) {
-          try {
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            // We don't store email in token, so show user_id or fetch separately
-          } catch {}
-        }
-
-        // Recent transactions (last 5)
-        renderRecentTransactions(_allTransactions.slice(0, 5));
-
-      } catch (e) {
-        console.error('loadTransactionsData:', e);
-      }
-    }
-
-    // ── RENDER RECENT TRANSACTIONS ────────────────────────────────
-    function renderRecentTransactions(txs) {
-      const el = document.getElementById('recent-transactions');
-      if (!txs.length) {
-        el.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">No transactions yet. Add one to get started!</p>';
-        return;
-      }
-      el.innerHTML = txs.map(tx => {
-        const isIncome = tx.type === 'income';
-        const emoji = catEmoji[tx.category] || '💰';
-        return `
-          <div class="flex items-center justify-between p-4 rounded-xl bg-[#1a1a2e] hover:bg-[#252540] transition-colors">
-            <div class="flex items-center gap-4">
-              <div class="w-12 h-12 rounded-xl ${isIncome ? 'bg-green-500/20' : 'bg-red-500/20'} flex items-center justify-center">
-                <span class="text-2xl">${emoji}</span>
-              </div>
+      <!-- ── SETTINGS ── -->
+      <section id="section-settings" class="p-6 hidden">
+        <h1 class="text-2xl font-bold text-white mb-6">Settings</h1>
+        <div class="max-w-lg space-y-4">
+          <div class="glass rounded-2xl p-5">
+            <h3 class="font-semibold text-white mb-3 text-sm">Account</h3>
+            <div class="flex items-center gap-4 p-3 rounded-xl bg-[#1a1a2e]">
+              <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm" id="settings-avatar">--</div>
               <div>
-                <p class="font-medium text-white">${tx.description || tx.category || tx.type}</p>
-                <p class="text-sm text-gray-400">${tx.category || '—'} • ${fmtDate(tx.transaction_date)}</p>
+                <p class="text-white font-medium text-sm" id="settings-email">—</p>
+                <p class="text-gray-400 text-xs">Logged in user</p>
               </div>
             </div>
-            <span class="font-semibold ${isIncome ? 'text-green-400' : 'text-red-400'}">
-              ${isIncome ? '+' : '-'}${fmt(tx.amount)}
-            </span>
-          </div>`;
-      }).join('');
-    }
+          </div>
+          <div class="glass rounded-2xl p-5 border border-red-500/20">
+            <h3 class="font-semibold text-red-400 mb-3 text-sm">Session</h3>
+            <div class="flex items-center justify-between">
+              <div><p class="text-white text-sm">Sign Out</p><p class="text-gray-500 text-xs">End your current session</p></div>
+              <button onclick="handleLogout()" class="px-4 py-2 rounded-lg bg-red-500/20 text-red-400 text-sm hover:bg-red-500/30 transition-colors">Logout</button>
+            </div>
+          </div>
+        </div>
+      </section>
 
-    // ── LOAD EXPENSES ─────────────────────────────────────────────
-    async function loadExpenses() {
-      const tbody = document.getElementById('expense-table-body');
-      tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-gray-500">Loading...</td></tr>';
-      try {
-        const res = await fetch(`${API}/transactions/`, { headers: authHeaders() });
-        if (res.status === 401) { handleLogout(); return; }
-        const data = await res.json();
-        const expenses = (data.transactions || []).filter(t => t.type === 'expense');
-        if (!expenses.length) {
-          tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-gray-500">No expenses found. Add one above!</td></tr>';
-          return;
-        }
-        tbody.innerHTML = expenses.map(tx => `
-          <tr class="hover:bg-[#1a1a2e]/50 transition-colors">
-            <td class="px-6 py-4 text-white">${tx.description || '—'}</td>
-            <td class="px-6 py-4"><span class="px-3 py-1 rounded-full bg-red-500/20 text-red-400 text-sm">${catEmoji[tx.category] || '📦'} ${tx.category || '—'}</span></td>
-            <td class="px-6 py-4 text-gray-400">${fmtDate(tx.transaction_date)}</td>
-            <td class="px-6 py-4 text-right text-red-400 font-semibold">${fmt(tx.amount)}</td>
-          </tr>`).join('');
-      } catch (e) {
-        tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-red-400">Failed to load expenses.</td></tr>';
-      }
-    }
+    </main>
 
-    // ── LOAD INCOME ───────────────────────────────────────────────
-    async function loadIncome() {
-      const tbody = document.getElementById('income-table-body');
-      tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-gray-500">Loading...</td></tr>';
-      try {
-        const res = await fetch(`${API}/transactions/`, { headers: authHeaders() });
-        if (res.status === 401) { handleLogout(); return; }
-        const data = await res.json();
-        const incomes = (data.transactions || []).filter(t => t.type === 'income');
-        if (!incomes.length) {
-          tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-gray-500">No income found. Add one above!</td></tr>';
-          return;
-        }
-        tbody.innerHTML = incomes.map(tx => `
-          <tr class="hover:bg-[#1a1a2e]/50 transition-colors">
-            <td class="px-6 py-4 text-white">${tx.description || '—'}</td>
-            <td class="px-6 py-4"><span class="px-3 py-1 rounded-full bg-green-500/20 text-green-400 text-sm">${catEmoji[tx.category] || '💰'} ${tx.category || '—'}</span></td>
-            <td class="px-6 py-4 text-gray-400">${fmtDate(tx.transaction_date)}</td>
-            <td class="px-6 py-4 text-right text-green-400 font-semibold">${fmt(tx.amount)}</td>
-          </tr>`).join('');
-      } catch (e) {
-        tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-red-400">Failed to load income.</td></tr>';
-      }
-    }
+    <!-- FAB -->
+    <button onclick="showSection('expenses')" class="no-print fixed bottom-6 right-6 w-12 h-12 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg hover:shadow-xl transform hover:scale-110 transition-all flex items-center justify-center glow z-50">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+    </button>
+  </div><!-- /#main-app -->
+</div><!-- /#app -->
 
-    // ── LOAD REPORTS ──────────────────────────────────────────────
-    async function loadReports() {
-      try {
-        const res = await fetch(`${API}/transactions/`, { headers: authHeaders() });
-        if (res.status === 401) { handleLogout(); return; }
-        const data = await res.json();
-        const txs = data.transactions || [];
+<script>
+  function setMsg(text, type="success") {
+    const el = document.getElementById("exp-msg") || document.getElementById("inc-msg");
+    el.textContent = text;
+    el.className = "text-xs " + (type === "success" ? "text-teal-400" : "text-red-400");
+  }
+// ═══════════════════════════════════════════════════════════
+//  CONSTANTS & HELPERS
+// ═══════════════════════════════════════════════════════════
+const API      = 'http://127.0.0.1:8000';
+const getToken = () => localStorage.getItem('ft_token');
+const setToken = t  => localStorage.setItem('ft_token', t);
+const clearToken = () => localStorage.removeItem('ft_token');
+const authH = () => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` });
 
-        const income = txs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-        const expense = txs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+// FIX: These are constants, not evaluated in a floating expression
+// All category lookup happens inside functions where `tx` is a local variable
+const CAT_EMOJI = {
+  Food:'🍔', Transport:'🚕', Shopping:'🛒', Entertainment:'🎬',
+  Medical:'💊', Taxes:'📋', Salary:'💼', Income:'💰',
+  Bills:'💡', Others:'📦'
+};
+const CAT_COLOR = {
+  Food:'#ef4444', Transport:'#f59e0b', Shopping:'#8b5cf6', Entertainment:'#ec4899',
+  Medical:'#10b981', Taxes:'#3b82f6', Salary:'#22c55e', Income:'#22c55e',
+  Bills:'#06b6d4', Others:'#64748b'
+};
 
-        document.getElementById('report-income').textContent = fmt(income);
-        document.getElementById('report-expense').textContent = fmt(expense);
-        document.getElementById('report-savings').textContent = fmt(income - expense);
+// Chart instances — stored so we can destroy before re-creating
+let _pieChart, _barChart, _lineChart, _invPieChart;
+let _allLoans = [], _loanTab = 'lent';
+let _chatHistory = [];   // [{role, content}]
 
-        // Category breakdown
-        const byCat = {};
-        txs.filter(t => t.type === 'expense').forEach(t => {
-          const cat = t.category || 'Others';
-          byCat[cat] = (byCat[cat] || 0) + t.amount;
-        });
+const fmt = n => '₹' + Number(n).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+const fmtDate = iso => iso ? new Date(iso).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }) : '—';
 
-        const breakdown = document.getElementById('category-breakdown');
-        const entries = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
-        if (!entries.length) {
-          breakdown.innerHTML = '<p class="text-gray-500 text-sm">No expense data yet.</p>';
-          return;
-        }
-        const maxVal = entries[0][1];
-        breakdown.innerHTML = entries.map(([cat, total]) => {
-          const pct = maxVal > 0 ? Math.round((total / maxVal) * 100) : 0;
-          return `
-            <div class="flex items-center gap-4">
-              <div class="w-28 text-gray-400 text-sm">${catEmoji[cat] || '📦'} ${cat}</div>
-              <div class="flex-1 h-8 rounded-lg bg-[#1a1a2e] overflow-hidden">
-                <div class="h-full bg-gradient-to-r from-teal-500 to-cyan-500 flex items-center justify-end pr-3 transition-all" style="width:${pct}%">
-                  <span class="text-white text-xs font-medium">${fmt(total)}</span>
-                </div>
-              </div>
-            </div>`;
-        }).join('');
-      } catch (e) {
-        document.getElementById('category-breakdown').innerHTML = '<p class="text-red-400 text-sm">Failed to load data.</p>';
-      }
-    }
+// Normalise category to title-case, handles "FOOD" → "Food", "food" → "Food"
+function normCat(cat) {
+  if (!cat) return 'Others';
+  const s = cat.trim();
+  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+}
 
-    // ── SUBMIT EXPENSE ────────────────────────────────────────────
-    document.getElementById('expense-form').addEventListener('submit', async function(e) {
-      e.preventDefault();
-      const btn = document.getElementById('exp-submit-btn');
-      const msg = document.getElementById('exp-form-msg');
+function toast(msg, ok = true) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `toast glass px-5 py-2.5 rounded-xl text-sm font-medium show ${ok ? 'text-teal-400' : 'text-red-400'}`;
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
 
-      const amount = parseFloat(document.getElementById('exp-amount').value);
-      const category = document.getElementById('exp-category').value;
-      const date = document.getElementById('exp-date').value;
-      const description = document.getElementById('exp-description').value.trim();
+// ═══════════════════════════════════════════════════════════
+//  SCREEN NAVIGATION
+// ═══════════════════════════════════════════════════════════
+function showLogin() {
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('signup-screen').classList.add('hidden','flex'); document.getElementById('signup-screen').classList.remove('flex');
+  document.getElementById('main-app').classList.add('hidden'); document.getElementById('main-app').classList.remove('flex');
+}
+function showSignup() {
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('signup-screen').classList.remove('hidden'); document.getElementById('signup-screen').classList.add('flex');
+  document.getElementById('main-app').classList.add('hidden'); document.getElementById('main-app').classList.remove('flex');
+}
+function showDashboard() {
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('signup-screen').classList.add('hidden'); document.getElementById('signup-screen').classList.remove('flex');
+  document.getElementById('main-app').classList.remove('hidden'); document.getElementById('main-app').classList.add('flex');
+}
 
-      if (!amount || !category || !date) { msg.textContent = 'Please fill all required fields.'; msg.className = 'text-sm text-red-400'; return; }
+function showSection(id) {
+  document.querySelectorAll('main section').forEach(s => s.classList.add('hidden'));
+  document.getElementById('section-' + id).classList.remove('hidden');
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.section === id));
+  if (id === 'expenses')    loadExpenses();
+  if (id === 'income')      loadIncome();
+  if (id === 'reports')     loadReports();
+  if (id === 'insights')    loadInsights();
+  if (id === 'investments') loadInvestments();
+  if (id === 'loans')       loadLoans();
+}
 
-      btn.disabled = true;
-      btn.textContent = 'Adding...';
-      msg.textContent = '';
+// ═══════════════════════════════════════════════════════════
+//  AUTH
+// ═══════════════════════════════════════════════════════════
+async function handleLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  const btn   = document.getElementById('login-btn');
+  errEl.classList.add('hidden');
+  if (!email || !pass) { errEl.textContent = 'Fill in all fields.'; errEl.classList.remove('hidden'); return; }
+  btn.disabled = true; btn.textContent = 'Signing in...';
+  try {
+    const form = new URLSearchParams(); form.append('username', email); form.append('password', pass);
+    const res = await fetch(`${API}/auth/login`, { method:'POST', body:form });
+    const d = await res.json();
+    if (res.ok) { setToken(d.access_token); await boot(true); showDashboard(); }
+    else { errEl.textContent = d.detail || 'Invalid credentials.'; errEl.classList.remove('hidden'); }
+  } catch { errEl.textContent = 'Server unreachable.'; errEl.classList.remove('hidden'); }
+  finally { btn.disabled = false; btn.textContent = 'Sign In'; }
+}
 
-      try {
-        const res = await fetch(`${API}/transactions/`, {
-          method: 'POST',
-          headers: authHeaders(),
-          body: JSON.stringify({
-            amount,
-            type: 'expense',
-            category,
-            description: description || null,
-            transaction_date: new Date(date).toISOString()
-          })
-        });
-        const data = await res.json();
-        if (res.ok) {
-          showToast('Expense added!', 'ok');
-          this.reset();
-          loadExpenses();
-          loadTransactionsData(); // refresh dashboard stats
-        } else {
-          msg.textContent = data.detail || 'Failed to add expense.';
-          msg.className = 'text-sm text-red-400';
-        }
-      } catch {
-        msg.textContent = 'Server error.';
-        msg.className = 'text-sm text-red-400';
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Add Expense';
+async function handleSignup() {
+  const email = document.getElementById('signup-email').value.trim();
+  const pass  = document.getElementById('signup-password').value;
+  const errEl = document.getElementById('signup-error');
+  const btn   = document.getElementById('signup-btn');
+  errEl.classList.add('hidden');
+  if (!email || !pass) { errEl.textContent = 'Fill in all fields.'; errEl.classList.remove('hidden'); return; }
+  if (pass.length < 6) { errEl.textContent = 'Password must be 6+ characters.'; errEl.classList.remove('hidden'); return; }
+  btn.disabled = true; btn.textContent = 'Creating...';
+  try {
+    const res = await fetch(`${API}/auth/signup`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ email, password:pass }) });
+    const d = await res.json();
+    if (res.ok) { toast('Account created! Please sign in.'); showLogin(); document.getElementById('login-email').value = email; }
+    else { errEl.textContent = d.detail || 'Registration failed.'; errEl.classList.remove('hidden'); }
+  } catch { errEl.textContent = 'Server unreachable.'; errEl.classList.remove('hidden'); }
+  finally { btn.disabled = false; btn.textContent = 'Create Account'; }
+}
+
+function handleLogout() {
+  clearToken(); _chatHistory = []; showLogin();
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-password').value = '';
+}
+
+// ═══════════════════════════════════════════════════════════
+//  BOOT / DASHBOARD
+// ═══════════════════════════════════════════════════════════
+async function boot(fromLogin = false) {
+  const token = getToken();
+  if (!token) { showLogin(); return; }
+  try {
+    const res = await fetch(`${API}/transactions/`, { headers: authH() });
+    if (res.status === 401) { clearToken(); showLogin(); return; }
+    const d = await res.json();
+    const txs = d.transactions || [];
+    const bal = d.current_balance ?? 0;
+
+    // User ID from JWT
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const uid = payload.user_id || payload.sub || '?';
+      ['user-avatar','settings-avatar'].forEach(id => document.getElementById(id).textContent = String(uid).slice(0,2).toUpperCase());
+      ['sidebar-email','settings-email'].forEach(id => document.getElementById(id).textContent = `User #${uid}`);
+    } catch {}
+
+    const income  = txs.filter(t => t.type === 'income').reduce((s,t)  => s+t.amount, 0);
+    const expense = txs.filter(t => t.type === 'expense').reduce((s,t) => s+t.amount, 0);
+    document.getElementById('total-balance').textContent = fmt(bal);
+    document.getElementById('total-balance').className   = `text-4xl font-bold mt-1 ${bal >= 0 ? 'text-white' : 'text-red-400'}`;
+    document.getElementById('stat-income').textContent   = fmt(income);
+    document.getElementById('stat-expense').textContent  = fmt(expense);
+    document.getElementById('stat-count').textContent    = txs.length;
+
+    const now = new Date();
+    document.getElementById('dash-subtitle').textContent = `Overview for ${now.toLocaleString('en-IN',{month:'long',year:'numeric'})}`;
+    renderRecentTxs(txs.slice(0, 6));
+    if (!fromLogin) showDashboard();
+  } catch { if (!fromLogin) showLogin(); }
+}
+
+function renderRecentTxs(txs) {
+  const el = document.getElementById('recent-txs');
+  if (!txs.length) { el.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">No transactions yet. Add one!</p>'; return; }
+  el.innerHTML = txs.map(tx => {
+    const income = tx.type === 'income';
+    // FIX: normCat is called here inside the map, not at module level
+    const cat   = normCat(tx.category);
+    const emoji = CAT_EMOJI[cat] || '💰';
+    return `<div class="flex items-center justify-between p-3 rounded-xl bg-[#1a1a2e] hover:bg-[#252540] transition-colors">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl ${income ? 'bg-green-500/15':'bg-red-500/15'} flex items-center justify-center text-lg">${emoji}</div>
+        <div>
+          <p class="font-medium text-white text-sm">${tx.description || cat || tx.type}</p>
+          <p class="text-xs text-gray-500">${cat} · ${fmtDate(tx.transaction_date)}</p>
+        </div>
+      </div>
+      <span class="font-semibold text-sm ${income ? 'text-green-400':'text-red-400'}">${income ? '+':'-'}${fmt(tx.amount)}</span>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  EXPENSES
+// ═══════════════════════════════════════════════════════════
+async function loadExpenses() {
+  const tbody = document.getElementById('exp-tbody');
+  tbody.innerHTML = '<tr><td colspan="5" class="px-5 py-8 text-center text-gray-500 text-sm">Loading...</td></tr>';
+  const res = await fetch(`${API}/transactions/`, { headers:authH() });
+  if (res.status === 401) { handleLogout(); return; }
+  const { transactions } = await res.json();
+  const exps = transactions.filter(t => t.type === 'expense');
+  if (!exps.length) { tbody.innerHTML = '<tr><td colspan="5" class="px-5 py-8 text-center text-gray-500 text-sm">No expenses yet.</td></tr>'; return; }
+  tbody.innerHTML = exps.map(tx => {
+    const cat = normCat(tx.category);
+    return `<tr class="hover:bg-[#1a1a2e]/40 transition-colors">
+      <td class="px-5 py-3 text-white text-sm">${tx.description || '—'}</td>
+      <td class="px-5 py-3"><span class="px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 text-xs">${CAT_EMOJI[cat]||'📦'} ${cat}</span></td>
+      <td class="px-5 py-3 text-gray-400 text-sm">${fmtDate(tx.transaction_date)}</td>
+      <td class="px-5 py-3 text-right text-red-400 font-semibold text-sm">${fmt(tx.amount)}</td>
+      <td class="px-5 py-3 text-center"><button onclick="deleteTx(${tx.id},'exp')" class="text-gray-500 hover:text-red-400 transition-colors">🗑️</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INCOME
+// ═══════════════════════════════════════════════════════════
+async function loadIncome() {
+  const tbody = document.getElementById('inc-tbody');
+  tbody.innerHTML = '<tr><td colspan="5" class="px-5 py-8 text-center text-gray-500 text-sm">Loading...</td></tr>';
+  const res = await fetch(`${API}/transactions/`, { headers:authH() });
+  if (res.status === 401) { handleLogout(); return; }
+  const { transactions } = await res.json();
+  const incs = transactions.filter(t => t.type === 'income');
+  if (!incs.length) { tbody.innerHTML = '<tr><td colspan="5" class="px-5 py-8 text-center text-gray-500 text-sm">No income yet.</td></tr>'; return; }
+  tbody.innerHTML = incs.map(tx => {
+    const cat = normCat(tx.category);
+    return `<tr class="hover:bg-[#1a1a2e]/40 transition-colors">
+      <td class="px-5 py-3 text-white text-sm">${tx.description || '—'}</td>
+      <td class="px-5 py-3"><span class="px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 text-xs">${CAT_EMOJI[cat]||'💰'} ${cat}</span></td>
+      <td class="px-5 py-3 text-gray-400 text-sm">${fmtDate(tx.transaction_date)}</td>
+      <td class="px-5 py-3 text-right text-green-400 font-semibold text-sm">${fmt(tx.amount)}</td>
+      <td class="px-5 py-3 text-center"><button onclick="deleteTx(${tx.id},'inc')" class="text-gray-500 hover:text-red-400 transition-colors">🗑️</button></td>
+    </tr>`;
+  }).join('');
+}
+
+async function deleteTx(id, tab) {
+  if (!confirm('Delete this transaction?')) return;
+  const res = await fetch(`${API}/transactions/${id}`, { method:'DELETE', headers:authH() });
+  if (res.ok) { toast('Deleted'); boot(true); if (tab==='exp') loadExpenses(); else loadIncome(); }
+  else toast('Delete failed', false);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SUBMIT EXPENSE
+// ═══════════════════════════════════════════════════════════
+document.getElementById('expense-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById('exp-btn'), msg = document.getElementById('exp-msg');
+  const amount = parseFloat(document.getElementById('exp-amount').value);
+  const date   = document.getElementById('exp-date').value;
+  const desc   = document.getElementById('exp-desc').value.trim();
+  if (!amount || !date || !desc) { msg.textContent='Fill all fields.'; msg.className='text-xs text-red-400'; return; }
+  btn.disabled=true; btn.textContent='Adding...'; msg.textContent='';
+  try {
+    const res = await fetch(`${API}/transactions/`, {
+      method:'POST', headers:authH(),
+      body: JSON.stringify({ amount, type:'expense', description:desc, transaction_date:new Date(date).toISOString() })
+    });
+    const d = await res.json();
+    msg.textContent = `Added! Category: ${d.predicted_category}`;
+    msg.className = "text-xs text-teal-400";
+    if (res.ok) {
+      const cat = normCat(d.transaction?.category);
+      toast(`✓ Expense added · AI category: ${cat}`);
+      this.reset(); document.getElementById('exp-date').value = new Date().toISOString().split('T')[0];
+      loadExpenses(); boot(true);
+    } else { msg.textContent=d.detail||'Failed.'; msg.className='text-xs text-red-400'; }
+  } catch { msg.textContent='Server error.'; msg.className='text-xs text-red-400'; }
+  finally { btn.disabled=false; btn.textContent='Add Expense'; }
+});
+
+// ═══════════════════════════════════════════════════════════
+//  SUBMIT INCOME
+// ═══════════════════════════════════════════════════════════
+document.getElementById('income-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById('inc-btn'), msg = document.getElementById('inc-msg');
+  const amount = parseFloat(document.getElementById('inc-amount').value);
+  const date   = document.getElementById('inc-date').value;
+  const desc   = document.getElementById('inc-desc').value.trim();
+  if (!amount || !date || !desc) { msg.textContent='Fill all fields.'; msg.className='text-xs text-red-400'; return; }
+  btn.disabled=true; btn.textContent='Adding...'; msg.textContent='';
+  try {
+    const res = await fetch(`${API}/transactions/`, {
+      method:'POST', headers:authH(),
+      body: JSON.stringify({ amount, type:'income', description:desc, transaction_date:new Date(date).toISOString() })
+    });
+    const d = await res.json();
+    msg.textContent = `Added! Category: ${d.predicted_category}`;
+    msg.className = "text-xs text-teal-400";
+    if (res.ok) {
+      toast('✓ Income added');
+      this.reset(); document.getElementById('inc-date').value = new Date().toISOString().split('T')[0];
+      loadIncome(); boot(true);
+    } else { msg.textContent=d.detail||'Failed.'; msg.className='text-xs text-red-400'; }
+  } catch { msg.textContent='Server error.'; msg.className='text-xs text-red-400'; }
+  finally { btn.disabled=false; btn.textContent='Add Income'; }
+});
+
+// ═══════════════════════════════════════════════════════════
+//  BUDGET
+// ═══════════════════════════════════════════════════════════
+document.getElementById('budget-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const msg   = document.getElementById('budget-msg');
+  const limit = parseFloat(document.getElementById('budget-limit').value);
+  const month = parseInt(document.getElementById('budget-month').value);
+  const year  = parseInt(document.getElementById('budget-year').value);
+  msg.textContent='Saving...'; msg.className='text-xs text-gray-400';
+  const res = await fetch(`${API}/budgets/`, { method:'POST', headers:authH(), body:JSON.stringify({ monthly_limit:limit, month, year }) });
+  if (res.ok) { msg.textContent='✓ Budget saved!'; msg.className='text-xs text-teal-400'; loadBudgetStatus(); }
+  else { msg.textContent='Failed.'; msg.className='text-xs text-red-400'; }
+});
+
+async function loadBudgetStatus() {
+  const month = parseInt(document.getElementById('budget-month').value);
+  const year  = parseInt(document.getElementById('budget-year').value);
+  const card  = document.getElementById('budget-status');
+  const res   = await fetch(`${API}/budgets/status?month=${month}&year=${year}`, { headers:authH() });
+  if (res.status === 404) { toast('No budget set for this month', false); card.classList.add('hidden'); return; }
+  const d = await res.json();
+  card.classList.remove('hidden');
+  document.getElementById('bs-limit').textContent  = fmt(d.monthly_limit);
+  document.getElementById('bs-spent').textContent  = fmt(d.total_spent);
+  const rem = d.remaining_budget;
+  document.getElementById('bs-remaining').textContent  = fmt(Math.abs(rem));
+  document.getElementById('bs-remaining').className    = `text-xl font-bold mt-1 ${rem>=0?'text-green-400':'text-red-400'}`;
+  const pct = Math.min(100, Math.round((d.total_spent/d.monthly_limit)*100));
+  const bar = document.getElementById('bs-bar');
+  bar.style.width   = pct+'%';
+  bar.className     = `h-full rounded-full transition-all duration-700 ${pct>=100?'bg-red-500':pct>=80?'bg-amber-500':'bg-gradient-to-r from-teal-500 to-cyan-500'}`;
+  const txt = document.getElementById('bs-text');
+  txt.textContent   = d.overspending ? `⚠️ Over budget by ${fmt(Math.abs(rem))}` : `✓ ${pct}% used — ${fmt(rem)} remaining`;
+  txt.className     = `mt-2 text-sm ${d.overspending?'text-red-400':pct>=80?'text-amber-400':'text-teal-400'}`;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  LOANS
+// ═══════════════════════════════════════════════════════════
+async function loadLoans() {
+  const res = await fetch(`${API}/loans/`, { headers:authH() });
+  if (res.status === 401) { handleLogout(); return; }
+  _allLoans = await res.json();
+  const lent     = _allLoans.filter(l => l.loan_type === 'lent');
+  const borrowed = _allLoans.filter(l => l.loan_type === 'borrowed');
+  const pending  = _allLoans.filter(l => l.status === 'pending');
+  document.getElementById('loan-total-lent').textContent     = fmt(lent.reduce((s,l)=>s+l.amount,0));
+  document.getElementById('loan-total-borrowed').textContent = fmt(borrowed.reduce((s,l)=>s+l.amount,0));
+  document.getElementById('loan-pending').textContent        = pending.length;
+  renderLoans();
+}
+
+function setLoanTab(tab) {
+  _loanTab = tab;
+  const isLent = tab==='lent';
+  document.getElementById('tab-lent').className     = `px-5 py-2 rounded-xl text-sm font-medium ${isLent  ?'bg-green-500/20 text-green-400 border border-green-500/30':'bg-[#1a1a2e] text-gray-400 border border-gray-700'}`;
+  document.getElementById('tab-borrowed').className = `px-5 py-2 rounded-xl text-sm font-medium ${!isLent ?'bg-red-500/20 text-red-400 border border-red-500/30':'bg-[#1a1a2e] text-gray-400 border border-gray-700'}`;
+  renderLoans();
+}
+
+function renderLoans() {
+  const list = document.getElementById('loan-list');
+  const data = _allLoans.filter(l => l.loan_type === _loanTab);
+  if (!data.length) { list.innerHTML = `<div class="glass rounded-2xl p-8 text-center text-gray-500 text-sm">No ${_loanTab==='lent'?'money lent':'borrowed money'} entries yet.</div>`; return; }
+  list.innerHTML = data.map(l => {
+    const isOverdue   = l.due_date && new Date(l.due_date) < new Date() && l.status==='pending';
+    const status      = isOverdue ? 'overdue' : l.status;
+    const statusColor = {pending:'text-amber-400 bg-amber-500/15', settled:'text-green-400 bg-green-500/15', overdue:'text-red-400 bg-red-500/15'}[status]||'text-gray-400 bg-gray-500/15';
+    const statusLabel = {pending:'⏳ Pending', settled:'✓ Settled', overdue:'⚠️ Overdue'}[status]||status;
+    return `<div class="glass rounded-2xl p-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-gradient-to-br ${_loanTab==='lent'?'from-teal-500 to-cyan-500':'from-orange-500 to-red-500'} flex items-center justify-center text-white font-bold text-sm">${l.person_name.slice(0,2).toUpperCase()}</div>
+          <div>
+            <p class="font-semibold text-white text-sm">${l.person_name}</p>
+            <p class="text-xs text-gray-500">${l.description||'—'} · ${fmtDate(l.loan_date)}</p>
+          </div>
+        </div>
+        <div class="text-right">
+          <p class="text-lg font-bold ${_loanTab==='lent'?'text-green-400':'text-red-400'}">${fmt(l.amount)}</p>
+          ${l.due_date?`<p class="text-xs text-gray-500">Due: ${fmtDate(l.due_date)}</p>`:''}
+        </div>
+      </div>
+      <div class="flex items-center justify-between mt-3">
+        <span class="px-3 py-1 rounded-full text-xs font-medium ${statusColor}">${statusLabel}</span>
+        <div class="flex gap-2">
+          ${l.status!=='settled'?`<button onclick="updateLoanStatus(${l.id},'settled')" class="px-3 py-1.5 rounded-lg bg-green-500/15 text-green-400 text-xs hover:bg-green-500/25 transition-colors">Mark Settled</button>`:''}
+          <button onclick="deleteLoan(${l.id})" class="px-3 py-1.5 rounded-lg bg-[#1a1a2e] text-gray-400 text-xs hover:text-red-400 transition-colors">Delete</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('loan-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const msg = document.getElementById('loan-msg');
+  msg.textContent='Adding...'; msg.className='text-xs text-gray-400';
+  const body = {
+    loan_type:   document.getElementById('loan-type').value,
+    person_name: document.getElementById('loan-person').value.trim(),
+    amount:      parseFloat(document.getElementById('loan-amount').value),
+    loan_date:   new Date(document.getElementById('loan-date').value).toISOString(),
+    due_date:    document.getElementById('loan-due').value ? new Date(document.getElementById('loan-due').value).toISOString() : null,
+    description: document.getElementById('loan-desc').value.trim()||null,
+  };
+  const res = await fetch(`${API}/loans/`, { method:'POST', headers:authH(), body:JSON.stringify(body) });
+  if (res.ok) { toast('Loan entry added!'); this.reset(); document.getElementById('loan-date').value=new Date().toISOString().split('T')[0]; loadLoans(); msg.textContent=''; }
+  else { const d=await res.json(); msg.textContent=d.detail||'Failed.'; msg.className='text-xs text-red-400'; }
+});
+
+async function updateLoanStatus(id, status) {
+  const res = await fetch(`${API}/loans/${id}/status`, { method:'PATCH', headers:authH(), body:JSON.stringify({status}) });
+  if (res.ok) { toast('Updated!'); loadLoans(); } else toast('Failed', false);
+}
+async function deleteLoan(id) {
+  if (!confirm('Delete?')) return;
+  const res = await fetch(`${API}/loans/${id}`, { method:'DELETE', headers:authH() });
+  if (res.ok) { toast('Deleted'); loadLoans(); } else toast('Failed', false);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  REPORTS & CHARTS
+// ═══════════════════════════════════════════════════════════
+const CDEFS = { plugins:{ legend:{ labels:{ color:'#94a3b8', font:{size:11} } } } };
+
+async function loadReports() {
+  const res = await fetch(`${API}/reports/summary`, { headers:authH() });
+  if (res.status===401) { handleLogout(); return; }
+  const d = await res.json();
+  document.getElementById('rep-income').textContent  = fmt(d.total_income  || 0);
+  document.getElementById('rep-expense').textContent = fmt(d.total_expense || 0);
+  document.getElementById('rep-savings').textContent = fmt(d.balance       || 0);
+  loadPieChart(); loadBarChart(); loadLineChart();
+}
+
+async function loadPieChart() {
+  const res  = await fetch(`${API}/reports/category-breakdown`, { headers:authH() });
+  const data = await res.json();
+  if (_pieChart) _pieChart.destroy();
+  const ctx = document.getElementById('pie-chart').getContext('2d');
+  _pieChart = new Chart(ctx, {
+    type:'doughnut',
+    data:{
+      labels: data.map(d => `${CAT_EMOJI[normCat(d.category)]||'📦'} ${normCat(d.category)}`),
+      datasets:[{ data:data.map(d=>d.total), backgroundColor:data.map(d=>CAT_COLOR[normCat(d.category)]||'#64748b'), borderColor:'#0f0f1a', borderWidth:3, hoverOffset:8 }]
+    },
+    options:{ ...CDEFS, cutout:'60%', plugins:{ ...CDEFS.plugins, tooltip:{ callbacks:{ label:c=>` ${fmt(c.parsed)}` } } } }
+  });
+}
+
+async function loadBarChart() {
+  const year = document.getElementById('bar-year').value;
+  const res  = await fetch(`${API}/reports/monthly-spending?year=${year}`, { headers:authH() });
+  const data = await res.json();
+  if (_barChart) _barChart.destroy();
+  const ctx = document.getElementById('bar-chart').getContext('2d');
+  _barChart = new Chart(ctx, {
+    type:'bar',
+    data:{ labels:data.map(d=>d.month), datasets:[{ label:'Expenses', data:data.map(d=>d.total), backgroundColor:'rgba(20,184,166,0.6)', borderColor:'rgba(20,184,166,1)', borderWidth:1, borderRadius:6 }] },
+    options:{ ...CDEFS, scales:{ x:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}}, y:{ticks:{color:'#64748b',font:{size:10},callback:v=>'₹'+(v/1000).toFixed(0)+'K'},grid:{color:'rgba(255,255,255,0.04)'}} }, plugins:{...CDEFS.plugins,tooltip:{callbacks:{label:c=>` ${fmt(c.parsed.y)}`}}} }
+  });
+}
+
+async function loadLineChart() {
+  const month = document.getElementById('line-month').value;
+  const year  = document.getElementById('line-year').value;
+  const res   = await fetch(`${API}/reports/daily-trend?month=${month}&year=${year}`, { headers:authH() });
+  const data  = await res.json();
+  if (_lineChart) _lineChart.destroy();
+  const ctx = document.getElementById('line-chart').getContext('2d');
+  _lineChart = new Chart(ctx, {
+    type:'line',
+    data:{ labels:data.map(d=>`Day ${d.day}`), datasets:[{ label:'Daily Spend', data:data.map(d=>d.total), borderColor:'#14b8a6', backgroundColor:'rgba(20,184,166,0.1)', fill:true, tension:0.4, pointBackgroundColor:'#14b8a6', pointRadius:4 }] },
+    options:{ ...CDEFS, scales:{ x:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}}, y:{ticks:{color:'#64748b',font:{size:10},callback:v=>'₹'+(v/1000).toFixed(0)+'K'},grid:{color:'rgba(255,255,255,0.04)'}} }, plugins:{...CDEFS.plugins,tooltip:{callbacks:{label:c=>` ${fmt(c.parsed.y)}`}}} }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  AI INSIGHTS
+// ═══════════════════════════════════════════════════════════
+async function loadInsights() {
+  const res = await fetch(`${API}/reports/insights`, { headers:authH() });
+  if (res.status===401) { handleLogout(); return; }
+  const d = await res.json();
+
+  document.getElementById('ins-top-category').textContent    = d.top_category ? `${d.top_category} · ${fmt(d.top_category_amount)}` : '—';
+  document.getElementById('ins-largest-expense').textContent = d.largest_expense ? `${d.largest_expense} · ${fmt(d.largest_expense_amount)}` : '—';
+  document.getElementById('ins-avg-expense').textContent     = fmt(d.avg_expense || 0);
+  document.getElementById('ins-savings-rate').textContent    = `${d.savings_rate || 0}%`;
+  document.getElementById('ins-this-month').textContent      = fmt(d.this_month_spend || 0);
+  document.getElementById('ins-last-month').textContent      = fmt(d.last_month_spend || 0);
+
+  const changePct = d.spend_change_pct || 0;
+  const changeEl  = document.getElementById('ins-change');
+  if (changePct > 0) { changeEl.textContent = `↑ ${changePct}% vs last month`; changeEl.className = 'text-xs text-red-400'; }
+  else if (changePct < 0) { changeEl.textContent = `↓ ${Math.abs(changePct)}% vs last month`; changeEl.className = 'text-xs text-green-400'; }
+  else { changeEl.textContent = 'Same as last month'; changeEl.className = 'text-xs text-gray-400'; }
+
+  const list = document.getElementById('insight-list');
+  const lines = d.insights || [];
+  if (!lines.length) { list.innerHTML = '<p class="text-gray-500 text-sm">No insights yet. Add more transactions.</p>'; return; }
+  list.innerHTML = lines.map(item => {
+    const cleaned = item.replace(/\*\*(.+?)\*\*/g, '<strong class="text-white">$1</strong>');
+    return `<div class="flex items-start gap-3 p-3 rounded-xl bg-[#1a1a2e]">
+      <span class="text-lg flex-shrink-0">${item.charAt(0)}</span>
+      <p class="text-sm text-gray-300">${cleaned.slice(2)}</p>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INVESTMENTS
+// ═══════════════════════════════════════════════════════════
+async function loadInvestments() {
+  const res = await fetch(`${API}/reports/insights`, { headers:authH() });
+  if (res.status===401) { handleLogout(); return; }
+  const d   = await res.json();
+  const inv = d.investment_plan || {};
+
+  document.getElementById('inv-profile').textContent       = inv.profile || '—';
+  document.getElementById('inv-monthly').textContent       = fmt(inv.monthly_investable || 0);
+  document.getElementById('inv-savings-rate').textContent  = `${inv.savings_rate || 0}%`;
+  document.getElementById('inv-message').textContent       = inv.message || '';
+  document.getElementById('inv-emergency').textContent     = inv.emergency_fund_note || '';
+  document.getElementById('inv-disclaimer').textContent    = inv.disclaimer || '';
+
+  const allocs = inv.allocations || [];
+
+  // Allocation list
+  const allocEl = document.getElementById('inv-allocations');
+  if (!allocs.length) {
+    allocEl.innerHTML = '<p class="text-gray-500 text-sm">Add transactions to generate your plan.</p>';
+  } else {
+    allocEl.innerHTML = allocs.map(a => `
+      <div class="flex items-center justify-between p-3 rounded-xl bg-[#1a1a2e]">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl flex items-center justify-center text-lg" style="background:${a.color}22;border:1px solid ${a.color}44">${a.icon}</div>
+          <div>
+            <p class="text-white text-sm font-medium">${a.instrument}</p>
+            <p class="text-gray-500 text-xs">${a.rationale.slice(0,60)}…</p>
+          </div>
+        </div>
+        <div class="text-right flex-shrink-0 ml-3">
+          <p class="text-white font-bold text-sm">${fmt(a.amount)}</p>
+          <p class="text-xs" style="color:${a.color}">${a.pct}%</p>
+        </div>
+      </div>`).join('');
+  }
+
+  // Investment donut chart
+  if (_invPieChart) _invPieChart.destroy();
+  if (allocs.length) {
+    const ctx = document.getElementById('inv-pie-chart').getContext('2d');
+    _invPieChart = new Chart(ctx, {
+      type:'doughnut',
+      data:{
+        labels: allocs.map(a => a.instrument),
+        datasets:[{ data:allocs.map(a=>a.amount), backgroundColor:allocs.map(a=>a.color), borderColor:'#0f0f1a', borderWidth:3, hoverOffset:8 }]
+      },
+      options:{
+        ...CDEFS, cutout:'55%',
+        plugins:{ ...CDEFS.plugins, tooltip:{ callbacks:{ label:c=>` ${fmt(c.parsed)} (${allocs[c.dataIndex].pct}%)` } } }
       }
     });
+  }
+}
 
-    // ── SUBMIT INCOME ─────────────────────────────────────────────
-    document.getElementById('income-form').addEventListener('submit', async function(e) {
-      e.preventDefault();
-      const btn = document.getElementById('inc-submit-btn');
-      const msg = document.getElementById('inc-form-msg');
+// ═══════════════════════════════════════════════════════════
+//  CHATBOT
+// ═══════════════════════════════════════════════════════════
+function appendChatBubble(role, text, isTyping = false) {
+  const container = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = `flex gap-3 ${role === 'user' ? 'justify-end' : ''}`;
+  div.id = isTyping ? 'typing-bubble' : '';
 
-      const amount = parseFloat(document.getElementById('inc-amount').value);
-      const category = document.getElementById('inc-category').value;
-      const date = document.getElementById('inc-date').value;
-      const description = document.getElementById('inc-description').value.trim();
+  const icon = role === 'user'
+    ? `<div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0" id="user-avatar-chat">${(document.getElementById('user-avatar')?.textContent||'?')}</div>`
+    : `<div class="w-8 h-8 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center flex-shrink-0 text-sm">🤖</div>`;
 
-      if (!amount || !date) { msg.textContent = 'Please fill all required fields.'; msg.className = 'text-sm text-red-400'; return; }
+  const bubbleClass = role === 'user' ? 'bubble-user' : 'bubble-ai';
+  const content = isTyping
+    ? `<div class="flex items-center gap-1.5 px-4 py-3"><span class="w-2 h-2 rounded-full bg-teal-400 dot1"></span><span class="w-2 h-2 rounded-full bg-teal-400 dot2"></span><span class="w-2 h-2 rounded-full bg-teal-400 dot3"></span></div>`
+    : `<div class="px-4 py-3 max-w-lg text-sm text-gray-200 leading-relaxed whitespace-pre-wrap">${text.replace(/\*\*(.+?)\*\*/g,'<strong class="text-white">$1</strong>').replace(/•/g,'&bull;')}</div>`;
 
-      btn.disabled = true;
-      btn.textContent = 'Adding...';
-      msg.textContent = '';
+  div.innerHTML = role === 'user'
+    ? `${content}<div class="${bubbleClass}">${content}</div>${icon}`
+    : `${icon}<div class="${bubbleClass}">${content}</div>`;
 
-      try {
-        const res = await fetch(`${API}/transactions/`, {
-          method: 'POST',
-          headers: authHeaders(),
-          body: JSON.stringify({
-            amount,
-            type: 'income',
-            category,
-            description: description || null,
-            transaction_date: new Date(date).toISOString()
-          })
-        });
-        const data = await res.json();
-        if (res.ok) {
-          showToast('Income added!', 'ok');
-          this.reset();
-          loadIncome();
-          loadTransactionsData();
-        } else {
-          msg.textContent = data.detail || 'Failed to add income.';
-          msg.className = 'text-sm text-red-400';
-        }
-      } catch {
-        msg.textContent = 'Server error.';
-        msg.className = 'text-sm text-red-400';
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Add Income';
-      }
+  // Simpler correct structure
+  div.innerHTML = '';
+  if (role !== 'user') div.appendChild(document.createRange().createContextualFragment(icon));
+  const bubble = document.createElement('div');
+  bubble.className = bubbleClass;
+  bubble.innerHTML = content;
+  div.appendChild(bubble);
+  if (role === 'user') div.appendChild(document.createRange().createContextualFragment(icon));
+
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return div;
+}
+
+async function sendChatMessage() {
+  const input = document.getElementById('chat-input');
+  const text  = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  document.getElementById('chat-send').disabled = true;
+
+  // Show user bubble
+  appendChatBubble('user', text);
+  _chatHistory.push({ role:'user', content:text });
+
+  // Show typing indicator
+  const typingDiv = appendChatBubble('assistant', '', true);
+  typingDiv.id = 'typing-bubble';
+
+  try {
+    const res = await fetch(`${API}/chat/`, {
+      method: 'POST',
+      headers: authH(),
+      body: JSON.stringify({
+        message: text  
+      })
     });
+    const d = await res.json();
+    document.getElementById('typing-bubble')?.remove();
 
-    // ── BUDGET: SET ───────────────────────────────────────────────
-    document.getElementById('budget-form').addEventListener('submit', async function(e) {
-      e.preventDefault();
-      const msg = document.getElementById('budget-form-msg');
-      const limit = parseFloat(document.getElementById('budget-limit').value);
-      const month = parseInt(document.getElementById('budget-month').value);
-      const year = parseInt(document.getElementById('budget-year').value);
-
-      msg.textContent = 'Saving...';
-      msg.className = 'text-sm text-gray-400';
-
-      try {
-        const res = await fetch(`${API}/budgets/`, {
-          method: 'POST',
-          headers: authHeaders(),
-          body: JSON.stringify({ monthly_limit: limit, month, year })
-        });
-        const data = await res.json();
-        if (res.ok) {
-          msg.textContent = '✓ Budget saved!';
-          msg.className = 'text-sm text-teal-400';
-          loadBudgetStatus();
-        } else {
-          msg.textContent = data.detail || 'Failed to save budget.';
-          msg.className = 'text-sm text-red-400';
-        }
-      } catch {
-        msg.textContent = 'Server error.';
-        msg.className = 'text-sm text-red-400';
-      }
-    });
-
-    // ── BUDGET: STATUS ────────────────────────────────────────────
-    async function loadBudgetStatus() {
-      const month = parseInt(document.getElementById('budget-month').value);
-      const year = parseInt(document.getElementById('budget-year').value);
-      const card = document.getElementById('budget-status-card');
-
-      try {
-        const res = await fetch(`${API}/budgets/status?month=${month}&year=${year}`, { headers: authHeaders() });
-        if (res.status === 404) {
-          showToast('No budget set for this month yet.', 'err');
-          card.classList.add('hidden');
-          return;
-        }
-        if (res.status === 401) { handleLogout(); return; }
-        const data = await res.json();
-
-        card.classList.remove('hidden');
-        document.getElementById('bs-limit').textContent = fmt(data.monthly_limit);
-        document.getElementById('bs-spent').textContent = fmt(data.total_spent);
-
-        const remaining = data.remaining_budget;
-        const remEl = document.getElementById('bs-remaining');
-        remEl.textContent = fmt(Math.abs(remaining));
-        remEl.className = `text-2xl font-bold mt-1 ${remaining >= 0 ? 'text-green-400' : 'text-red-400'}`;
-
-        const pct = Math.min(100, Math.round((data.total_spent / data.monthly_limit) * 100));
-        document.getElementById('bs-bar').style.width = pct + '%';
-        document.getElementById('bs-bar').className =
-          `h-full rounded-full transition-all duration-700 ${pct >= 100 ? 'bg-red-500' : pct >= 80 ? 'bg-amber-500' : 'bg-gradient-to-r from-teal-500 to-cyan-500'}`;
-
-        const statusEl = document.getElementById('bs-status-text');
-        if (data.overspending) {
-          statusEl.textContent = `⚠️ You have exceeded your budget by ${fmt(Math.abs(remaining))}`;
-          statusEl.className = 'mt-3 text-sm text-red-400';
-        } else {
-          statusEl.textContent = `✓ ${pct}% used — ${fmt(remaining)} remaining`;
-          statusEl.className = `mt-3 text-sm ${pct >= 80 ? 'text-amber-400' : 'text-teal-400'}`;
-        }
-      } catch {
-        showToast('Could not fetch budget status.', 'err');
-      }
+    if (d.error) {
+      appendChatBubble('assistant', `⚠️ ${d.reply}`);
+    } else {
+      appendChatBubble('assistant', d.reply);
+      _chatHistory.push({ role:'assistant', content:d.reply });
     }
+  } catch(e) {
+    document.getElementById('typing-bubble')?.remove();
+    appendChatBubble('assistant', '⚠️ Could not reach the server. Is the backend running?');
+  }
 
-    // ── BOOT: CHECK AUTH ON LOAD ───────────────────────────────────
-    (async function boot() {
-      const token = getToken();
-      if (!token) { showLogin(); return; }
+  document.getElementById('chat-send').disabled = false;
+  input.focus();
+}
 
-      // Set month default to current month
-      const now = new Date();
-      document.getElementById('budget-month').value = now.getMonth() + 1;
-      document.getElementById('budget-year').value = now.getFullYear();
-      document.getElementById('exp-date').value = now.toISOString().split('T')[0];
-      document.getElementById('inc-date').value = now.toISOString().split('T')[0];
+function sendQuickPrompt(text) {
+  document.getElementById('chat-input').value = text;
+  sendChatMessage();
+}
 
-      // Verify token is still valid by fetching transactions
-      try {
-        const res = await fetch(`${API}/transactions/`, { headers: authHeaders() });
-        if (res.status === 401) { clearToken(); showLogin(); return; }
-        const data = await res.json();
+function clearChat() {
+  _chatHistory = [];
+  const msgs = document.getElementById('chat-messages');
+  // Keep only the welcome message (first child)
+  while (msgs.children.length > 1) msgs.removeChild(msgs.lastChild);
+}
 
-        // Decode email from JWT (sub or user_id only — show email if stored)
-        try {
-          const payload = JSON.parse(atob(token.split('.')[1]));
-          const uid = payload.user_id || payload.sub || '?';
-          const initials = String(uid).slice(0, 2).toUpperCase();
-          document.getElementById('user-avatar').textContent = initials;
-          document.getElementById('settings-avatar').textContent = initials;
-          document.getElementById('sidebar-user-email').textContent = `User #${uid}`;
-          document.getElementById('settings-email').textContent = `User ID: ${uid}`;
-        } catch {}
+// ═══════════════════════════════════════════════════════════
+//  EXPORT
+// ═══════════════════════════════════════════════════════════
+async function exportCSV() {
+  const res = await fetch(`${API}/reports/export/csv`, { headers:authH() });
+  if (!res.ok) { toast('Export failed', false); return; }
+  const blob = await res.blob();
+  const url  = URL.createObjectURL(blob);
+  const a    = Object.assign(document.createElement('a'), { href:url, download:`fintrack_${new Date().toISOString().split('T')[0]}.csv` });
+  a.click(); URL.revokeObjectURL(url);
+  toast('CSV downloaded!');
+}
 
-        _allTransactions = data.transactions || [];
-        const balance = data.current_balance ?? 0;
-        document.getElementById('total-balance').textContent = fmt(balance);
+function exportPDF() {
+  showSection('reports');
+  setTimeout(() => window.print(), 600);
+}
 
-        const income = _allTransactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-        const expense = _allTransactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
-        document.getElementById('stat-total-income').textContent = fmt(income);
-        document.getElementById('stat-total-expense').textContent = fmt(expense);
-        document.getElementById('stat-tx-count').textContent = _allTransactions.length;
+// ═══════════════════════════════════════════════════════════
+//  BOOT
+// ═══════════════════════════════════════════════════════════
+(async function init() {
+  const today = new Date().toISOString().split('T')[0];
+  ['exp-date','inc-date','loan-date'].forEach(id => { const el=document.getElementById(id); if(el) el.value=today; });
+  const now = new Date();
+  const bm  = document.getElementById('budget-month'); if(bm) bm.value = now.getMonth()+1;
+  const lm  = document.getElementById('line-month');   if(lm) lm.value = now.getMonth()+1;
+  await boot();
+})();
 
-        document.getElementById('dashboard-subtitle').textContent =
-          `Financial overview for ${now.toLocaleString('en-IN', { month: 'long', year: 'numeric' })}`;
-
-        renderRecentTransactions(_allTransactions.slice(0, 5));
-        showDashboard();
-      } catch {
-        // Server not reachable — go to login
-        showLogin();
-      }
-    })();
-
-    // Enter key on login/signup password fields
-    document.getElementById('login-password').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
-    document.getElementById('signup-password').addEventListener('keydown', e => { if (e.key === 'Enter') handleSignup(); });
-  </script>
+document.getElementById('login-password').addEventListener('keydown',  e => { if(e.key==='Enter') handleLogin(); });
+document.getElementById('signup-password').addEventListener('keydown', e => { if(e.key==='Enter') handleSignup(); });
+document.getElementById('chat-input').addEventListener('keydown',      e => { if(e.key==='Enter' && !e.shiftKey) sendChatMessage(); });
+</script>
 </body>
 </html>

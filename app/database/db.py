@@ -23,6 +23,8 @@ SessionLocal = sessionmaker(
 
 Base = declarative_base()
 
+print("DATABASE_URL:", DATABASE_URL)
+
 
 def get_db_connection():
     db = SessionLocal()

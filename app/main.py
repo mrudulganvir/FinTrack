@@ -1,24 +1,18 @@
+from app.services.categorization_service import _MODEL_PATH
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database.db import Base, engine
 from app.database import models
 
-from app.routes import auth_route
-from app.routes import transaction_route
-from app.routes import budget_routes
-from app.routes import meta_routes  
+from app.routes import auth_route, transaction_route, budget_routes, report_routes, loan_routes, chat_routes
 
 models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI(
-    title="FinTrack",
-    description="A personal financial tracking application",
-    version="1.0.0",
-)
+app = FastAPI(title="FinTrack", version="2.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Restrict to your frontend origin in production
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -27,9 +21,13 @@ app.add_middleware(
 app.include_router(auth_route.router)
 app.include_router(transaction_route.router)
 app.include_router(budget_routes.router)
-app.include_router(meta_routes.router)  # FIX: now registered — /meta/categories is reachable
+app.include_router(report_routes.router)
+app.include_router(loan_routes.router)
+app.include_router(chat_routes.router)
 
 
 @app.get("/")
 def root():
-    return {"message": "FinTrack Backend Running"}
+    return {"message": "FinTrack v2.0 Running"}
+
+print("MODEL LOADED FROM:", _MODEL_PATH)
