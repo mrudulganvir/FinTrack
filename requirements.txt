@@ -1,24 +1,54 @@
+# -------------------------------
+# 🚀 Backend (FastAPI)
+# -------------------------------
 fastapi==0.115.0
 uvicorn[standard]==0.30.6
 
-# Database
+# -------------------------------
+# 🗄️ Database (PostgreSQL - Neon)
+# -------------------------------
 sqlalchemy==2.0.35
 psycopg[binary]==3.2.1
 
-# Auth
+# -------------------------------
+# 🔐 Auth
+# -------------------------------
 python-jose==3.3.0
 passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
 python-multipart==0.0.9
 
-# Validation
+# -------------------------------
+# 🧠 Validation & Env
+# -------------------------------
 pydantic==2.9.2
 pydantic[email]
 python-dotenv==1.0.1
 
-# ML — Categorization (FIXED)
+# -------------------------------
+# 🤖 ML (Categorization)
+# -------------------------------
 scikit-learn==1.3.2
 joblib==1.3.2
 numpy==1.26.4
+pandas==2.2.2
 
-# Migrations
+# -------------------------------
+# 🤖 LLM (Mistral + LangChain)
+# -------------------------------
+langchain==0.2.16
+langchain-core==0.2.38
+langchain-community==0.2.16
+langchain-mistralai==0.1.12
+mistralai==0.4.2
+
+# -------------------------------
+# 📊 Visualization (Optional)
+# -------------------------------
+matplotlib==3.9.2
+seaborn==0.13.2
+
+# -------------------------------
+# 🔄 Migrations
+# -------------------------------
 alembic==1.13.2
