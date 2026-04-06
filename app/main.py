@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database.db import Base, engine
 from app.database import models
 
-from app.routes import auth_route, transaction_route, budget_routes, report_routes, loan_routes, chat_routes
+from app.routes import auth_route, transaction_route, budget_routes, report_routes, loan_routes, predictive_budget_routes, alert_routes, chat_routes
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -23,7 +23,11 @@ app.include_router(transaction_route.router)
 app.include_router(budget_routes.router)
 app.include_router(report_routes.router)
 app.include_router(loan_routes.router)
+app.include_router(predictive_budget_routes.router)
+app.include_router(alert_routes.router)
 app.include_router(chat_routes.router)
+
+
 
 
 @app.get("/")

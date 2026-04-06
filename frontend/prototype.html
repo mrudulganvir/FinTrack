@@ -42,6 +42,86 @@
 </head>
 <body class="h-full bg-[#0f0f1a] text-gray-100 overflow-auto">
 
+
+<!-- ═══════════════  PREDICTIVE BUDGET ALERT MODAL  ═══════════════ -->
+<div id="predictive-alert-overlay" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(6,6,15,0.82);backdrop-filter:blur(6px);">
+  <div id="predictive-alert-modal" class="w-full max-w-md rounded-2xl overflow-hidden" style="background:#0f0f1a;border:1px solid rgba(255,255,255,0.07);box-shadow:0 24px 80px rgba(0,0,0,0.7);transform:scale(0.92) translateY(20px);opacity:0;transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1),opacity 0.35s ease;">
+    <div id="pa-header-strip" class="px-5 py-3 flex items-center justify-between" style="background:linear-gradient(135deg,#1a0a0a,#2a0d0d);">
+      <div class="flex items-center gap-2.5">
+        <div id="pa-pulse-dot" class="w-2.5 h-2.5 rounded-full bg-red-500" style="animation:pulse-dot 1.2s infinite;"></div>
+        <span class="text-xs font-bold tracking-widest uppercase text-gray-300" id="pa-risk-label">Analysing...</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-xs text-gray-500" id="pa-confidence-badge"></span>
+        <button onclick="closePredictiveAlert()" class="w-6 h-6 rounded-full flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 transition-all text-sm">&#10005;</button>
+      </div>
+    </div>
+    <div class="p-5">
+      <div class="mb-4">
+        <h2 class="text-lg font-bold text-white leading-snug" id="pa-headline">Checking your budget...</h2>
+        <p class="text-xs text-gray-500 mt-0.5" id="pa-subline"></p>
+      </div>
+      <div class="mb-4" id="pa-meter-wrap">
+        <div class="flex justify-between text-xs text-gray-500 mb-1.5">
+          <span>Spent so far</span>
+          <span id="pa-meter-label" class="font-medium"></span>
+        </div>
+        <div class="relative h-2.5 rounded-full overflow-hidden" style="background:#1a1a2e;">
+          <div id="pa-bar-proj" class="absolute top-0 left-0 h-full rounded-full" style="width:0%;transition:width 1s cubic-bezier(0.34,1.56,0.64,1) 0.3s;opacity:0.3;"></div>
+          <div id="pa-bar-actual" class="absolute top-0 left-0 h-full rounded-full" style="width:0%;transition:width 0.8s cubic-bezier(0.34,1.56,0.64,1) 0.1s;"></div>
+        </div>
+        <div class="flex justify-between text-xs mt-1.5">
+          <span class="text-gray-600">&#8377;0</span>
+          <span class="text-gray-600" id="pa-budget-cap">Budget Limit</span>
+        </div>
+      </div>
+      <div class="grid grid-cols-3 gap-2 mb-4" id="pa-stats-row">
+        <div class="rounded-xl p-3 text-center" style="background:#131320;">
+          <p class="text-xs text-gray-500 mb-0.5">Spent</p>
+          <p class="text-sm font-bold text-white" id="pa-stat-spent">-</p>
+        </div>
+        <div class="rounded-xl p-3 text-center" style="background:#131320;">
+          <p class="text-xs text-gray-500 mb-0.5">Projected EOM</p>
+          <p class="text-sm font-bold" id="pa-stat-projected">-</p>
+        </div>
+        <div class="rounded-xl p-3 text-center" style="background:#131320;">
+          <p class="text-xs text-gray-500 mb-0.5">Budget</p>
+          <p class="text-sm font-bold text-gray-300" id="pa-stat-budget">-</p>
+        </div>
+      </div>
+      <div id="pa-notif-list" class="space-y-2 mb-4"></div>
+      <div class="flex items-center justify-between rounded-xl px-4 py-2.5 mb-4" style="background:#0d0d18;border:1px solid #1e1e2e;" id="pa-rate-row">
+        <div>
+          <p class="text-xs text-gray-500">Daily rate</p>
+          <p class="text-sm font-bold text-white" id="pa-daily-rate">-</p>
+        </div>
+        <div class="text-right">
+          <p class="text-xs text-gray-500">Trend</p>
+          <p class="text-sm font-bold" id="pa-trend">-</p>
+        </div>
+        <div class="text-right">
+          <p class="text-xs text-gray-500">Days left</p>
+          <p class="text-sm font-bold text-blue-400" id="pa-days-left">-</p>
+        </div>
+      </div>
+      <div class="flex gap-2" id="pa-actions">
+        <button class="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90" id="pa-cta-btn" style="background:linear-gradient(135deg,#ef4444,#dc2626);">Cut Spending</button>
+        <button onclick="closePredictiveAlert()" class="px-5 py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:text-white transition-colors" style="background:#131320;border:1px solid #1e1e2e;">Dismiss</button>
+      </div>
+      <div id="pa-no-budget" class="hidden text-center py-4">
+        <p class="text-4xl mb-2">&#128184;</p>
+        <p class="text-gray-400 text-sm mb-3">No budget set for this month. Set one to enable predictive alerts.</p>
+        <button onclick="closePredictiveAlert(); showSection('budgets')" class="px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style="background:linear-gradient(135deg,#14b8a6,#0ea5e9);">Set a Budget &#8594;</button>
+      </div>
+    </div>
+  </div>
+</div>
+<style>
+  @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(1.4)} }
+  @keyframes pa-slide-in { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+  .pa-notif { animation: pa-slide-in 0.35s ease forwards; opacity:0; }
+</style>
+
 <div id="toast" class="toast glass px-5 py-2.5 rounded-xl text-sm font-medium"></div>
 
 <div id="app" class="h-full w-full">
@@ -476,7 +556,12 @@
             <h1 class="text-2xl font-bold text-white">Investment Plan 💹</h1>
             <p class="text-gray-400 text-sm mt-1">Personalised monthly allocation based on your savings pattern</p>
           </div>
-          <button onclick="loadInvestments()" class="px-4 py-2 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white text-sm hover:bg-[#252540] transition-colors">↻ Refresh</button>
+          <div class="flex gap-2">
+            <button onclick="loadInvestments()" class="px-4 py-2 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white text-sm hover:bg-[#252540] transition-colors">↻ Refresh</button>
+            <button onclick="exportInvestmentPDF()" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-teal-500/20 to-cyan-500/20 border border-teal-500/40 text-teal-300 text-sm hover:from-teal-500/30 hover:to-cyan-500/30 transition-all">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>Why This Plan?
+            </button>
+          </div>
         </div>
 
         <!-- Profile + investable amount -->
@@ -702,7 +787,7 @@ async function handleLogin() {
     const form = new URLSearchParams(); form.append('username', email); form.append('password', pass);
     const res = await fetch(`${API}/auth/login`, { method:'POST', body:form });
     const d = await res.json();
-    if (res.ok) { setToken(d.access_token); await boot(true); showDashboard(); }
+    if (res.ok) { setToken(d.access_token); await boot(true); showDashboard(); setTimeout(triggerPredictiveAlert, 800); }
     else { errEl.textContent = d.detail || 'Invalid credentials.'; errEl.classList.remove('hidden'); }
   } catch { errEl.textContent = 'Server unreachable.'; errEl.classList.remove('hidden'); }
   finally { btn.disabled = false; btn.textContent = 'Sign In'; }
@@ -764,7 +849,7 @@ async function boot(fromLogin = false) {
     const now = new Date();
     document.getElementById('dash-subtitle').textContent = `Overview for ${now.toLocaleString('en-IN',{month:'long',year:'numeric'})}`;
     renderRecentTxs(txs.slice(0, 6));
-    if (!fromLogin) showDashboard();
+    if (!fromLogin) { showDashboard(); setTimeout(triggerPredictiveAlert, 1000); }
   } catch { if (!fromLogin) showLogin(); }
 }
 
@@ -1225,7 +1310,7 @@ async function sendChatMessage() {
       method: 'POST',
       headers: authH(),
       body: JSON.stringify({
-        message: text  
+        message: text
       })
     });
     const d = await res.json();
@@ -1271,9 +1356,873 @@ async function exportCSV() {
   toast('CSV downloaded!');
 }
 
-function exportPDF() {
-  showSection('reports');
-  setTimeout(() => window.print(), 600);
+async function exportPDF() {
+  toast('Generating PDF report...');
+  try {
+    // Fetch all required data in parallel
+    const [summaryRes, catRes, insightsRes] = await Promise.all([
+      fetch(`${API}/reports/summary`, { headers: authH() }),
+      fetch(`${API}/reports/category-breakdown`, { headers: authH() }),
+      fetch(`${API}/reports/insights`, { headers: authH() }),
+    ]);
+    const summary  = await summaryRes.json();
+    const cats     = await catRes.json();
+    const insights = await insightsRes.json();
+
+    const now      = new Date();
+    const dateStr  = now.toLocaleDateString('en-IN', { day:'2-digit', month:'long', year:'numeric' });
+    const monthStr = now.toLocaleDateString('en-IN', { month:'long', year:'numeric' });
+
+    const catRows = cats.map(c => `
+      <tr>
+        <td>${(c.category||'Others').replace(/\b\w/g,l=>l.toUpperCase())}</td>
+        <td style="text-align:right;color:#dc2626;">&#8377;${Number(c.total).toLocaleString('en-IN',{maximumFractionDigits:0})}</td>
+        <td style="text-align:right;color:#6b7280;">${summary.total_expense > 0 ? Math.round(c.total/summary.total_expense*100) : 0}%</td>
+      </tr>`).join('');
+
+    const insightLines = (insights.insights || []).map(i =>
+      `<li>${i.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/📈|📉|🏆|💸|⚠️|🌟|👍|🚨/g,'')}</li>`
+    ).join('');
+
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>FinTrack Report — ${monthStr}</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; color: #1a1a2e; background: #fff; padding: 40px; }
+    .header { display:flex; align-items:center; justify-content:space-between; border-bottom: 3px solid #14b8a6; padding-bottom: 20px; margin-bottom: 30px; }
+    .logo { display:flex; align-items:center; gap: 12px; }
+    .logo-icon { width:44px; height:44px; border-radius:12px; background:linear-gradient(135deg,#14b8a6,#0ea5e9); display:flex; align-items:center; justify-content:center; color:white; font-size:22px; font-weight:bold; }
+    .logo h1 { font-size:26px; font-weight:700; color:#0f172a; }
+    .logo p  { font-size:12px; color:#64748b; margin-top:2px; }
+    .meta { text-align:right; font-size:12px; color:#64748b; line-height:1.8; }
+    .section-title { font-size:13px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:14px; margin-top:28px; }
+    .cards { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:8px; }
+    .card { border-radius:12px; padding:16px 20px; background:#f8fafc; border:1px solid #e2e8f0; }
+    .card .label { font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px; }
+    .card .value { font-size:22px; font-weight:700; }
+    .card.income .value  { color:#16a34a; }
+    .card.expense .value { color:#dc2626; }
+    .card.balance .value { color:#0ea5e9; }
+    .card.rate .value    { color:#7c3aed; }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    thead tr { background:#f1f5f9; }
+    th { padding:10px 14px; text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:#64748b; font-weight:600; }
+    td { padding:10px 14px; border-bottom:1px solid #f1f5f9; color:#374151; }
+    tbody tr:last-child td { border-bottom:none; }
+    .bar-wrap { background:#e5e7eb; border-radius:99px; height:6px; width:120px; display:inline-block; vertical-align:middle; overflow:hidden; }
+    .bar-fill  { height:100%; border-radius:99px; background:linear-gradient(90deg,#14b8a6,#0ea5e9); }
+    ul.insights { list-style:none; padding:0; }
+    ul.insights li { padding:8px 0; border-bottom:1px solid #f1f5f9; font-size:13px; color:#374151; line-height:1.5; }
+    ul.insights li:last-child { border-bottom:none; }
+    ul.insights li::before { content:"→ "; color:#14b8a6; font-weight:700; }
+    .footer { margin-top:40px; padding-top:16px; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; font-size:11px; color:#94a3b8; }
+    .two-col { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+    .panel { background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px; }
+    .panel h4 { font-size:12px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:12px; }
+    .stat-row { display:flex; justify-content:space-between; padding:5px 0; font-size:13px; border-bottom:1px solid #f1f5f9; }
+    .stat-row:last-child { border-bottom:none; }
+    .stat-row .lbl { color:#64748b; }
+    .stat-row .val { font-weight:600; color:#0f172a; }
+    @media print { body { padding:20px; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon">&#8377;</div>
+      <div>
+        <h1>FinTrack</h1>
+        <p>AI-Powered Personal Finance Report</p>
+      </div>
+    </div>
+    <div class="meta">
+      <div><strong>Generated:</strong> ${dateStr}</div>
+      <div><strong>Period:</strong> All-time summary</div>
+      <div><strong>This Month:</strong> ${monthStr}</div>
+    </div>
+  </div>
+
+  <div class="section-title">Financial Overview</div>
+  <div class="cards">
+    <div class="card income">
+      <div class="label">Total Income</div>
+      <div class="value">&#8377;${Number(summary.total_income||0).toLocaleString('en-IN',{maximumFractionDigits:0})}</div>
+    </div>
+    <div class="card expense">
+      <div class="label">Total Expenses</div>
+      <div class="value">&#8377;${Number(summary.total_expense||0).toLocaleString('en-IN',{maximumFractionDigits:0})}</div>
+    </div>
+    <div class="card balance">
+      <div class="label">Net Balance</div>
+      <div class="value">&#8377;${Number(summary.balance||0).toLocaleString('en-IN',{maximumFractionDigits:0})}</div>
+    </div>
+  </div>
+
+  <div class="two-col" style="margin-top:20px;">
+    <div class="panel">
+      <h4>Key Metrics</h4>
+      <div class="stat-row"><span class="lbl">Savings Rate</span><span class="val">${insights.savings_rate||0}%</span></div>
+      <div class="stat-row"><span class="lbl">Total Transactions</span><span class="val">${summary.transaction_count||0}</span></div>
+      <div class="stat-row"><span class="lbl">Top Category</span><span class="val">${insights.top_category||'—'}</span></div>
+      <div class="stat-row"><span class="lbl">Avg. Expense</span><span class="val">&#8377;${Number(insights.avg_expense||0).toLocaleString('en-IN',{maximumFractionDigits:0})}</span></div>
+      <div class="stat-row"><span class="lbl">This Month Spend</span><span class="val">&#8377;${Number(insights.this_month_spend||0).toLocaleString('en-IN',{maximumFractionDigits:0})}</span></div>
+      <div class="stat-row"><span class="lbl">Last Month Spend</span><span class="val">&#8377;${Number(insights.last_month_spend||0).toLocaleString('en-IN',{maximumFractionDigits:0})}</span></div>
+    </div>
+    <div class="panel">
+      <h4>Monthly Averages</h4>
+      <div class="stat-row"><span class="lbl">Avg Monthly Income</span><span class="val">&#8377;${Number(insights.monthly_income_avg||0).toLocaleString('en-IN',{maximumFractionDigits:0})}</span></div>
+      <div class="stat-row"><span class="lbl">Avg Monthly Savings</span><span class="val">&#8377;${Number(insights.monthly_savings_avg||0).toLocaleString('en-IN',{maximumFractionDigits:0})}</span></div>
+      <div class="stat-row"><span class="lbl">Largest Expense</span><span class="val">${insights.largest_expense||'—'}</span></div>
+      <div class="stat-row"><span class="lbl">Largest Amount</span><span class="val">&#8377;${Number(insights.largest_expense_amount||0).toLocaleString('en-IN',{maximumFractionDigits:0})}</span></div>
+      <div class="stat-row"><span class="lbl">Investment Profile</span><span class="val">${(insights.investment_plan||{}).profile||'—'}</span></div>
+      <div class="stat-row"><span class="lbl">Monthly Investable</span><span class="val">&#8377;${Number((insights.investment_plan||{}).monthly_investable||0).toLocaleString('en-IN',{maximumFractionDigits:0})}</span></div>
+    </div>
+  </div>
+
+  <div class="section-title" style="margin-top:28px;">Expense Breakdown by Category</div>
+  <table>
+    <thead><tr><th>Category</th><th style="text-align:right">Amount</th><th style="text-align:right">% of Total</th><th>Proportion</th></tr></thead>
+    <tbody>
+      ${cats.map(c => {
+        const pct = summary.total_expense > 0 ? Math.round(c.total/summary.total_expense*100) : 0;
+        return `<tr>
+          <td>${(c.category||'Others').replace(/\b\w/g,l=>l.toUpperCase())}</td>
+          <td style="text-align:right;color:#dc2626;font-weight:600;">&#8377;${Number(c.total).toLocaleString('en-IN',{maximumFractionDigits:0})}</td>
+          <td style="text-align:right;color:#6b7280;">${pct}%</td>
+          <td><div class="bar-wrap"><div class="bar-fill" style="width:${pct}%"></div></div></td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>
+
+  <div class="section-title" style="margin-top:28px;">AI-Generated Insights</div>
+  <div class="panel" style="background:#fff;border:1px solid #e2e8f0;">
+    <ul class="insights">${insightLines || '<li>No insights available yet. Add more transactions.</li>'}</ul>
+  </div>
+
+  <div class="footer">
+    <span>FinTrack — AI-Powered Personal Finance Manager</span>
+    <span>Confidential · Generated ${dateStr}</span>
+  </div>
+
+<!-- ═══════════════  CUT SPENDING MODAL  ═══════════════ -->
+<div id="cut-spending-overlay" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(6,6,15,0.85);backdrop-filter:blur(6px);">
+  <div id="cut-spending-modal" class="w-full max-w-lg rounded-2xl overflow-hidden" style="background:#0f0f1a;border:1px solid rgba(255,255,255,0.07);box-shadow:0 24px 80px rgba(0,0,0,0.7);transform:scale(0.92) translateY(20px);opacity:0;transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1),opacity 0.35s ease;max-height:90vh;overflow-y:auto;">
+    <!-- Header -->
+    <div class="px-5 py-4 flex items-center justify-between sticky top-0 z-10" style="background:linear-gradient(135deg,#1a0707,#2a0d0d);border-bottom:1px solid #3a1515;">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-xl bg-red-500/20 flex items-center justify-center text-base">✂️</div>
+        <div>
+          <p class="text-sm font-bold text-white">Smart Spending Cuts</p>
+          <p class="text-xs text-gray-500">Personalised savings recommendations</p>
+        </div>
+      </div>
+      <button onclick="closeCutSpending()" class="w-7 h-7 rounded-full flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 transition-all text-sm">✕</button>
+    </div>
+    <!-- Potential savings banner -->
+    <div class="px-5 pt-4 pb-3">
+      <div class="rounded-xl px-4 py-3 flex items-center justify-between" style="background:linear-gradient(135deg,#052014,#0a2a18);border:1px solid #14532d;">
+        <div>
+          <p class="text-xs text-gray-400 mb-0.5">Potential monthly savings</p>
+          <p class="text-2xl font-bold text-green-400" id="cs-potential-savings">₹—</p>
+        </div>
+        <div class="text-right">
+          <p class="text-xs text-gray-400 mb-0.5">If savings rate reaches</p>
+          <p class="text-lg font-bold text-teal-400" id="cs-target-rate">—%</p>
+        </div>
+      </div>
+    </div>
+    <!-- Category-by-category cuts -->
+    <div class="px-5 pb-2">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">Category Recommendations</p>
+      <div id="cs-category-tips" class="space-y-2"></div>
+    </div>
+    <!-- Quick wins -->
+    <div class="px-5 pb-4 mt-2">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">Quick Wins This Month</p>
+      <div id="cs-quick-wins" class="space-y-2"></div>
+    </div>
+    <!-- 30-day plan -->
+    <div class="px-5 pb-5 mt-1">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">30-Day Action Plan</p>
+      <div id="cs-action-plan" class="space-y-2"></div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>`;
+
+    // Open in new window and trigger print
+    const win = window.open('', '_blank', 'width=900,height=700');
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); }, 500);
+    toast('PDF report opened!');
+  } catch(e) {
+    console.error(e);
+    toast('Failed to generate report', false);
+  }
+}
+
+
+// ═══════════════════════════════════════════════════════════
+//  PREDICTIVE BUDGET ALERT  (ML projection on load)
+// ═══════════════════════════════════════════════════════════
+
+const PA_RISK = {
+  safe:     { strip:'linear-gradient(135deg,#071a0f,#0a2a18)', dot:'#22c55e', barColor:'#22c55e', label:'SAFE',     projColor:'#22c55e', ctaBg:'linear-gradient(135deg,#16a34a,#15803d)', ctaText:'View Budget' },
+  warning:  { strip:'linear-gradient(135deg,#1f1507,#2a1e07)', dot:'#f59e0b', barColor:'#f59e0b', label:'WARNING',  projColor:'#f59e0b', ctaBg:'linear-gradient(135deg,#d97706,#b45309)', ctaText:'Review Budget' },
+  danger:   { strip:'linear-gradient(135deg,#1f0707,#2a0d0d)', dot:'#ef4444', barColor:'#ef4444', label:'AT RISK',  projColor:'#ef4444', ctaBg:'linear-gradient(135deg,#ef4444,#dc2626)', ctaText:'Cut Spending' },
+  exceeded: { strip:'linear-gradient(135deg,#1a0505,#250808)', dot:'#b91c1c', barColor:'#b91c1c', label:'EXCEEDED', projColor:'#b91c1c', ctaBg:'linear-gradient(135deg,#dc2626,#b91c1c)', ctaText:'Review Expenses' },
+};
+
+const PA_NOTIF_STYLE = {
+  danger:  { bg:'#1f0707', border:'#7f1d1d', dot:'#ef4444' },
+  warning: { bg:'#1f1507', border:'#78350f', dot:'#f59e0b' },
+  success: { bg:'#071a0f', border:'#14532d', dot:'#22c55e' },
+  tip:     { bg:'#07101a', border:'#1e3a5f', dot:'#60a5fa' },
+};
+
+function _daysInMonth(y, m) {
+  return new Date(y, m, 0).getDate();
+}
+
+function _linearSlope(xs, ys) {
+  const n = xs.length;
+  if (n < 2) return 0;
+  const mx = xs.reduce((a,b)=>a+b,0)/n, my = ys.reduce((a,b)=>a+b,0)/n;
+  const num = xs.reduce((s,x,i)=>s+(x-mx)*(ys[i]-my),0);
+  const den = xs.reduce((s,x)=>s+(x-mx)**2,0);
+  return den===0 ? 0 : num/den;
+}
+
+function runPrediction(transactions, budgetLimit, month, year) {
+  const now = new Date();
+  const totalDays = _daysInMonth(year, month);
+  const daysElapsed = now.getDate();
+  const daysRemaining = totalDays - daysElapsed;
+
+  // Build daily spend map
+  const dailySpend = {};
+  transactions.forEach(t => {
+    const d = new Date(t.transaction_date);
+    if (t.type === 'expense' && d.getMonth()+1 === month && d.getFullYear() === year) {
+      const day = d.getDate();
+      dailySpend[day] = (dailySpend[day]||0) + t.amount;
+    }
+  });
+
+  const currentSpend = Object.values(dailySpend).reduce((a,b)=>a+b,0);
+
+  // Build cumulative series
+  const xs = [], ys = [];
+  let cum = 0;
+  for (let d=1; d<=daysElapsed; d++) {
+    cum += dailySpend[d]||0;
+    xs.push(d); ys.push(cum);
+  }
+
+  const slope = xs.length >= 3 ? _linearSlope(xs, ys) : (daysElapsed>0 ? currentSpend/daysElapsed : 0);
+  const dailyRate = Math.max(slope, 0);
+  const n = xs.length;
+  const mx = n>0 ? xs.reduce((a,b)=>a+b,0)/n : 0;
+  const my = n>0 ? ys.reduce((a,b)=>a+b,0)/n : 0;
+  const intercept = n>0 ? my - slope*mx : 0;
+  const projectedSpend = Math.max(intercept + slope*totalDays, currentSpend);
+
+  // Trend acceleration
+  const mid = Math.floor(daysElapsed/2);
+  const h1 = Array.from({length:mid},(_,i)=>dailySpend[i+1]||0).reduce((a,b)=>a+b,0)/Math.max(mid,1);
+  const h2 = Array.from({length:daysElapsed-mid},(_,i)=>dailySpend[mid+i+1]||0).reduce((a,b)=>a+b,0)/Math.max(daysElapsed-mid,1);
+  const trendAcc = Math.round(h2-h1);
+
+  // Category breakdown
+  const catTotals = {};
+  transactions.forEach(t => {
+    const d = new Date(t.transaction_date);
+    if (t.type==='expense' && d.getMonth()+1===month && d.getFullYear()===year) {
+      const c = (t.category||'Others').replace(/\b\w/g,l=>l.toUpperCase());
+      catTotals[c] = (catTotals[c]||0)+t.amount;
+    }
+  });
+  const topCats = Object.entries(catTotals).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([cat,amt])=>({category:cat,amount:amt,pctOfSpend:currentSpend>0?Math.round(amt/currentSpend*100):0}));
+
+  const dataPoints = Array.from({length:daysElapsed},(_,i)=>dailySpend[i+1]||0).filter(v=>v>0).length;
+  const confidence = Math.min(dataPoints/7,1);
+
+  const pctUsed = budgetLimit>0 ? Math.round(currentSpend/budgetLimit*100) : 0;
+  const projPct  = budgetLimit>0 ? Math.round(projectedSpend/budgetLimit*100) : 0;
+  const overshoot = Math.max(projectedSpend-budgetLimit,0);
+
+  let riskLevel;
+  if (currentSpend > budgetLimit) riskLevel = 'exceeded';
+  else if (projPct >= 100) riskLevel = 'danger';
+  else if (projPct >= 80) riskLevel = 'warning';
+  else riskLevel = 'safe';
+
+  return { projectedSpend, currentSpend, budgetLimit, daysElapsed, daysRemaining, totalDays, dailyRate, confidence, riskLevel, overshoot, pctUsed, projPct, topCats, trendAcc };
+}
+
+function buildNotifications(pred) {
+  const notes = [];
+  const rl = pred.riskLevel;
+  if (rl==='exceeded') {
+    notes.push({type:'danger', title:'&#128680; Budget Exceeded!', message:`You've already spent ${fmt(pred.currentSpend)} against your ${fmt(pred.budgetLimit)} budget — ${fmt(Math.abs(pred.currentSpend-pred.budgetLimit))} over limit.`});
+  } else if (rl==='danger') {
+    notes.push({type:'danger', title:'&#128308; Projected to Exceed Budget', message:`At ${fmt(pred.dailyRate)}/day you're on track to spend ${fmt(pred.projectedSpend)} — ${fmt(pred.overshoot)} over your budget.`});
+  } else if (rl==='warning') {
+    notes.push({type:'warning', title:'&#9888;&#65039; Approaching Budget Limit', message:`You've used ${pred.pctUsed}% of your budget with ${pred.daysRemaining} days left. Projected: ${fmt(pred.projectedSpend)} (${pred.projPct}%).`});
+  } else {
+    notes.push({type:'success', title:'&#9989; Budget on Track', message:`Great job! Projected spend: ${fmt(pred.projectedSpend)} — ${pred.projPct}% of your ${fmt(pred.budgetLimit)} budget.`});
+  }
+  if (pred.trendAcc > 200 && ['warning','danger'].includes(rl)) {
+    const tc = pred.topCats[0]?.category || 'various categories';
+    notes.push({type:'warning', title:'&#128200; Spending Accelerating', message:`Daily spend rose by ${fmt(pred.trendAcc)}/day recently. Top driver: ${tc}.`});
+  }
+  if (pred.topCats[0]?.pctOfSpend > 40 && ['warning','danger','exceeded'].includes(rl)) {
+    const t = pred.topCats[0];
+    notes.push({type:'tip', title:`&#128161; ${t.category} is your biggest spend`, message:`${fmt(t.amount)} (${t.pctOfSpend}% of spend) went to ${t.category}. Reducing this could rescue your budget.`});
+  }
+  if (pred.daysRemaining <= 5 && ['warning','danger'].includes(rl)) {
+    const safeDailyAmt = Math.max((pred.budgetLimit-pred.currentSpend)/Math.max(pred.daysRemaining,1),0);
+    notes.push({type:'tip', title:`&#128197; Only ${pred.daysRemaining} days left`, message:`To stay within budget, limit daily spend to ${fmt(safeDailyAmt)}/day.`});
+  }
+  return notes;
+}
+
+function openPredictiveAlert() {
+  const overlay = document.getElementById('predictive-alert-overlay');
+  const modal   = document.getElementById('predictive-alert-modal');
+  overlay.classList.remove('hidden');
+  overlay.style.display = 'flex';
+  setTimeout(() => {
+    modal.style.transform = 'scale(1) translateY(0)';
+    modal.style.opacity   = '1';
+  }, 30);
+}
+
+function closePredictiveAlert() {
+  const overlay = document.getElementById('predictive-alert-overlay');
+  const modal   = document.getElementById('predictive-alert-modal');
+  modal.style.transform = 'scale(0.94) translateY(16px)';
+  modal.style.opacity   = '0';
+  setTimeout(() => { overlay.style.display='none'; overlay.classList.add('hidden'); }, 350);
+}
+
+function renderPredictiveAlert(pred) {
+  const cfg = PA_RISK[pred.riskLevel];
+
+  // Header strip
+  document.getElementById('pa-header-strip').style.background = cfg.strip;
+  document.getElementById('pa-pulse-dot').style.background    = cfg.dot;
+  document.getElementById('pa-risk-label').textContent        = cfg.label;
+  document.getElementById('pa-confidence-badge').textContent  = `${Math.round(pred.confidence*100)}% confident`;
+
+  // Headline
+  const headlines = {
+    safe:     "&#127881; Your budget is healthy this month",
+    warning:  "&#9888;&#65039; Watch out — you're approaching your limit",
+    danger:   "&#128308; You're projected to exceed your budget",
+    exceeded: "&#128680; Budget already exceeded!"
+  };
+  document.getElementById('pa-headline').innerHTML = headlines[pred.riskLevel];
+  document.getElementById('pa-subline').textContent = `Based on ${pred.daysElapsed} days of transactions · ${pred.daysRemaining} days remaining`;
+
+  // Meter
+  document.getElementById('pa-budget-cap').textContent = fmt(pred.budgetLimit);
+  document.getElementById('pa-meter-label').innerHTML  = `<span style="color:${cfg.dot}">${pred.pctUsed}% used</span> · ${fmt(pred.currentSpend)} of ${fmt(pred.budgetLimit)}`;
+  document.getElementById('pa-bar-proj').style.background   = cfg.barColor;
+  document.getElementById('pa-bar-actual').style.background = `linear-gradient(90deg,${cfg.barColor}99,${cfg.barColor})`;
+  document.getElementById('pa-bar-actual').style.boxShadow  = `0 0 8px ${cfg.barColor}66`;
+  setTimeout(() => {
+    document.getElementById('pa-bar-proj').style.width   = Math.min(pred.projPct,100)+'%';
+    document.getElementById('pa-bar-actual').style.width = Math.min(pred.pctUsed,100)+'%';
+  }, 100);
+
+  // Stats
+  document.getElementById('pa-stat-spent').textContent     = fmt(pred.currentSpend);
+  document.getElementById('pa-stat-projected').textContent = fmt(pred.projectedSpend);
+  document.getElementById('pa-stat-projected').style.color = cfg.projColor;
+  document.getElementById('pa-stat-budget').textContent    = fmt(pred.budgetLimit);
+
+  // Notifications
+  const nl = document.getElementById('pa-notif-list');
+  nl.innerHTML = '';
+  buildNotifications(pred).forEach((n, i) => {
+    const s = PA_NOTIF_STYLE[n.type] || PA_NOTIF_STYLE.tip;
+    const div = document.createElement('div');
+    div.className = 'pa-notif rounded-xl flex items-start gap-2.5 px-3 py-2.5';
+    div.style.cssText = `background:${s.bg};border:1px solid ${s.border};animation-delay:${i*120}ms;`;
+    div.innerHTML = `<div class="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style="background:${s.dot};box-shadow:0 0 4px ${s.dot};"></div><div><p class="text-xs font-semibold text-gray-200">${n.title}</p><p class="text-xs text-gray-400 mt-0.5 leading-relaxed">${n.message}</p></div>`;
+    nl.appendChild(div);
+  });
+
+  // Rate row
+  document.getElementById('pa-daily-rate').textContent = fmt(pred.dailyRate)+'/day';
+  const trendEl = document.getElementById('pa-trend');
+  if (pred.trendAcc > 0) { trendEl.textContent = '▲ +'+fmt(pred.trendAcc)+'/day'; trendEl.style.color='#ef4444'; }
+  else { trendEl.textContent = '▼ '+fmt(Math.abs(pred.trendAcc))+'/day'; trendEl.style.color='#22c55e'; }
+  document.getElementById('pa-days-left').textContent = pred.daysRemaining+'d';
+
+  // CTA button
+  const btn = document.getElementById('pa-cta-btn');
+  btn.style.background = cfg.ctaBg;
+  btn.textContent      = cfg.ctaText;
+  // Remove old listeners by cloning
+  const newBtn = btn.cloneNode(true);
+  btn.parentNode.replaceChild(newBtn, btn);
+  if (pred.riskLevel === 'danger' || pred.riskLevel === 'exceeded' || pred.riskLevel === 'warning') {
+    newBtn.addEventListener('click', () => { closePredictiveAlert(); setTimeout(triggerCutSpending, 380); });
+  } else {
+    newBtn.addEventListener('click', () => { closePredictiveAlert(); showSection('budgets'); });
+  }
+
+  // Show active sections, hide fallback
+  document.getElementById('pa-meter-wrap').classList.remove('hidden');
+  document.getElementById('pa-stats-row').classList.remove('hidden');
+  document.getElementById('pa-rate-row').classList.remove('hidden');
+  document.getElementById('pa-actions').classList.remove('hidden');
+  document.getElementById('pa-no-budget').classList.add('hidden');
+}
+
+function renderNoBudgetAlert() {
+  document.getElementById('pa-header-strip').style.background = 'linear-gradient(135deg,#0d0d18,#13132a)';
+  document.getElementById('pa-pulse-dot').style.background    = '#6366f1';
+  document.getElementById('pa-risk-label').textContent        = 'NO BUDGET SET';
+  document.getElementById('pa-confidence-badge').textContent  = '';
+  document.getElementById('pa-headline').textContent          = '&#128184; Set a budget to get predictions';
+  document.getElementById('pa-subline').textContent           = 'We need a monthly limit to run your forecast';
+  document.getElementById('pa-meter-wrap').classList.add('hidden');
+  document.getElementById('pa-stats-row').classList.add('hidden');
+  document.getElementById('pa-notif-list').innerHTML = '';
+  document.getElementById('pa-rate-row').classList.add('hidden');
+  document.getElementById('pa-actions').classList.add('hidden');
+  document.getElementById('pa-no-budget').classList.remove('hidden');
+}
+
+async function triggerPredictiveAlert() {
+  try {
+    const now = new Date();
+    const month = now.getMonth()+1, year = now.getFullYear();
+
+    // Fetch transactions + budget in parallel
+    const [txRes, budgetRes] = await Promise.all([
+      fetch(`${API}/transactions/`, { headers: authH() }),
+      fetch(`${API}/budgets/status?month=${month}&year=${year}`, { headers: authH() })
+    ]);
+
+    if (txRes.status===401) return;
+
+    const { transactions } = await txRes.json();
+    let budgetLimit = null;
+    if (budgetRes.ok) {
+      const bd = await budgetRes.json();
+      budgetLimit = bd.monthly_limit;
+    }
+
+    // Open modal first (feel fast)
+    openPredictiveAlert();
+
+    if (!budgetLimit) {
+      renderNoBudgetAlert();
+      return;
+    }
+
+    const thisMonthExpenses = transactions.filter(t => {
+      const d = new Date(t.transaction_date);
+      return t.type==='expense' && d.getMonth()+1===month && d.getFullYear()===year;
+    });
+
+    if (!thisMonthExpenses.length && transactions.length === 0) {
+      renderNoBudgetAlert();
+      document.getElementById('pa-headline').textContent = 'No transactions yet this month';
+      document.getElementById('pa-subline').textContent = 'Add expenses to start your budget forecast';
+      return;
+    }
+
+    const pred = runPrediction(transactions, budgetLimit, month, year);
+    renderPredictiveAlert(pred);
+
+  } catch(e) {
+    // Silently fail — don't interrupt the user experience
+    console.warn('Predictive alert error:', e);
+  }
+}
+
+// Close on backdrop click
+document.getElementById('predictive-alert-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closePredictiveAlert();
+});
+
+// Close on Escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    const csOverlay = document.getElementById('cut-spending-overlay');
+    const paOverlay = document.getElementById('predictive-alert-overlay');
+    if (csOverlay && !csOverlay.classList.contains('hidden')) { closeCutSpending(); return; }
+    if (paOverlay && !paOverlay.classList.contains('hidden')) { closePredictiveAlert(); return; }
+  }
+});
+
+
+// ═══════════════════════════════════════════════════════════
+//  INVESTMENT DECISION PDF  (explains why each pick)
+// ═══════════════════════════════════════════════════════════
+async function exportInvestmentPDF() {
+  toast('Building investment rationale PDF...');
+  try {
+    const res = await fetch(`${API}/reports/insights`, { headers: authH() });
+    if (!res.ok) { toast('Failed to load data', false); return; }
+    const d   = await res.json();
+    const inv = d.investment_plan || {};
+    const allocs = inv.allocations || [];
+
+    if (!allocs.length) { toast('No investment plan yet — add transactions first', false); return; }
+
+    const now     = new Date();
+    const dateStr = now.toLocaleDateString('en-IN', { day:'2-digit', month:'long', year:'numeric' });
+    const monthStr= now.toLocaleDateString('en-IN', { month:'long', year:'numeric' });
+
+    // Determine profile tier and explain reasoning
+    const sr = inv.savings_rate || 0;
+    let profileReason = '';
+    let profileColor  = '#0ea5e9';
+    let ruleSummary   = '';
+
+    if (sr < 15) {
+      profileColor  = '#f59e0b';
+      profileReason = `Your savings rate is <strong>${sr}%</strong>, which is below 15%. This places you in the <strong>Conservative</strong> profile. At this stage, capital protection is more important than growth — sudden market volatility could derail your financial stability. The system prioritises guaranteed-return instruments (FDs, PPF) over equity.`;
+      ruleSummary   = 'Rule: savings_rate < 15% → Conservative';
+    } else if (sr < 30) {
+      profileColor  = '#14b8a6';
+      profileReason = `Your savings rate is <strong>${sr}%</strong>, which is between 15%–30%. This places you in the <strong>Moderate</strong> profile. You have enough surplus to take measured equity exposure for long-term growth, while keeping debt instruments as a safety cushion. The 50/50 equity-debt balance suits this stage.`;
+      ruleSummary   = 'Rule: 15% ≤ savings_rate < 30% → Moderate';
+    } else {
+      profileColor  = '#22c55e';
+      profileReason = `Your savings rate is <strong>${sr}%</strong>, which exceeds 30%. This places you in the <strong>Aggressive</strong> profile. Strong surplus means you can absorb short-term market risk. The system allocates heavily to equities, international ETFs, and high-growth instruments that maximise long-term compounding.`;
+      ruleSummary   = 'Rule: savings_rate ≥ 30% → Aggressive';
+    }
+
+    // Build decision factor rows
+    const factorRows = [
+      ['Savings Rate', `${sr}%`, sr >= 30 ? '✅ Strong' : sr >= 15 ? '⚠️ Moderate' : '🔴 Low', 'Primary factor determining risk profile'],
+      ['Monthly Income (avg)', `&#8377;${Number(inv.monthly_income||0).toLocaleString('en-IN',{maximumFractionDigits:0})}`, '—', 'Used to size investable amount'],
+      ['Monthly Investable (90% of savings)', `&#8377;${Number(inv.monthly_investable||0).toLocaleString('en-IN',{maximumFractionDigits:0})}`, '✅', '10% kept as liquid cash buffer'],
+      ['Top Spending Category', d.top_category || '—', '—', 'Signals lifestyle & risk behaviour'],
+      ['Risk Profile Assigned', inv.profile || '—', '✅', ruleSummary],
+    ];
+
+    const factorHTML = factorRows.map(([f,v,s,r]) => `
+      <tr>
+        <td style="font-weight:600;color:#374151;">${f}</td>
+        <td style="color:#0f172a;font-family:monospace;">${v}</td>
+        <td style="text-align:center;">${s}</td>
+        <td style="color:#6b7280;font-size:12px;">${r}</td>
+      </tr>`).join('');
+
+    // Build per-allocation rationale rows
+    const allocHTML = allocs.map((a, i) => `
+      <div style="display:flex;gap:16px;align-items:flex-start;padding:16px;background:${i%2===0?'#f8fafc':'#fff'};border-radius:12px;margin-bottom:10px;border:1px solid #e2e8f0;">
+        <div style="width:48px;height:48px;border-radius:12px;background:${a.color}18;border:2px solid ${a.color}44;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">${a.icon}</div>
+        <div style="flex:1;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <h4 style="font-size:14px;font-weight:700;color:#0f172a;margin:0;">${a.instrument}</h4>
+            <div style="text-align:right;">
+              <span style="font-size:16px;font-weight:700;color:${a.color};">&#8377;${Number(a.amount).toLocaleString('en-IN',{maximumFractionDigits:0})}</span>
+              <span style="font-size:12px;color:#94a3b8;margin-left:6px;">${a.pct}% of investable</span>
+            </div>
+          </div>
+          <p style="font-size:13px;color:#374151;line-height:1.6;margin:0 0 8px 0;">${a.rationale}</p>
+          <div style="height:6px;background:#e5e7eb;border-radius:99px;overflow:hidden;">
+            <div style="height:100%;width:${a.pct}%;background:${a.color};border-radius:99px;"></div>
+          </div>
+        </div>
+      </div>`).join('');
+
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>FinTrack — Investment Decision Report</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI',Arial,sans-serif; color:#1a1a2e; background:#fff; padding:40px; line-height:1.6; }
+    .header { display:flex; align-items:center; justify-content:space-between; padding-bottom:20px; margin-bottom:28px; border-bottom:3px solid ${profileColor}; }
+    .logo-icon { width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#14b8a6,#0ea5e9);display:flex;align-items:center;justify-content:center;color:white;font-size:22px;font-weight:bold; }
+    .logo h1 { font-size:24px;font-weight:700;color:#0f172a;margin-left:12px; }
+    .logo p  { font-size:12px;color:#64748b;margin-left:12px; }
+    .meta    { text-align:right;font-size:12px;color:#64748b;line-height:1.8; }
+    .profile-card { background:linear-gradient(135deg,${profileColor}15,${profileColor}08); border:2px solid ${profileColor}44; border-radius:16px; padding:24px; margin-bottom:28px; }
+    .profile-card h2 { font-size:20px;font-weight:700;color:#0f172a;margin-bottom:4px; }
+    .profile-card .badge { display:inline-block;padding:4px 14px;border-radius:99px;font-size:12px;font-weight:700;background:${profileColor}22;color:${profileColor};border:1px solid ${profileColor}55;margin-bottom:14px; }
+    .profile-card p { font-size:13px;color:#374151;line-height:1.7; }
+    .section-title { font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.08em;margin:28px 0 14px; }
+    table { width:100%;border-collapse:collapse;font-size:13px; }
+    thead tr { background:#f1f5f9; }
+    th { padding:10px 14px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:#64748b;font-weight:600; }
+    td { padding:10px 14px;border-bottom:1px solid #f1f5f9;vertical-align:top; }
+    tbody tr:last-child td { border-bottom:none; }
+    .formula-box { background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px 20px;margin-bottom:20px; }
+    .formula-box h4 { font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px; }
+    .formula { font-family:monospace;font-size:13px;color:#374151;background:#e2e8f0;padding:8px 12px;border-radius:8px;display:inline-block;margin:4px 0; }
+    .disclaimer { margin-top:36px;padding:14px;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;font-size:12px;color:#92400e; }
+    .footer { margin-top:30px;padding-top:14px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;font-size:11px;color:#94a3b8; }
+    @media print { body { padding:20px; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo" style="display:flex;align-items:center;">
+      <div class="logo-icon">&#8377;</div>
+      <div>
+        <h1 style="margin-left:12px;">FinTrack</h1>
+        <p style="margin-left:12px;">Investment Decision Rationale Report</p>
+      </div>
+    </div>
+    <div class="meta">
+      <div><strong>Generated:</strong> ${dateStr}</div>
+      <div><strong>Profile:</strong> ${inv.profile || '—'}</div>
+      <div><strong>Monthly Investable:</strong> &#8377;${Number(inv.monthly_investable||0).toLocaleString('en-IN',{maximumFractionDigits:0})}</div>
+    </div>
+  </div>
+
+  <div class="profile-card">
+    <div class="badge">${inv.profile || 'Unknown Profile'}</div>
+    <h2>Why you were assigned this profile</h2>
+    <p style="margin-top:10px;">${profileReason}</p>
+  </div>
+
+  <div class="section-title">Decision Logic — How the System Works</div>
+  <div class="formula-box">
+    <h4>Step 1: Compute Savings Rate</h4>
+    <div class="formula">savings_rate = (total_income − total_expense) / total_income × 100</div>
+    <p style="font-size:12px;color:#64748b;margin-top:8px;">Your computed savings rate: <strong style="color:#0f172a;">${sr}%</strong></p>
+  </div>
+  <div class="formula-box">
+    <h4>Step 2: Assign Risk Profile</h4>
+    <div class="formula">if savings_rate &lt; 15% → Conservative 🛡️</div><br>
+    <div class="formula">if 15% ≤ savings_rate &lt; 30% → Moderate ⚖️</div><br>
+    <div class="formula">if savings_rate ≥ 30% → Aggressive 🚀</div>
+    <p style="font-size:12px;color:#64748b;margin-top:8px;">Applied rule: <strong style="color:#0f172a;">${ruleSummary}</strong></p>
+  </div>
+  <div class="formula-box">
+    <h4>Step 3: Calculate Monthly Investable Amount</h4>
+    <div class="formula">monthly_investable = monthly_savings_avg × 0.90</div>
+    <p style="font-size:12px;color:#64748b;margin-top:8px;">10% retained as liquid cash buffer. Your investable: <strong style="color:#0f172a;">&#8377;${Number(inv.monthly_investable||0).toLocaleString('en-IN',{maximumFractionDigits:0})}</strong></p>
+  </div>
+
+  <div class="section-title">Input Factors Used in This Decision</div>
+  <table>
+    <thead><tr><th>Factor</th><th>Your Value</th><th>Status</th><th>Role in Decision</th></tr></thead>
+    <tbody>${factorHTML}</tbody>
+  </table>
+
+  <div class="section-title">Allocation Rationale — Why Each Instrument</div>
+  ${allocHTML}
+
+  <div class="disclaimer">
+    ⚠️ <strong>Disclaimer:</strong> This report is generated algorithmically based on your spending and savings data. It is for informational purposes only and does not constitute financial advice. Please consult a SEBI-registered investment advisor before making any investment decisions. Past performance of any instrument is not a guarantee of future returns.
+  </div>
+
+  <div class="footer">
+    <span>FinTrack — AI-Powered Personal Finance · Investment Decision Report</span>
+    <span>Confidential · ${dateStr}</span>
+  </div>
+</body>
+</html>`;
+
+    const win = window.open('', '_blank', 'width=960,height=750');
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => win.print(), 500);
+    toast('Investment rationale PDF opened!');
+  } catch(e) {
+    console.error(e);
+    toast('Failed to generate PDF', false);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CUT SPENDING MODAL
+// ═══════════════════════════════════════════════════════════
+function openCutSpending() {
+  const overlay = document.getElementById('cut-spending-overlay');
+  const modal   = document.getElementById('cut-spending-modal');
+  overlay.classList.remove('hidden');
+  overlay.style.display = 'flex';
+  setTimeout(() => {
+    modal.style.transform = 'scale(1) translateY(0)';
+    modal.style.opacity   = '1';
+  }, 30);
+}
+
+function closeCutSpending() {
+  const overlay = document.getElementById('cut-spending-overlay');
+  const modal   = document.getElementById('cut-spending-modal');
+  modal.style.transform = 'scale(0.94) translateY(16px)';
+  modal.style.opacity   = '0';
+  setTimeout(() => { overlay.style.display = 'none'; overlay.classList.add('hidden'); }, 350);
+}
+
+document.getElementById('cut-spending-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeCutSpending();
+});
+
+// Category-specific benchmarks (% of income that's healthy to spend there)
+const SPEND_BENCHMARKS = {
+  'Food & Dining':   { healthy: 15, icon: '🍽️', tips: ['Cook at home 4+ days/week', 'Use Swiggy/Zomato only on weekends', 'Meal prep on Sundays to cut ordering impulse', 'Switch to UPI cashback offers for groceries'] },
+  'Transport':       { healthy: 10, icon: '🚗', tips: ['Use BMTC/Metro for daily commute', 'Carpool with colleagues', 'Walk for trips under 2km', 'Book Ola/Uber in advance (cheaper than surge)'] },
+  'Shopping':        { healthy: 10, icon: '🛍️', tips: ['Follow a 24-hour rule before any non-essential purchase', 'Unsubscribe from promotional emails', 'Use wishlists — buy only after 7 days', 'Check for cashback via HDFC/ICICI SmartBuy'] },
+  'Entertainment':   { healthy: 5,  icon: '🎬', tips: ['Share OTT subscriptions with family', 'Use BookMyShow offers on Tuesdays (50% off)', 'Explore free events on Insider.in', 'Cancel unused subscriptions this week'] },
+  'Utilities':       { healthy: 8,  icon: '💡', tips: ['Switch off ACs 30 min before sleep', 'Use a smart power strip to cut phantom load', 'Compare internet plans — Jio Fiber vs ACT annually', 'Prepay electricity to avoid late fees'] },
+  'Healthcare':      { healthy: 5,  icon: '💊', tips: ['Buy generic medicines (same salt, 70% cheaper)', 'Use Jan Aushadhi stores for regular medications', 'Get a family health insurance policy', 'Schedule preventive checkups — cheaper than cure'] },
+  'Education':       { healthy: 8,  icon: '📚', tips: ['Use YouTube/NPTEL before paid courses', 'Apply for early-bird discounts on courses', 'Share course access with peers where permitted', 'Leverage your employer L&D budget'] },
+  'Travel':          { healthy: 7,  icon: '✈️', tips: ['Book flights 6–8 weeks in advance', 'Use IRCTC Tatkal only when necessary', 'Travel mid-week (Tue/Wed) for cheaper fares', 'Use credit card points for hotel stays'] },
+  'Others':          { healthy: 5,  icon: '📦', tips: ['Audit this category — what are these expenses?', 'Track with a daily spending note for 1 week', 'Set a weekly "miscellaneous" cash limit', 'Move recurring items to correct categories'] },
+};
+
+function getCategoryBenchmark(cat) {
+  for (const [key, val] of Object.entries(SPEND_BENCHMARKS)) {
+    if (cat.toLowerCase().includes(key.toLowerCase().split(' ')[0].toLowerCase())) return { key, ...val };
+  }
+  return { key: cat, healthy: 8, icon: '📦', tips: SPEND_BENCHMARKS['Others'].tips };
+}
+
+async function triggerCutSpending() {
+  openCutSpending();
+  // Show loading state
+  document.getElementById('cs-potential-savings').textContent = '...';
+  document.getElementById('cs-target-rate').textContent = '...';
+  document.getElementById('cs-category-tips').innerHTML = '<p class="text-gray-500 text-sm py-2">Loading your spending data...</p>';
+
+  try {
+    const [txRes, summaryRes] = await Promise.all([
+      fetch(`${API}/transactions/`, { headers: authH() }),
+      fetch(`${API}/reports/summary`, { headers: authH() }),
+    ]);
+    const { transactions } = await txRes.json();
+    const summary = await summaryRes.json();
+
+    const now = new Date();
+    const thisMonth = transactions.filter(t => {
+      const d = new Date(t.transaction_date);
+      return t.type === 'expense' && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    });
+
+    const totalIncome  = summary.total_income  || 0;
+    const totalExpense = summary.total_expense || 0;
+    const currentSR    = totalIncome > 0 ? Math.round((totalIncome - totalExpense) / totalIncome * 100) : 0;
+
+    // Monthly income average
+    const monthlyInc = totalIncome / Math.max(
+      new Set(transactions.filter(t=>t.type==='income').map(t => {
+        const d = new Date(t.transaction_date); return `${d.getFullYear()}-${d.getMonth()}`;
+      })).size, 1
+    );
+
+    // Category totals this month
+    const catMap = {};
+    thisMonth.forEach(t => {
+      const c = (t.category || 'Others').replace(/\w/g, l => l.toUpperCase());
+      catMap[c] = (catMap[c] || 0) + t.amount;
+    });
+    const totalThisMonth = Object.values(catMap).reduce((a,b)=>a+b,0);
+
+    // Sort categories by spend descending
+    const sortedCats = Object.entries(catMap).sort((a,b) => b[1]-a[1]);
+
+    // Compute potential savings per category
+    let totalPotentialSaving = 0;
+    const catTips = sortedCats.map(([cat, spent]) => {
+      const bm = getCategoryBenchmark(cat);
+      const benchmarkAmt = (bm.healthy / 100) * monthlyInc;
+      const excess = Math.max(spent - benchmarkAmt, 0);
+      const pctOfMonth = totalThisMonth > 0 ? Math.round(spent / totalThisMonth * 100) : 0;
+      const pctOfInc = monthlyInc > 0 ? Math.round(spent / monthlyInc * 100) : 0;
+      const isOver = pctOfInc > bm.healthy;
+      totalPotentialSaving += excess;
+      return { cat, spent, benchmarkAmt, excess, pctOfMonth, pctOfInc, isOver, bm };
+    });
+
+    const targetSR = Math.min(currentSR + Math.round(totalPotentialSaving / Math.max(monthlyInc, 1) * 100), 50);
+
+    // Update banner
+    document.getElementById('cs-potential-savings').textContent = fmt(Math.round(totalPotentialSaving));
+    document.getElementById('cs-target-rate').textContent = `${targetSR}%`;
+
+    // Render category tips
+    const ctEl = document.getElementById('cs-category-tips');
+    if (!catTips.length) {
+      ctEl.innerHTML = '<p class="text-gray-500 text-sm">No expenses this month yet.</p>';
+    } else {
+      ctEl.innerHTML = catTips.map(({ cat, spent, benchmarkAmt, excess, pctOfMonth, pctOfInc, isOver, bm }) => {
+        const barPct = Math.min(pctOfInc / bm.healthy * 100, 200);
+        const barColor = isOver ? (barPct > 150 ? '#ef4444' : '#f59e0b') : '#22c55e';
+        const tipHtml = bm.tips.slice(0,2).map(t => `<li class="text-xs text-gray-400 mt-1">• ${t}</li>`).join('');
+        return `<div class="rounded-xl p-3" style="background:#111120;border:1px solid ${isOver ? '#3a1515':'#0a2a18'};">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <span class="text-base">${bm.icon}</span>
+              <div>
+                <p class="text-sm font-semibold text-white">${cat}</p>
+                <p class="text-xs text-gray-500">${pctOfInc}% of avg income · benchmark: ${bm.healthy}%</p>
+              </div>
+            </div>
+            <div class="text-right">
+              <p class="text-sm font-bold" style="color:${barColor}">${fmt(spent)}</p>
+              ${isOver ? `<p class="text-xs text-red-400">+${fmt(excess)} over</p>` : `<p class="text-xs text-green-400">✓ On track</p>`}
+            </div>
+          </div>
+          <div class="h-1.5 rounded-full mb-2" style="background:#1e1e2e;">
+            <div class="h-full rounded-full" style="width:${Math.min(barPct/2,100)}%;background:${barColor};transition:width 0.8s ease;"></div>
+          </div>
+          ${isOver ? `<ul style="list-style:none;padding:0;">${tipHtml}</ul>` : ''}
+        </div>`;
+      }).join('');
+    }
+
+    // Quick wins
+    const overCats = catTips.filter(c => c.isOver).sort((a,b) => b.excess - a.excess).slice(0,3);
+    const qwEl = document.getElementById('cs-quick-wins');
+    if (!overCats.length) {
+      qwEl.innerHTML = '<div class="rounded-xl px-4 py-3 text-sm text-green-400" style="background:#071a0f;border:1px solid #14532d;">🎉 All categories are within healthy limits this month!</div>';
+    } else {
+      qwEl.innerHTML = overCats.map((c, i) => `
+        <div class="flex items-start gap-3 rounded-xl px-4 py-3" style="background:#111120;border:1px solid #2a1515;">
+          <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5" style="background:#ef444422;color:#ef4444;">${i+1}</div>
+          <div>
+            <p class="text-sm font-semibold text-white">${c.bm.icon} Cut ${c.cat} by ${fmt(c.excess)}</p>
+            <p class="text-xs text-gray-400 mt-0.5">${c.bm.tips[0]}</p>
+          </div>
+        </div>`).join('');
+    }
+
+    // 30-day action plan
+    const apEl = document.getElementById('cs-action-plan');
+    const allTips = catTips.filter(c=>c.isOver).flatMap(c => c.bm.tips.map(t => ({ cat: c.cat, icon: c.bm.icon, tip: t })));
+    const planTips = allTips.slice(0, 6);
+    const weeks = ['This week', 'Week 2', 'Week 3', 'Week 4'];
+    if (!planTips.length) {
+      apEl.innerHTML = '<p class="text-gray-500 text-sm">Your spending is healthy! Keep it up.</p>';
+    } else {
+      apEl.innerHTML = planTips.map((pt, i) => `
+        <div class="flex items-center gap-3 rounded-xl px-4 py-2.5" style="background:#0a0a14;border:1px solid #1e1e2e;">
+          <span class="text-xs font-bold text-teal-400 w-14 flex-shrink-0">${weeks[Math.floor(i/1.5)]||'Week 4'}</span>
+          <span class="text-base">${pt.icon}</span>
+          <p class="text-xs text-gray-300">${pt.tip}</p>
+        </div>`).join('');
+    }
+
+  } catch(e) {
+    console.error(e);
+    document.getElementById('cs-category-tips').innerHTML = '<p class="text-red-400 text-sm">Failed to load data. Is the backend running?</p>';
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
