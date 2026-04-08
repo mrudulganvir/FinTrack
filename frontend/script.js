@@ -34,7 +34,7 @@ if (bioBtn) {
   });
 }
 
-const API = "http://127.0.0.1:8000";
+const API = "https://fintrack-backend.onrender.com";
 
 // FIX 1: Login now has try/catch for network errors
 // FIX 2: Login errors are now shown to the user via setMsg instead of only console.error
