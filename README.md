@@ -510,8 +510,7 @@ FINTRACK/
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/your-username/pfma.git
-cd pfma
+git clone https://github.com/mrudulganvir/FinTrack
 
 # 2. Create and activate virtual environment
 python -m venv .venv
@@ -566,6 +565,7 @@ cd frontend && python -m http.server 3000
 ```
 
 **API Docs available at:** `http://localhost:8000/docs` (Swagger UI)
+**Website Available at:** `https://pfma-8c7b8.web.app/` (Website link)
 
 ---
 
