@@ -33,6 +33,7 @@
     #pages { padding-bottom: 64px; }
     .page { display:none; min-height: calc(100vh - 64px); }
     .page.active { display:block; }
+    #page-chat.active { display:flex !important; }
     /* Card */
     .card { background: rgba(30,41,59,0.7); border:1px solid rgba(255,255,255,0.06); border-radius:16px; }
     /* Input */
@@ -240,6 +241,18 @@
           <div class="relative h-44"><canvas id="m-bar-chart"></canvas></div>
         </div>
 
+        <!-- Export buttons -->
+        <div class="grid grid-cols-2 gap-3 mb-4">
+          <button onclick="exportMCSV()" class="card p-3 flex items-center gap-2 active:opacity-75">
+            <svg class="w-4 h-4 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            <span class="text-white text-sm font-medium">Export CSV</span>
+          </button>
+          <button onclick="exportMPDF()" class="card p-3 flex items-center gap-2 active:opacity-75">
+            <svg class="w-4 h-4 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="text-white text-sm font-medium">Export PDF</span>
+          </button>
+        </div>
+
         <!-- AI Insights -->
         <div class="card p-4 mb-4">
           <div class="flex items-center justify-between mb-3">
@@ -251,6 +264,25 @@
             <div class="stat"><p class="text-xs text-gray-400">Savings Rate</p><p class="text-sm font-bold text-teal-400 mt-0.5" id="m-ins-sr">—</p></div>
           </div>
           <div id="m-insight-list" class="space-y-2"><p class="text-gray-500 text-xs">Loading insights...</p></div>
+        </div>
+
+        <!-- Investments -->
+        <div class="card p-4 mb-4">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-semibold text-white text-sm">Investment Plan 💹</h3>
+            <div class="flex gap-2">
+              <button onclick="loadMInvestments()" class="text-teal-400 text-xs">Refresh</button>
+              <button onclick="exportMInvestmentPDF()" class="px-2 py-1 rounded-lg text-xs font-medium" style="background:rgba(20,184,166,0.15);color:#14b8a6;border:1px solid rgba(20,184,166,0.3);">Why This Plan?</button>
+            </div>
+          </div>
+          <div class="grid grid-cols-3 gap-2 mb-3">
+            <div class="stat text-center"><p class="text-xs text-gray-400 mb-0.5">Profile</p><p class="text-xs font-bold text-teal-400" id="m-inv-profile">—</p></div>
+            <div class="stat text-center"><p class="text-xs text-gray-400 mb-0.5">Investable</p><p class="text-xs font-bold text-green-400" id="m-inv-monthly">₹—</p></div>
+            <div class="stat text-center"><p class="text-xs text-gray-400 mb-0.5">Savings %</p><p class="text-xs font-bold text-blue-400" id="m-inv-sr">—%</p></div>
+          </div>
+          <p class="text-gray-400 text-xs mb-3" id="m-inv-message">Loading your investment profile...</p>
+          <div id="m-inv-allocations" class="space-y-2"><p class="text-gray-500 text-xs">Loading...</p></div>
+          <p class="text-gray-600 text-xs text-center mt-3">Algorithmic suggestions only. Consult a SEBI advisor.</p>
         </div>
       </div>
     </div>
@@ -287,7 +319,7 @@
     </div>
 
     <!-- ── CHAT ── -->
-    <div id="page-chat" class="page" style="height:calc(100vh - 64px); display:none; flex-direction:column;">
+    <div id="page-chat" class="page" style="height:calc(100vh - 64px); flex-direction:column;">
       <!-- Header -->
       <div class="p-4 pt-6 flex items-center justify-between border-b border-gray-800 flex-shrink-0">
         <div>
@@ -547,14 +579,14 @@ function showPage(id) {
   });
   const pg = document.getElementById('page-'+id);
   if (pg) {
-    if (id === 'chat') { pg.style.display = 'flex'; } else { pg.style.display = 'block'; }
+    pg.style.display = (id === 'chat') ? 'flex' : 'block';
     pg.classList.add('active');
   }
   const nav = document.getElementById('nav-'+id);
   if (nav) nav.classList.add('active');
 
   if (id === 'transactions') loadMTxs();
-  if (id === 'analytics')    loadMAnalytics();
+  if (id === 'analytics')    { loadMAnalytics(); loadMInvestments(); }
   if (id === 'budgets')      { loadMBudgetStatus(); loadMLoans(); }
 }
 
@@ -929,11 +961,15 @@ async function sendMChatMessage() {
   appendMChat('user', msg);
   appendMTyping();
   try {
-    const res = await fetch(`${API}/chat/message`, { method:'POST', headers:authH(), body:JSON.stringify({ message:msg, history:_mChatHistory }) });
+    const res = await fetch(`${API}/chat/`, {
+      method: 'POST',
+      headers: authH(),
+      body: JSON.stringify({ message: msg })
+    });
     removeTyping();
     if (res.ok) {
       const d = await res.json();
-      const reply = d.response || d.message || 'No response';
+      const reply = d.reply || d.response || d.message || 'No response';
       appendMChat('assistant', reply);
       _mChatHistory.push({ role:'user', content:msg }, { role:'assistant', content:reply });
     } else { appendMChat('assistant', 'Sorry, something went wrong.'); }
@@ -970,6 +1006,8 @@ function clearMChat() {
   _mChatHistory = [];
   document.getElementById('m-chat-messages').innerHTML = `<div class="flex gap-2"><div class="w-7 h-7 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center flex-shrink-0 text-xs">🤖</div><div class="bubble-ai px-3 py-2.5 max-w-xs"><p class="text-gray-200 text-sm">Chat cleared! Ask me anything.</p></div></div>`;
 }
+
+
 
 // ═══════════════ PREDICTIVE ALERT ═══════════════
 function _daysInMonth(year, month) { return new Date(year, month, 0).getDate(); }
@@ -1048,9 +1086,211 @@ async function triggerPredictiveAlert() {
   await boot();
 })();
 
-document.getElementById('m-chat-input').addEventListener('keydown', e => { if(e.key==='Enter') sendMChatMessage(); });
+// ═══════════════ CSV EXPORT ═══════════════
+async function exportMCSV() {
+  toast('Preparing CSV...');
+  try {
+    const res = await fetch(`${API}/reports/export/csv`, { headers:authH() });
+    if (!res.ok) { toast('Export failed', false); return; }
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href=url; a.download=`fintrack_${new Date().toISOString().split('T')[0]}.csv`; a.click();
+    URL.revokeObjectURL(url);
+    toast('CSV downloaded!');
+  } catch { toast('Export failed', false); }
+}
+
+// ═══════════════ PDF EXPORT ═══════════════
+async function exportMPDF() {
+  toast('Generating PDF report...');
+  try {
+    const [summaryRes, catRes, insightsRes] = await Promise.all([
+      fetch(`${API}/reports/summary`, { headers:authH() }),
+      fetch(`${API}/reports/category-breakdown`, { headers:authH() }),
+      fetch(`${API}/reports/insights`, { headers:authH() }),
+    ]);
+    const summary  = await summaryRes.json();
+    const cats     = await catRes.json();
+    const insights = await insightsRes.json();
+    const now      = new Date();
+    const dateStr  = now.toLocaleDateString('en-IN', { day:'2-digit', month:'long', year:'numeric' });
+    const monthStr = now.toLocaleDateString('en-IN', { month:'long', year:'numeric' });
+    const insightLines = (insights.insights || []).map(i =>
+      `<li>${i.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/📈|📉|🏆|💸|⚠️|🌟|👍|🚨/g,'')}</li>`
+    ).join('');
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>FinTrack Report — ${monthStr}</title>
+    <style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;padding:28px;line-height:1.6;}
+    .header{display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #14b8a6;padding-bottom:16px;margin-bottom:24px;}
+    .logo{display:flex;align-items:center;gap:10px;}.logo-icon{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#14b8a6,#0ea5e9);display:flex;align-items:center;justify-content:center;color:white;font-size:20px;font-weight:bold;}
+    .meta{text-align:right;font-size:11px;color:#64748b;line-height:1.8;}
+    .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
+    .card{border-radius:10px;padding:14px;background:#f8fafc;border:1px solid #e2e8f0;}
+    .card .lbl{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
+    .card .val{font-size:18px;font-weight:700;}
+    .card.income .val{color:#16a34a;}.card.expense .val{color:#dc2626;}.card.balance .val{color:#0ea5e9;}
+    .section-title{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin:20px 0 12px;}
+    table{width:100%;border-collapse:collapse;font-size:12px;}
+    thead tr{background:#f1f5f9;}th{padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#64748b;font-weight:600;}
+    td{padding:8px 12px;border-bottom:1px solid #f1f5f9;color:#374151;}tbody tr:last-child td{border-bottom:none;}
+    .bar-wrap{background:#e5e7eb;border-radius:99px;height:5px;width:100px;display:inline-block;vertical-align:middle;overflow:hidden;}
+    .bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#14b8a6,#0ea5e9);}
+    ul.insights{list-style:none;padding:0;}ul.insights li{padding:7px 0;border-bottom:1px solid #f1f5f9;font-size:12px;color:#374151;line-height:1.5;}
+    ul.insights li:last-child{border-bottom:none;}ul.insights li::before{content:"→ ";color:#14b8a6;font-weight:700;}
+    .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px;}
+    .panel{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;}
+    .panel h4{font-size:10px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;}
+    .stat-row{display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid #f1f5f9;}
+    .stat-row:last-child{border-bottom:none;}.stat-row .lbl{color:#64748b;}.stat-row .val{font-weight:600;color:#0f172a;}
+    .footer{margin-top:28px;padding-top:12px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;font-size:10px;color:#94a3b8;}
+    @media print{body{padding:16px;}}</style>
+    </head><body>
+    <div class="header">
+      <div class="logo"><div class="logo-icon">₹</div><div><h1 style="font-size:20px;font-weight:700;color:#0f172a;">FinTrack</h1><p style="font-size:11px;color:#64748b;">AI-Powered Finance Report</p></div></div>
+      <div class="meta"><div><strong>Generated:</strong> ${dateStr}</div><div><strong>Period:</strong> All-time</div><div><strong>This Month:</strong> ${monthStr}</div></div>
+    </div>
+    <div class="cards">
+      <div class="card income"><div class="lbl">Total Income</div><div class="val">₹${Number(summary.total_income||0).toLocaleString('en-IN',{maximumFractionDigits:0})}</div></div>
+      <div class="card expense"><div class="lbl">Total Expenses</div><div class="val">₹${Number(summary.total_expense||0).toLocaleString('en-IN',{maximumFractionDigits:0})}</div></div>
+      <div class="card balance"><div class="lbl">Net Balance</div><div class="val">₹${Number(summary.balance||0).toLocaleString('en-IN',{maximumFractionDigits:0})}</div></div>
+    </div>
+    <div class="stats-grid">
+      <div class="panel"><h4>Key Metrics</h4>
+        <div class="stat-row"><span class="lbl">Savings Rate</span><span class="val">${insights.savings_rate||0}%</span></div>
+        <div class="stat-row"><span class="lbl">Total Transactions</span><span class="val">${summary.transaction_count||0}</span></div>
+        <div class="stat-row"><span class="lbl">Top Category</span><span class="val">${insights.top_category||'—'}</span></div>
+        <div class="stat-row"><span class="lbl">Avg. Expense</span><span class="val">₹${Number(insights.avg_expense||0).toLocaleString('en-IN',{maximumFractionDigits:0})}</span></div>
+      </div>
+      <div class="panel"><h4>This vs Last Month</h4>
+        <div class="stat-row"><span class="lbl">This Month Spend</span><span class="val">₹${Number(insights.this_month_spend||0).toLocaleString('en-IN',{maximumFractionDigits:0})}</span></div>
+        <div class="stat-row"><span class="lbl">Last Month Spend</span><span class="val">₹${Number(insights.last_month_spend||0).toLocaleString('en-IN',{maximumFractionDigits:0})}</span></div>
+        <div class="stat-row"><span class="lbl">Investment Profile</span><span class="val">${(insights.investment_plan||{}).profile||'—'}</span></div>
+        <div class="stat-row"><span class="lbl">Monthly Investable</span><span class="val">₹${Number((insights.investment_plan||{}).monthly_investable||0).toLocaleString('en-IN',{maximumFractionDigits:0})}</span></div>
+      </div>
+    </div>
+    <div class="section-title" style="margin-top:20px;">Expense Breakdown by Category</div>
+    <table><thead><tr><th>Category</th><th style="text-align:right">Amount</th><th style="text-align:right">% of Total</th><th>Proportion</th></tr></thead><tbody>
+    ${cats.map(c => {
+      const pct = summary.total_expense > 0 ? Math.round(c.total/summary.total_expense*100) : 0;
+      return `<tr><td>${(c.category||'Others').replace(/\b\w/g,l=>l.toUpperCase())}</td><td style="text-align:right;color:#dc2626;font-weight:600;">₹${Number(c.total).toLocaleString('en-IN',{maximumFractionDigits:0})}</td><td style="text-align:right;color:#6b7280;">${pct}%</td><td><div class="bar-wrap"><div class="bar-fill" style="width:${pct}%"></div></div></td></tr>`;
+    }).join('')}
+    </tbody></table>
+    <div class="section-title" style="margin-top:20px;">AI-Generated Insights</div>
+    <div class="panel" style="background:#fff;border:1px solid #e2e8f0;"><ul class="insights">${insightLines||'<li>No insights yet. Add more transactions.</li>'}</ul></div>
+    <div class="footer"><span>FinTrack — AI-Powered Personal Finance</span><span>Confidential · ${dateStr}</span></div>
+    </body></html>`;
+    const w = window.open('','_blank');
+    w.document.write(html);
+    w.document.close();
+    setTimeout(()=>w.print(), 500);
+    toast('PDF ready — use Share → Print to save');
+  } catch(e) { console.error(e); toast('Export failed', false); }
+}
+
+// ═══════════════ INVESTMENTS ═══════════════
+async function loadMInvestments() {
+  try {
+    const res = await fetch(`${API}/reports/insights`, { headers:authH() });
+    if (res.status===401) { handleLogout(); return; }
+    const d = await res.json();
+    const inv = d.investment_plan || {};
+    const allocs = inv.allocations || [];
+    document.getElementById('m-inv-profile').textContent  = inv.profile || '—';
+    document.getElementById('m-inv-monthly').textContent  = fmt(inv.monthly_investable || 0);
+    document.getElementById('m-inv-sr').textContent       = `${inv.savings_rate || 0}%`;
+    document.getElementById('m-inv-message').textContent  = inv.message || 'Add more transactions for a personalised plan.';
+    const el = document.getElementById('m-inv-allocations');
+    if (!allocs.length) { el.innerHTML='<p class="text-gray-500 text-xs">No allocations yet — add income and expenses first.</p>'; return; }
+    el.innerHTML = allocs.map((a) => {
+      return `<div class="flex items-center gap-3 p-2.5 rounded-xl" style="background:#0a0a14;border:1px solid #1e1e2e;">
+        <div class="w-8 h-8 rounded-xl flex items-center justify-center text-base flex-shrink-0" style="background:${a.color}22;border:1px solid ${a.color}44">${a.icon}</div>
+        <div class="flex-1 min-w-0">
+          <p class="text-white text-xs font-semibold">${a.instrument}</p>
+          <p class="text-gray-500 text-xs truncate">${(a.rationale||'').slice(0,50)}…</p>
+        </div>
+        <div class="text-right flex-shrink-0">
+          <p class="text-xs font-bold" style="color:${a.color}">${fmt(a.amount)}</p>
+          <p class="text-gray-600 text-xs">${a.pct||0}%</p>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) { console.error(e); document.getElementById('m-inv-allocations').innerHTML='<p class="text-red-400 text-xs">Failed to load. Is backend running?</p>'; }
+}
+
+async function exportMInvestmentPDF() {
+  toast('Building investment PDF...');
+  try {
+    const res = await fetch(`${API}/reports/insights`, { headers:authH() });
+    if (!res.ok) { toast('Failed to load data', false); return; }
+    const d = await res.json();
+    const inv = d.investment_plan || {};
+    const allocs = inv.allocations || [];
+    if (!allocs.length) { toast('No investment plan yet — add transactions first', false); return; }
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-IN', { day:'2-digit', month:'long', year:'numeric' });
+    const sr = inv.savings_rate || 0;
+    let profileColor = sr >= 30 ? '#22c55e' : sr >= 15 ? '#14b8a6' : '#f59e0b';
+    let profileReason = sr >= 30
+      ? `Your savings rate is <strong>${sr}%</strong> (≥30%) → <strong>Aggressive</strong> profile. Strong surplus means you can absorb market risk and maximise long-term compounding.`
+      : sr >= 15
+      ? `Your savings rate is <strong>${sr}%</strong> (15–30%) → <strong>Moderate</strong> profile. Balanced equity-debt allocation suits your current stage.`
+      : `Your savings rate is <strong>${sr}%</strong> (<15%) → <strong>Conservative</strong> profile. Capital protection prioritised over growth.`;
+    const allocHTML = allocs.map((a,i) => `
+      <div style="display:flex;gap:12px;align-items:flex-start;padding:14px;background:${i%2===0?'#f8fafc':'#fff'};border-radius:10px;margin-bottom:8px;border:1px solid #e2e8f0;">
+        <div style="width:40px;height:40px;border-radius:10px;background:${a.color}18;border:2px solid ${a.color}44;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">${a.icon}</div>
+        <div style="flex:1;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+            <strong style="font-size:13px;color:#0f172a;">${a.instrument}</strong>
+            <span style="font-size:15px;font-weight:700;color:${a.color};">₹${Number(a.amount).toLocaleString('en-IN',{maximumFractionDigits:0})} <span style="font-size:11px;color:#94a3b8;">(${a.pct}%)</span></span>
+          </div>
+          <p style="font-size:12px;color:#374151;line-height:1.5;margin:0;">${a.rationale}</p>
+          <div style="height:5px;background:#e5e7eb;border-radius:99px;margin-top:8px;overflow:hidden;">
+            <div style="height:100%;width:${a.pct}%;background:${a.color};border-radius:99px;"></div>
+          </div>
+        </div>
+      </div>`).join('');
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>FinTrack — Investment Plan</title>
+      <style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;padding:32px;line-height:1.6;}
+      .header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:16px;margin-bottom:24px;border-bottom:3px solid ${profileColor};}
+      .logo{display:flex;align-items:center;gap:10px;}.logo-icon{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#14b8a6,#0ea5e9);display:flex;align-items:center;justify-content:center;color:white;font-size:20px;font-weight:bold;}
+      .meta{text-align:right;font-size:12px;color:#64748b;line-height:1.8;}
+      .profile-card{background:linear-gradient(135deg,${profileColor}15,${profileColor}08);border:2px solid ${profileColor}44;border-radius:14px;padding:20px;margin-bottom:20px;}
+      .badge{display:inline-block;padding:3px 12px;border-radius:99px;font-size:11px;font-weight:700;background:${profileColor}22;color:${profileColor};border:1px solid ${profileColor}55;margin-bottom:10px;}
+      .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
+      .card{padding:14px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;}
+      .card .lbl{font-size:11px;color:#64748b;text-transform:uppercase;margin-bottom:4px;}
+      .card .val{font-size:18px;font-weight:700;}
+      .section-title{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin:20px 0 12px;}
+      .disclaimer{margin-top:28px;padding:12px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;font-size:11px;color:#92400e;}
+      .footer{margin-top:24px;padding-top:12px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;font-size:10px;color:#94a3b8;}
+      @media print{body{padding:16px;}}</style>
+      </head><body>
+      <div class="header">
+        <div class="logo"><div class="logo-icon">₹</div><div><h1 style="font-size:20px;font-weight:700;color:#0f172a;">FinTrack</h1><p style="font-size:11px;color:#64748b;">Investment Plan</p></div></div>
+        <div class="meta"><div><strong>Generated:</strong> ${dateStr}</div><div><strong>Profile:</strong> ${inv.profile||'—'}</div><div><strong>Investable:</strong> ₹${Number(inv.monthly_investable||0).toLocaleString('en-IN',{maximumFractionDigits:0})}/mo</div></div>
+      </div>
+      <div class="profile-card"><div class="badge">${inv.profile||'Unknown'}</div><h2 style="font-size:16px;font-weight:700;color:#0f172a;margin-bottom:8px;">Why this profile?</h2><p style="font-size:12px;color:#374151;">${profileReason}</p></div>
+      <div class="cards">
+        <div class="card"><div class="lbl">Savings Rate</div><div class="val" style="color:${profileColor}">${sr}%</div></div>
+        <div class="card"><div class="lbl">Monthly Investable</div><div class="val" style="color:#16a34a">₹${Number(inv.monthly_investable||0).toLocaleString('en-IN',{maximumFractionDigits:0})}</div></div>
+        <div class="card"><div class="lbl">Risk Profile</div><div class="val" style="color:${profileColor}">${inv.profile||'—'}</div></div>
+      </div>
+      <div class="section-title">Allocation Breakdown</div>
+      ${allocHTML}
+      <div class="disclaimer">⚠️ <strong>Disclaimer:</strong> Algorithmic suggestions only. Consult a SEBI-registered advisor before investing. Past performance is not a guarantee of future returns.</div>
+      <div class="footer"><span>FinTrack — AI-Powered Personal Finance</span><span>Confidential · ${dateStr}</span></div>
+      </body></html>`;
+    const w = window.open('','_blank');
+    w.document.write(html);
+    w.document.close();
+    setTimeout(()=>w.print(), 500);
+    toast('Investment PDF opened!');
+  } catch(e) { console.error(e); toast('Failed to generate PDF', false); }
+}
+
 document.getElementById('login-password').addEventListener('keydown', e => { if(e.key==='Enter') handleLogin(); });
 document.getElementById('signup-password').addEventListener('keydown', e => { if(e.key==='Enter') handleSignup(); });
+document.getElementById('m-chat-input').addEventListener('keydown', e => { if(e.key==='Enter') sendMChatMessage(); });
 </script>
 </body>
 </html>
