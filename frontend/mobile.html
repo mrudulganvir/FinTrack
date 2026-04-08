@@ -754,37 +754,50 @@ async function deleteMTx(id) {
 
 // ═══════════════ ADD EXPENSE ═══════════════
 async function submitMExpense() {
-  const amount = document.getElementById('m-exp-amount').value;
+  const amount = parseFloat(document.getElementById('m-exp-amount').value);
   const date   = document.getElementById('m-exp-date').value;
   const desc   = document.getElementById('m-exp-desc').value.trim();
   const msgEl  = document.getElementById('m-exp-msg');
   if (!amount||!date||!desc) { msgEl.textContent='Fill all fields'; msgEl.className='text-xs text-red-400 block'; return; }
   msgEl.textContent='Adding...'; msgEl.className='text-xs text-gray-400 block';
   try {
-    const res = await fetch(`${API}/transactions/expense`, { method:'POST', headers:authH(), body:JSON.stringify({ amount:parseFloat(amount), transaction_date:date, description:desc }) });
+    const res = await fetch(`${API}/transactions/`, {
+      method:'POST', headers:authH(),
+      body: JSON.stringify({ amount, type:'expense', description:desc, transaction_date:new Date(date).toISOString() })
+    });
+    const d = await res.json();
     if (res.ok) {
-      toast('Expense added!');
-      ['m-exp-amount','m-exp-desc'].forEach(id => document.getElementById(id).value='');
-      msgEl.textContent=''; closeSheet('add-expense'); boot();
-    } else { const d=await res.json(); msgEl.textContent=d.detail||'Failed'; msgEl.className='text-xs text-red-400 block'; }
+      const cat = normCat(d.transaction?.category);
+      toast(`✓ Expense added · AI category: ${cat}`);
+      msgEl.textContent=`Added! Category: ${d.predicted_category||cat}`; msgEl.className='text-xs text-teal-400 block';
+      document.getElementById('m-exp-amount').value='';
+      document.getElementById('m-exp-desc').value='';
+      closeSheet('add-expense'); boot();
+    } else { msgEl.textContent=d.detail||'Failed'; msgEl.className='text-xs text-red-400 block'; }
   } catch { msgEl.textContent='Server unreachable'; msgEl.className='text-xs text-red-400 block'; }
 }
 
 // ═══════════════ ADD INCOME ═══════════════
 async function submitMIncome() {
-  const amount = document.getElementById('m-inc-amount').value;
+  const amount = parseFloat(document.getElementById('m-inc-amount').value);
   const date   = document.getElementById('m-inc-date').value;
   const desc   = document.getElementById('m-inc-desc').value.trim();
   const msgEl  = document.getElementById('m-inc-msg');
   if (!amount||!date||!desc) { msgEl.textContent='Fill all fields'; msgEl.className='text-xs text-red-400 block'; return; }
   msgEl.textContent='Adding...'; msgEl.className='text-xs text-gray-400 block';
   try {
-    const res = await fetch(`${API}/transactions/income`, { method:'POST', headers:authH(), body:JSON.stringify({ amount:parseFloat(amount), transaction_date:date, description:desc }) });
+    const res = await fetch(`${API}/transactions/`, {
+      method:'POST', headers:authH(),
+      body: JSON.stringify({ amount, type:'income', description:desc, transaction_date:new Date(date).toISOString() })
+    });
+    const d = await res.json();
     if (res.ok) {
-      toast('Income added!');
-      ['m-inc-amount','m-inc-desc'].forEach(id => document.getElementById(id).value='');
-      msgEl.textContent=''; closeSheet('add-income'); boot();
-    } else { const d=await res.json(); msgEl.textContent=d.detail||'Failed'; msgEl.className='text-xs text-red-400 block'; }
+      toast('✓ Income added');
+      msgEl.textContent=`Added! Category: ${d.predicted_category||''}`; msgEl.className='text-xs text-teal-400 block';
+      document.getElementById('m-inc-amount').value='';
+      document.getElementById('m-inc-desc').value='';
+      closeSheet('add-income'); boot();
+    } else { msgEl.textContent=d.detail||'Failed'; msgEl.className='text-xs text-red-400 block'; }
   } catch { msgEl.textContent='Server unreachable'; msgEl.className='text-xs text-red-400 block'; }
 }
 
