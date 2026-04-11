@@ -6,6 +6,7 @@
   <title>FinTrack — Personal Finance Manager</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer onload="window.onGoogleLibraryLoad && window.onGoogleLibraryLoad()"></script>
   <script>
   var isMobile = /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
     || window.innerWidth <= 768;
@@ -45,6 +46,10 @@
       .glass { background:white !important; border:1px solid #ddd !important; color:black !important; }
       body  { background:white !important; color:black !important; }
     }
+    /* Auth divider */
+    .auth-divider { position:relative; display:flex; align-items:center; margin:16px 0; }
+    .auth-divider::before, .auth-divider::after { content:''; flex:1; border-top:1px solid rgba(255,255,255,0.1); }
+    .auth-divider span { margin:0 12px; font-size:12px; color:#6b7280; }
   </style>
 </head>
 <body class="h-full bg-[#0f0f1a] text-gray-100 overflow-auto">
@@ -145,6 +150,9 @@
           <p class="text-gray-400 mt-1 text-sm">AI-Powered Personal Finance</p>
         </div>
         <div class="space-y-4">
+          <!-- Google Sign-In (rendered by GSI SDK) -->
+          <div id="gsi-btn-login" class="flex justify-center"></div>
+          <div class="auth-divider"><span>or sign in with email</span></div>
           <div>
             <label class="block text-sm font-medium text-gray-300 mb-1">Email</label>
             <input id="login-email" type="email" placeholder="you@example.com" class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-teal-500 transition-colors">
@@ -170,6 +178,9 @@
           <p class="text-gray-400 mt-1 text-sm">Start tracking your finances</p>
         </div>
         <div class="space-y-4">
+          <!-- Google Sign-Up (rendered by GSI SDK) -->
+          <div id="gsi-btn-signup" class="flex justify-center"></div>
+          <div class="auth-divider"><span>or sign up with email</span></div>
           <div>
             <label class="block text-sm font-medium text-gray-300 mb-1">Email</label>
             <input id="signup-email" type="email" placeholder="you@example.com" class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-teal-500 transition-colors">
@@ -707,7 +718,7 @@
 // ═══════════════════════════════════════════════════════════
 //  CONSTANTS & HELPERS
 // ═══════════════════════════════════════════════════════════
-const API = ['https://fintrack-backend-8or0.onrender.com', "https://127.0.0.1:8000"];
+const API = 'https://fintrack-backend-8or0.onrender.com';
 const getToken = () => localStorage.getItem('ft_token');
 const setToken = t  => localStorage.setItem('ft_token', t);
 const clearToken = () => localStorage.removeItem('ft_token');
@@ -746,6 +757,53 @@ function toast(msg, ok = true) {
   el.textContent = msg;
   el.className = `toast glass px-5 py-2.5 rounded-xl text-sm font-medium show ${ok ? 'text-teal-400' : 'text-red-400'}`;
   setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  GOOGLE AUTH
+// ═══════════════════════════════════════════════════════════
+const GOOGLE_CLIENT_ID = '512970671344-ulji7fuc31ub032vjdbl21lk7i93aios.apps.googleusercontent.com';
+let _gsiReady = false;
+
+function _initGSI() {
+  if (_gsiReady || typeof google === 'undefined' || !google.accounts) return;
+  _gsiReady = true;
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: onGoogleCredential,
+    ux_mode: 'popup',
+  });
+  ['gsi-btn-login','gsi-btn-signup'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    google.accounts.id.renderButton(el, {
+      type: 'standard',
+      theme: 'filled_black',
+      size: 'large',
+      text: id.includes('signup') ? 'signup_with' : 'continue_with',
+      shape: 'rectangular',
+      width: el.parentElement ? el.parentElement.offsetWidth || 320 : 320,
+    });
+  });
+}
+window.onGoogleLibraryLoad = _initGSI;
+
+async function onGoogleCredential(response) {
+  try {
+    const res = await fetch(`${API}/auth/google`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id_token: response.credential }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Google sign-in failed');
+    setToken(data.access_token);
+    await boot(true);
+    showDashboard();
+    setTimeout(triggerPredictiveAlert, 800);
+  } catch(err) {
+    toast(err.message || 'Google sign-in failed', false);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
