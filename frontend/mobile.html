@@ -71,19 +71,21 @@
       <p class="text-gray-400 mt-1 text-sm">AI-Powered Personal Finance</p>
     </div>
     <div class="card p-6 space-y-4">
+      <form onsubmit="event.preventDefault(); handleLogin();" class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-2">Email</label>
+          <input id="login-email" type="email" placeholder="you@example.com" class="inp" autocomplete="email">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-2">Password</label>
+          <input id="login-password" type="password" placeholder="••••••••" class="inp" autocomplete="current-password">
+        </div>
+        <div id="login-error" class="hidden text-red-400 text-xs px-1"></div>
+        <button id="login-btn" type="submit" class="btn-primary">Sign In</button>
+      </form>
+      <div class="auth-divider"><span>or</span></div>
       <!-- Google Sign-In (rendered by GSI SDK) -->
-      <div id="gsi-btn-login" class="flex justify-center"></div>
-      <div class="auth-divider"><span>or sign in with email</span></div>
-      <div>
-        <label class="block text-xs font-medium text-gray-400 mb-2">Email</label>
-        <input id="login-email" type="email" placeholder="you@example.com" class="inp">
-      </div>
-      <div>
-        <label class="block text-xs font-medium text-gray-400 mb-2">Password</label>
-        <input id="login-password" type="password" placeholder="••••••••" class="inp">
-      </div>
-      <div id="login-error" class="hidden text-red-400 text-xs px-1"></div>
-      <button id="login-btn" onclick="handleLogin()" class="btn-primary">Sign In</button>
+      <div id="gsi-btn-login" class="flex justify-center rounded-xl overflow-hidden" style="min-height:44px;"></div>
       <p class="text-center text-gray-400 text-sm pt-1">No account? <button onclick="showSignup()" class="text-teal-400 font-medium">Sign up</button></p>
     </div>
   </div>
@@ -97,19 +99,21 @@
       <p class="text-gray-400 mt-1 text-sm">Start tracking your finances</p>
     </div>
     <div class="card p-6 space-y-4">
+      <form onsubmit="event.preventDefault(); handleSignup();" class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-2">Email</label>
+          <input id="signup-email" type="email" placeholder="you@example.com" class="inp" autocomplete="email">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-2">Password</label>
+          <input id="signup-password" type="password" placeholder="Min. 6 characters" class="inp" autocomplete="new-password">
+        </div>
+        <div id="signup-error" class="hidden text-red-400 text-xs px-1"></div>
+        <button id="signup-btn" type="submit" class="btn-primary">Create Account</button>
+      </form>
+      <div class="auth-divider"><span>or</span></div>
       <!-- Google Sign-Up (rendered by GSI SDK) -->
-      <div id="gsi-btn-signup" class="flex justify-center"></div>
-      <div class="auth-divider"><span>or sign up with email</span></div>
-      <div>
-        <label class="block text-xs font-medium text-gray-400 mb-2">Email</label>
-        <input id="signup-email" type="email" placeholder="you@example.com" class="inp">
-      </div>
-      <div>
-        <label class="block text-xs font-medium text-gray-400 mb-2">Password</label>
-        <input id="signup-password" type="password" placeholder="Min. 6 characters" class="inp">
-      </div>
-      <div id="signup-error" class="hidden text-red-400 text-xs px-1"></div>
-      <button id="signup-btn" onclick="handleSignup()" class="btn-primary">Create Account</button>
+      <div id="gsi-btn-signup" class="flex justify-center rounded-xl overflow-hidden" style="min-height:44px;"></div>
       <p class="text-center text-gray-400 text-sm pt-1">Have an account? <button onclick="showLogin()" class="text-teal-400 font-medium">Sign in</button></p>
     </div>
   </div>

@@ -9,6 +9,7 @@ from app.core.security import hash_password, verify_password, create_access_toke
 from google.oauth2 import id_token as google_id_token
 from google.auth.transport import requests as google_requests
 import os
+import secrets
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 
@@ -76,7 +77,10 @@ def google_login(payload: GoogleTokenRequest, db: Session = Depends(get_db_conne
     # Find or create user
     db_user = db.query(User).filter(User.email == email).first()
     if not db_user:
-        db_user = User(email=email, hashed_password=None)
+        # Generate a random unusable password so the DB NOT NULL constraint is satisfied.
+        # This password is unguessable — Google users can only sign in via Google.
+        random_pw = secrets.token_urlsafe(48)
+        db_user = User(email=email, hashed_password=hash_password(random_pw))
         db.add(db_user)
         db.commit()
         db.refresh(db_user)
