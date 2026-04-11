@@ -28,10 +28,6 @@ app.include_router(alert_routes.router)
 app.include_router(chat_routes.router)
 
 
-
-
 @app.get("/")
 def root():
     return {"message": "FinTrack v2.0 Running"}
-
-print("MODEL LOADED FROM:", _MODEL_PATH)

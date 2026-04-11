@@ -6,6 +6,7 @@
   <title>FinTrack</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer onload="window.onGoogleLibraryLoad && window.onGoogleLibraryLoad()"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { font-family: 'Plus Jakarta Sans', sans-serif; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -23,40 +24,35 @@
     .bubble-ai { background: rgba(30,41,59,0.9); border:1px solid rgba(255,255,255,0.08); border-radius:18px 18px 18px 4px; }
     @keyframes blink { 0%,100%{opacity:0.2} 50%{opacity:1} }
     .dot1{animation:blink 1.2s infinite 0s} .dot2{animation:blink 1.2s infinite 0.2s} .dot3{animation:blink 1.2s infinite 0.4s}
-    /* Bottom nav */
     #bottom-nav { position:fixed; bottom:0; left:0; right:0; height:64px; background:#12121f; border-top:1px solid rgba(255,255,255,0.06); z-index:100; display:flex; align-items:center; }
     .nav-btn { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:8px 0; color:#6b7280; transition:color 0.2s; }
     .nav-btn.active { color:#14b8a6; }
     .nav-btn svg { width:22px; height:22px; }
     .nav-btn span { font-size:10px; font-weight:500; }
-    /* Page content */
     #pages { padding-bottom: 64px; }
     .page { display:none; min-height: calc(100vh - 64px); }
     .page.active { display:block; }
     #page-chat.active { display:flex !important; }
-    /* Card */
     .card { background: rgba(30,41,59,0.7); border:1px solid rgba(255,255,255,0.06); border-radius:16px; }
-    /* Input */
     .inp { width:100%; padding:12px 14px; border-radius:12px; background:#1a1a2e; border:1px solid #374151; color:white; font-size:14px; outline:none; transition:border-color 0.2s; }
     .inp:focus { border-color:#14b8a6; }
     .inp::placeholder { color:#6b7280; }
-    /* Button */
     .btn-primary { width:100%; padding:14px; border-radius:12px; background:linear-gradient(135deg,#14b8a6,#0ea5e9); color:white; font-weight:600; font-size:15px; border:none; cursor:pointer; transition:opacity 0.2s; }
     .btn-primary:active { opacity:0.85; }
-    /* Stat card */
     .stat { background:#1a1a2e; border-radius:14px; padding:14px; }
-    /* Transaction row */
     .tx-row { display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
     .tx-row:last-child { border-bottom:none; }
-    /* Modal sheet */
     .sheet-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:200; display:none; align-items:flex-end; }
     .sheet-overlay.open { display:flex; }
     .sheet { background:#12121f; border-radius:24px 24px 0 0; width:100%; padding:20px; max-height:90vh; overflow-y:auto; border-top:1px solid rgba(255,255,255,0.08); }
     .sheet-handle { width:40px; height:4px; background:#374151; border-radius:2px; margin:0 auto 20px; }
-    /* Alert banner */
+    /* Auth divider */
+    .auth-divider { position:relative; display:flex; align-items:center; margin:16px 0; }
+    .auth-divider::before, .auth-divider::after { content:''; flex:1; border-top:1px solid #374151; }
+    .auth-divider span { margin:0 12px; font-size:11px; color:#6b7280; }
     @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(1.4)} }
-    @keyframes pa-slide-in { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-    .pa-notif { animation: pa-slide-in 0.35s ease forwards; opacity:0; }
+    @keyframes pa-slide-in { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    .pa-notif { animation: pa-slide-in 0.3s ease forwards; opacity:0; }
     select { appearance:none; -webkit-appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; }
   </style>
 </head>
@@ -75,6 +71,9 @@
       <p class="text-gray-400 mt-1 text-sm">AI-Powered Personal Finance</p>
     </div>
     <div class="card p-6 space-y-4">
+      <!-- Google Sign-In (rendered by GSI SDK) -->
+      <div id="gsi-btn-login" class="flex justify-center"></div>
+      <div class="auth-divider"><span>or sign in with email</span></div>
       <div>
         <label class="block text-xs font-medium text-gray-400 mb-2">Email</label>
         <input id="login-email" type="email" placeholder="you@example.com" class="inp">
@@ -98,6 +97,9 @@
       <p class="text-gray-400 mt-1 text-sm">Start tracking your finances</p>
     </div>
     <div class="card p-6 space-y-4">
+      <!-- Google Sign-Up (rendered by GSI SDK) -->
+      <div id="gsi-btn-signup" class="flex justify-center"></div>
+      <div class="auth-divider"><span>or sign up with email</span></div>
       <div>
         <label class="block text-xs font-medium text-gray-400 mb-2">Email</label>
         <input id="signup-email" type="email" placeholder="you@example.com" class="inp">
@@ -115,14 +117,11 @@
 
 <!-- ════════════════  MAIN APP  ════════════════ -->
 <div id="main-app" class="hidden">
-
-  <!-- Pages -->
   <div id="pages">
 
     <!-- ── DASHBOARD ── -->
     <div id="page-dashboard" class="page active">
       <div class="p-4 pt-6">
-        <!-- Header -->
         <div class="flex items-center justify-between mb-5">
           <div>
             <p class="text-gray-400 text-sm">Welcome back</p>
@@ -135,53 +134,26 @@
             <button onclick="showPage('settings')" class="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-xs" id="m-avatar">--</button>
           </div>
         </div>
-
-        <!-- Balance card -->
         <div class="card p-5 mb-4" style="border-color:rgba(20,184,166,0.3)">
           <p class="text-gray-400 text-xs mb-1">Total Balance</p>
           <h2 class="text-4xl font-bold text-white mb-1" id="m-balance">₹—</h2>
           <p class="text-gray-500 text-xs">All time income minus expenses</p>
         </div>
-
-        <!-- Stats row -->
         <div class="grid grid-cols-3 gap-3 mb-4">
-          <div class="stat">
-            <p class="text-gray-400 text-xs mb-1">Income</p>
-            <p class="text-base font-bold text-green-400" id="m-income">₹—</p>
-          </div>
-          <div class="stat">
-            <p class="text-gray-400 text-xs mb-1">Expenses</p>
-            <p class="text-base font-bold text-red-400" id="m-expense">₹—</p>
-          </div>
-          <div class="stat">
-            <p class="text-gray-400 text-xs mb-1">Txns</p>
-            <p class="text-base font-bold text-blue-400" id="m-count">—</p>
-          </div>
+          <div class="stat"><p class="text-gray-400 text-xs mb-1">Income</p><p class="text-base font-bold text-green-400" id="m-income">₹—</p></div>
+          <div class="stat"><p class="text-gray-400 text-xs mb-1">Expenses</p><p class="text-base font-bold text-red-400" id="m-expense">₹—</p></div>
+          <div class="stat"><p class="text-gray-400 text-xs mb-1">Txns</p><p class="text-base font-bold text-blue-400" id="m-count">—</p></div>
         </div>
-
-        <!-- Quick actions -->
         <div class="grid grid-cols-2 gap-3 mb-4">
           <button onclick="openSheet('add-expense')" class="card p-4 flex items-center gap-3 active:opacity-75 transition-opacity">
-            <div class="w-9 h-9 rounded-xl bg-red-500/20 flex items-center justify-center flex-shrink-0">
-              <svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            </div>
-            <div class="text-left">
-              <p class="text-white text-sm font-semibold">Add Expense</p>
-              <p class="text-gray-500 text-xs">Track spending</p>
-            </div>
+            <div class="w-9 h-9 rounded-xl bg-red-500/20 flex items-center justify-center flex-shrink-0"><svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+            <div class="text-left"><p class="text-white text-sm font-semibold">Add Expense</p><p class="text-gray-500 text-xs">Track spending</p></div>
           </button>
           <button onclick="openSheet('add-income')" class="card p-4 flex items-center gap-3 active:opacity-75 transition-opacity">
-            <div class="w-9 h-9 rounded-xl bg-green-500/20 flex items-center justify-center flex-shrink-0">
-              <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            </div>
-            <div class="text-left">
-              <p class="text-white text-sm font-semibold">Add Income</p>
-              <p class="text-gray-500 text-xs">Log earnings</p>
-            </div>
+            <div class="w-9 h-9 rounded-xl bg-green-500/20 flex items-center justify-center flex-shrink-0"><svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+            <div class="text-left"><p class="text-white text-sm font-semibold">Add Income</p><p class="text-gray-500 text-xs">Log earnings</p></div>
           </button>
         </div>
-
-        <!-- Recent transactions -->
         <div class="card p-4">
           <div class="flex items-center justify-between mb-3">
             <h3 class="font-semibold text-white text-sm">Recent Transactions</h3>
@@ -202,11 +174,10 @@
             <button onclick="openSheet('add-income')" class="px-3 py-1.5 rounded-lg bg-green-500/20 text-green-400 text-xs font-medium">+ Income</button>
           </div>
         </div>
-        <!-- Tabs -->
         <div class="flex gap-2 mb-4">
-          <button id="tx-tab-all" onclick="setTxTab('all')" class="flex-1 py-2 rounded-xl text-xs font-medium bg-teal-500/20 text-teal-400 border border-teal-500/30 transition-all">All</button>
+          <button id="tx-tab-all"     onclick="setTxTab('all')"     class="flex-1 py-2 rounded-xl text-xs font-medium bg-teal-500/20 text-teal-400 border border-teal-500/30 transition-all">All</button>
           <button id="tx-tab-expense" onclick="setTxTab('expense')" class="flex-1 py-2 rounded-xl text-xs font-medium bg-[#1a1a2e] text-gray-400 border border-gray-700 transition-all">Expenses</button>
-          <button id="tx-tab-income" onclick="setTxTab('income')" class="flex-1 py-2 rounded-xl text-xs font-medium bg-[#1a1a2e] text-gray-400 border border-gray-700 transition-all">Income</button>
+          <button id="tx-tab-income"  onclick="setTxTab('income')"  class="flex-1 py-2 rounded-xl text-xs font-medium bg-[#1a1a2e] text-gray-400 border border-gray-700 transition-all">Income</button>
         </div>
         <div id="m-tx-list" class="card p-4 space-y-1"><p class="text-gray-500 text-sm py-4 text-center">Loading...</p></div>
       </div>
@@ -215,21 +186,17 @@
     <!-- ── ANALYTICS ── -->
     <div id="page-analytics" class="page">
       <div class="p-4 pt-6">
-        <h1 class="text-xl font-bold text-white mb-5">Analytics</h1>
-
-        <!-- Summary stats -->
+        <h1 class="text-xl font-bold text-white mb-5">Analytics 📊</h1>
         <div class="grid grid-cols-3 gap-3 mb-4">
           <div class="stat text-center"><p class="text-gray-400 text-xs mb-1">Income</p><p class="text-sm font-bold text-green-400" id="an-income">₹—</p></div>
           <div class="stat text-center"><p class="text-gray-400 text-xs mb-1">Expenses</p><p class="text-sm font-bold text-red-400" id="an-expense">₹—</p></div>
           <div class="stat text-center"><p class="text-gray-400 text-xs mb-1">Savings</p><p class="text-sm font-bold text-blue-400" id="an-savings">₹—</p></div>
         </div>
-
-        <!-- Pie chart -->
+        <!-- Category pie chart -->
         <div class="card p-4 mb-4">
           <h3 class="font-semibold text-white text-sm mb-3">Category Breakdown</h3>
           <div class="relative h-48 flex items-center justify-center"><canvas id="m-pie-chart"></canvas></div>
         </div>
-
         <!-- Bar chart -->
         <div class="card p-4 mb-4">
           <div class="flex items-center justify-between mb-3">
@@ -240,7 +207,21 @@
           </div>
           <div class="relative h-44"><canvas id="m-bar-chart"></canvas></div>
         </div>
-
+        <!-- Daily trend line chart -->
+        <div class="card p-4 mb-4">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-semibold text-white text-sm">Daily Trend</h3>
+            <div class="flex gap-1">
+              <select id="m-line-month" onchange="loadMLineChart()" class="inp text-xs py-1 px-2 w-16">
+                <option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option>
+              </select>
+              <select id="m-line-year" onchange="loadMLineChart()" class="inp text-xs py-1 px-2 w-16">
+                <option value="2024">2024</option><option value="2025">2025</option><option value="2026" selected>2026</option>
+              </select>
+            </div>
+          </div>
+          <div class="relative h-44"><canvas id="m-line-chart"></canvas></div>
+        </div>
         <!-- Export buttons -->
         <div class="grid grid-cols-2 gap-3 mb-4">
           <button onclick="exportMCSV()" class="card p-3 flex items-center gap-2 active:opacity-75">
@@ -252,26 +233,26 @@
             <span class="text-white text-sm font-medium">Export PDF</span>
           </button>
         </div>
-
         <!-- AI Insights -->
         <div class="card p-4 mb-4">
           <div class="flex items-center justify-between mb-3">
             <h3 class="font-semibold text-white text-sm">AI Insights 🧠</h3>
-            <button onclick="loadMInsights()" class="text-teal-400 text-xs">Refresh</button>
+            <button onclick="loadMInsights()" class="text-teal-400 text-xs">↻ Refresh</button>
           </div>
           <div class="grid grid-cols-2 gap-2 mb-3">
             <div class="stat"><p class="text-xs text-gray-400">Top Category</p><p class="text-sm font-bold text-white mt-0.5 truncate" id="m-ins-top">—</p></div>
             <div class="stat"><p class="text-xs text-gray-400">Savings Rate</p><p class="text-sm font-bold text-teal-400 mt-0.5" id="m-ins-sr">—</p></div>
+            <div class="stat"><p class="text-xs text-gray-400">Avg Expense</p><p class="text-sm font-bold text-white mt-0.5" id="m-ins-avg">—</p></div>
+            <div class="stat"><p class="text-xs text-gray-400">This Month</p><p class="text-sm font-bold text-red-400 mt-0.5" id="m-ins-month">—</p></div>
           </div>
           <div id="m-insight-list" class="space-y-2"><p class="text-gray-500 text-xs">Loading insights...</p></div>
         </div>
-
         <!-- Investments -->
         <div class="card p-4 mb-4">
           <div class="flex items-center justify-between mb-3">
             <h3 class="font-semibold text-white text-sm">Investment Plan 💹</h3>
             <div class="flex gap-2">
-              <button onclick="loadMInvestments()" class="text-teal-400 text-xs">Refresh</button>
+              <button onclick="loadMInvestments()" class="text-teal-400 text-xs">↻</button>
               <button onclick="exportMInvestmentPDF()" class="px-2 py-1 rounded-lg text-xs font-medium" style="background:rgba(20,184,166,0.15);color:#14b8a6;border:1px solid rgba(20,184,166,0.3);">Why This Plan?</button>
             </div>
           </div>
@@ -294,13 +275,8 @@
           <h1 class="text-xl font-bold text-white">Budgets</h1>
           <button onclick="openSheet('set-budget')" class="px-3 py-1.5 rounded-lg bg-teal-500/20 text-teal-400 text-xs font-medium">+ Set Budget</button>
         </div>
-
-        <!-- Budget status card -->
-        <div id="m-budget-status" class="card p-4 mb-4">
-          <p class="text-gray-500 text-sm text-center py-4">Loading budget status...</p>
-        </div>
-
-        <!-- Loans section -->
+        <div id="m-budget-status" class="card p-4 mb-4"><p class="text-gray-500 text-sm text-center py-4">Loading budget status...</p></div>
+        <!-- Loans -->
         <div class="flex items-center justify-between mb-3">
           <h2 class="text-base font-bold text-white">Loans & Lending</h2>
           <button onclick="openSheet('add-loan')" class="px-3 py-1.5 rounded-lg bg-teal-500/20 text-teal-400 text-xs font-medium">+ Add</button>
@@ -311,7 +287,7 @@
           <div class="stat text-center"><p class="text-gray-400 text-xs mb-1">Pending</p><p class="text-sm font-bold text-amber-400" id="m-loan-pending">—</p></div>
         </div>
         <div class="flex gap-2 mb-3">
-          <button id="m-tab-lent" onclick="setMLoanTab('lent')" class="flex-1 py-2 rounded-xl text-xs font-medium bg-green-500/20 text-green-400 border border-green-500/30">💰 Lent</button>
+          <button id="m-tab-lent"     onclick="setMLoanTab('lent')"     class="flex-1 py-2 rounded-xl text-xs font-medium bg-green-500/20 text-green-400 border border-green-500/30">💰 Lent</button>
           <button id="m-tab-borrowed" onclick="setMLoanTab('borrowed')" class="flex-1 py-2 rounded-xl text-xs font-medium bg-[#1a1a2e] text-gray-400 border border-gray-700">💸 Borrowed</button>
         </div>
         <div id="m-loan-list" class="card p-4"><p class="text-gray-500 text-sm py-2 text-center">Loading...</p></div>
@@ -320,15 +296,10 @@
 
     <!-- ── CHAT ── -->
     <div id="page-chat" class="page" style="height:calc(100vh - 64px); flex-direction:column;">
-      <!-- Header -->
       <div class="p-4 pt-6 flex items-center justify-between border-b border-gray-800 flex-shrink-0">
-        <div>
-          <h1 class="text-xl font-bold text-white">FinTrack AI 🤖</h1>
-          <p class="text-gray-400 text-xs mt-0.5">Ask anything about your finances</p>
-        </div>
+        <div><h1 class="text-xl font-bold text-white">FinTrack AI 🤖</h1><p class="text-gray-400 text-xs mt-0.5">Ask anything about your finances</p></div>
         <button onclick="clearMChat()" class="px-3 py-1.5 rounded-lg bg-[#1a1a2e] text-gray-400 text-xs">Clear</button>
       </div>
-      <!-- Messages -->
       <div id="m-chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3">
         <div class="flex gap-2">
           <div class="w-7 h-7 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center flex-shrink-0 text-xs">🤖</div>
@@ -342,14 +313,13 @@
           </div>
         </div>
       </div>
-      <!-- Quick prompts -->
       <div class="px-4 pt-2 flex gap-2 overflow-x-auto pb-2 flex-shrink-0" style="scrollbar-width:none">
-        <button onclick="sendMQuick('How much did I spend this month?')" class="px-3 py-1.5 rounded-full bg-[#1a1a2e] text-gray-400 text-xs whitespace-nowrap flex-shrink-0">This month?</button>
-        <button onclick="sendMQuick('What is my savings rate?')" class="px-3 py-1.5 rounded-full bg-[#1a1a2e] text-gray-400 text-xs whitespace-nowrap flex-shrink-0">Savings rate?</button>
-        <button onclick="sendMQuick('Which category am I spending most on?')" class="px-3 py-1.5 rounded-full bg-[#1a1a2e] text-gray-400 text-xs whitespace-nowrap flex-shrink-0">Top category?</button>
+        <button onclick="sendMQuick('How much did I spend this month?')"         class="px-3 py-1.5 rounded-full bg-[#1a1a2e] text-gray-400 text-xs whitespace-nowrap flex-shrink-0">This month?</button>
+        <button onclick="sendMQuick('What is my savings rate?')"                 class="px-3 py-1.5 rounded-full bg-[#1a1a2e] text-gray-400 text-xs whitespace-nowrap flex-shrink-0">Savings rate?</button>
+        <button onclick="sendMQuick('Which category am I spending most on?')"    class="px-3 py-1.5 rounded-full bg-[#1a1a2e] text-gray-400 text-xs whitespace-nowrap flex-shrink-0">Top category?</button>
+        <button onclick="sendMQuick('How can I reduce my expenses?')"            class="px-3 py-1.5 rounded-full bg-[#1a1a2e] text-gray-400 text-xs whitespace-nowrap flex-shrink-0">Reduce expenses?</button>
         <button onclick="sendMQuick('Give me an investment plan based on my savings')" class="px-3 py-1.5 rounded-full bg-[#1a1a2e] text-gray-400 text-xs whitespace-nowrap flex-shrink-0">Invest plan?</button>
       </div>
-      <!-- Input -->
       <div class="p-4 flex gap-2 border-t border-gray-800 flex-shrink-0">
         <input id="m-chat-input" type="text" placeholder="Ask about your finances..." class="inp flex-1" style="padding:10px 14px;">
         <button onclick="sendMChatMessage()" class="px-4 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 text-white text-sm font-semibold flex-shrink-0">Send</button>
@@ -363,18 +333,12 @@
         <div class="card p-4 mb-4">
           <div class="flex items-center gap-4">
             <div class="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold" id="m-settings-avatar">--</div>
-            <div>
-              <p class="text-white font-medium text-sm" id="m-settings-email">—</p>
-              <p class="text-gray-400 text-xs">Logged in</p>
-            </div>
+            <div><p class="text-white font-medium text-sm" id="m-settings-email">—</p><p class="text-gray-400 text-xs">Logged in</p></div>
           </div>
         </div>
         <div class="card p-4 mb-4" style="border-color:rgba(239,68,68,0.2)">
           <div class="flex items-center justify-between">
-            <div>
-              <p class="text-white text-sm font-medium">Sign Out</p>
-              <p class="text-gray-500 text-xs mt-0.5">End your current session</p>
-            </div>
+            <div><p class="text-white text-sm font-medium">Sign Out</p><p class="text-gray-500 text-xs mt-0.5">End your current session</p></div>
             <button onclick="handleLogout()" class="px-4 py-2 rounded-lg bg-red-500/20 text-red-400 text-sm">Logout</button>
           </div>
         </div>
@@ -390,7 +354,7 @@
 
   <!-- Bottom nav -->
   <nav id="bottom-nav">
-    <button class="nav-btn active" id="nav-dashboard" onclick="showPage('dashboard')">
+    <button class="nav-btn active" id="nav-dashboard"    onclick="showPage('dashboard')">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
       <span>Home</span>
     </button>
@@ -415,7 +379,7 @@
 
 <!-- ════════  BOTTOM SHEETS  ════════ -->
 
-<!-- Add Expense Sheet -->
+<!-- Add Expense -->
 <div id="sheet-add-expense" class="sheet-overlay" onclick="sheetOutside(event,'add-expense')">
   <div class="sheet">
     <div class="sheet-handle"></div>
@@ -430,7 +394,7 @@
   </div>
 </div>
 
-<!-- Add Income Sheet -->
+<!-- Add Income -->
 <div id="sheet-add-income" class="sheet-overlay" onclick="sheetOutside(event,'add-income')">
   <div class="sheet">
     <div class="sheet-handle"></div>
@@ -445,7 +409,7 @@
   </div>
 </div>
 
-<!-- Set Budget Sheet -->
+<!-- Set Budget -->
 <div id="sheet-set-budget" class="sheet-overlay" onclick="sheetOutside(event,'set-budget')">
   <div class="sheet">
     <div class="sheet-handle"></div>
@@ -466,7 +430,7 @@
   </div>
 </div>
 
-<!-- Add Loan Sheet -->
+<!-- Add Loan -->
 <div id="sheet-add-loan" class="sheet-overlay" onclick="sheetOutside(event,'add-loan')">
   <div class="sheet">
     <div class="sheet-handle"></div>
@@ -495,53 +459,93 @@
 <div id="sheet-predictive" class="sheet-overlay" onclick="sheetOutside(event,'predictive')">
   <div class="sheet">
     <div class="sheet-handle"></div>
-    <div id="pa-m-header" class="flex items-center gap-2 mb-4">
-      <div id="pa-m-dot" class="w-2.5 h-2.5 rounded-full bg-red-500" style="animation:pulse-dot 1.2s infinite"></div>
+    <!-- Header -->
+    <div class="flex items-center gap-2 mb-3">
+      <div id="pa-m-dot" class="w-2.5 h-2.5 rounded-full bg-red-500 flex-shrink-0" style="animation:pulse-dot 1.2s infinite"></div>
       <span class="text-xs font-bold tracking-widest uppercase text-gray-300" id="pa-m-label">Analysing...</span>
       <span class="text-xs text-gray-500 ml-auto" id="pa-m-confidence"></span>
     </div>
     <h2 class="text-lg font-bold text-white mb-1" id="pa-m-headline">Checking budget...</h2>
     <p class="text-xs text-gray-500 mb-4" id="pa-m-subline"></p>
+
+    <!-- Content (shown when budget exists) -->
     <div id="pa-m-body">
+      <!-- Stats row -->
       <div class="grid grid-cols-3 gap-2 mb-4">
         <div class="stat text-center"><p class="text-xs text-gray-500 mb-0.5">Spent</p><p class="text-sm font-bold text-white" id="pa-m-spent">-</p></div>
         <div class="stat text-center"><p class="text-xs text-gray-500 mb-0.5">Projected</p><p class="text-sm font-bold" id="pa-m-projected">-</p></div>
         <div class="stat text-center"><p class="text-xs text-gray-500 mb-0.5">Budget</p><p class="text-sm font-bold text-gray-300" id="pa-m-budget">-</p></div>
       </div>
+      <!-- Progress bar -->
       <div class="mb-4">
         <div class="flex justify-between text-xs text-gray-500 mb-1.5"><span>Spent so far</span><span id="pa-m-meter-label"></span></div>
         <div class="relative h-2.5 rounded-full overflow-hidden" style="background:#1a1a2e;">
-          <div id="pa-m-bar" class="absolute top-0 left-0 h-full rounded-full" style="width:0%;transition:width 0.8s ease;"></div>
+          <div id="pa-m-bar-proj" class="absolute top-0 left-0 h-full rounded-full" style="width:0%;transition:width 1s ease 0.3s;opacity:0.3;"></div>
+          <div id="pa-m-bar"      class="absolute top-0 left-0 h-full rounded-full" style="width:0%;transition:width 0.8s ease;"></div>
         </div>
-        <div class="flex justify-between text-xs mt-1.5 text-gray-600"><span>₹0</span><span id="pa-m-cap"></span></div>
+        <div class="flex justify-between text-xs mt-1 text-gray-600"><span>₹0</span><span id="pa-m-cap"></span></div>
       </div>
+      <!-- Notifications -->
       <div id="pa-m-notifs" class="space-y-2 mb-4"></div>
+      <!-- Rate row -->
+      <div class="flex items-center justify-between rounded-xl px-3 py-2.5 mb-4" style="background:#0d0d18;border:1px solid #1e1e2e;">
+        <div><p class="text-xs text-gray-500">Daily rate</p><p class="text-sm font-bold text-white" id="pa-m-daily-rate">-</p></div>
+        <div class="text-center"><p class="text-xs text-gray-500">Trend</p><p class="text-sm font-bold" id="pa-m-trend">-</p></div>
+        <div class="text-right"><p class="text-xs text-gray-500">Days left</p><p class="text-sm font-bold text-blue-400" id="pa-m-days-left">-</p></div>
+      </div>
+      <!-- CTA -->
+      <button id="pa-m-cta" onclick="closeSheet('predictive'); setTimeout(triggerMCutSpending, 300);" class="btn-primary mb-2" style="background:linear-gradient(135deg,#ef4444,#dc2626);">Cut Spending</button>
     </div>
+
+    <!-- No budget fallback -->
     <div id="pa-m-no-budget" class="hidden text-center py-4">
       <p class="text-4xl mb-2">💸</p>
       <p class="text-gray-400 text-sm mb-3">No budget set for this month.</p>
       <button onclick="closeSheet('predictive'); showPage('budgets'); openSheet('set-budget')" class="btn-primary">Set a Budget →</button>
     </div>
-    <button onclick="closeSheet('predictive')" class="w-full py-3 rounded-xl text-sm font-medium text-gray-400 bg-[#1a1a2e] mt-2">Dismiss</button>
+    <button onclick="closeSheet('predictive')" class="w-full py-3 rounded-xl text-sm font-medium text-gray-400 bg-[#1a1a2e] mt-1">Dismiss</button>
+  </div>
+</div>
+
+<!-- Cut Spending Sheet -->
+<div id="sheet-cut-spending" class="sheet-overlay" onclick="sheetOutside(event,'cut-spending')">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-8 h-8 rounded-xl bg-red-500/20 flex items-center justify-center text-base">✂️</div>
+      <div><p class="text-sm font-bold text-white">Smart Spending Cuts</p><p class="text-xs text-gray-500">Personalised savings recommendations</p></div>
+    </div>
+    <!-- Potential savings banner -->
+    <div class="rounded-xl px-4 py-3 flex items-center justify-between mb-4" style="background:linear-gradient(135deg,#052014,#0a2a18);border:1px solid #14532d;">
+      <div><p class="text-xs text-gray-400 mb-0.5">Potential monthly savings</p><p class="text-xl font-bold text-green-400" id="cs-m-potential">₹—</p></div>
+      <div class="text-right"><p class="text-xs text-gray-400 mb-0.5">Target savings rate</p><p class="text-base font-bold text-teal-400" id="cs-m-target-rate">—%</p></div>
+    </div>
+    <p class="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">Category Tips</p>
+    <div id="cs-m-cat-tips" class="space-y-2 mb-4"><p class="text-gray-500 text-sm">Loading...</p></div>
+    <p class="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">Quick Wins</p>
+    <div id="cs-m-quick-wins" class="space-y-2 mb-4"></div>
+    <p class="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">30-Day Plan</p>
+    <div id="cs-m-action-plan" class="space-y-2 mb-4"></div>
+    <button onclick="closeSheet('cut-spending')" class="w-full py-3 rounded-xl text-sm font-medium text-gray-400 bg-[#1a1a2e]">Close</button>
   </div>
 </div>
 
 <script>
 // ═══════════════ CONSTANTS ═══════════════
-const API = ['https://fintrack-backend-8or0.onrender.com', "https://127.0.0.1:8000"];
+const API      = 'https://fintrack-backend-8or0.onrender.com';
 const getToken = () => localStorage.getItem('ft_token');
-const setToken = t => localStorage.setItem('ft_token', t);
-const clearToken = () => localStorage.removeItem('ft_token');
-const authH = () => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` });
-const fmt = n => '₹' + Number(n).toLocaleString('en-IN', { maximumFractionDigits: 0 });
-const fmtDate = iso => iso ? new Date(iso).toLocaleDateString('en-IN', { day:'numeric', month:'short' }) : '—';
+const setToken = t  => localStorage.setItem('ft_token', t);
+const clearToken= () => localStorage.removeItem('ft_token');
+const authH    = () => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` });
+const fmt      = n  => '₹' + Number(n).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+const fmtDate  = iso=> iso ? new Date(iso).toLocaleDateString('en-IN', { day:'numeric', month:'short' }) : '—';
 
 const CAT_EMOJI = { Food:'🍔', Transport:'🚕', Shopping:'🛒', Entertainment:'🎬', Medical:'💊', Taxes:'📋', Salary:'💼', Income:'💰', Bills:'💡', Others:'📦' };
 const CAT_COLOR = { Food:'#ef4444', Transport:'#f59e0b', Shopping:'#8b5cf6', Entertainment:'#ec4899', Medical:'#10b981', Taxes:'#3b82f6', Salary:'#22c55e', Income:'#22c55e', Bills:'#06b6d4', Others:'#64748b' };
+const normCat  = cat => { if(!cat) return 'Others'; const s=cat.trim(); return s.charAt(0).toUpperCase()+s.slice(1).toLowerCase(); };
 
-const normCat = cat => { if(!cat) return 'Others'; const s=cat.trim(); return s.charAt(0).toUpperCase()+s.slice(1).toLowerCase(); };
-
-let _mPieChart, _mBarChart, _mAllTxs = [], _mTxTab = 'all', _mLoanTab = 'lent', _mAllLoans = [], _mChatHistory = [];
+let _mPieChart, _mBarChart, _mLineChart;
+let _mAllTxs=[], _mTxFilter='all', _mLoanTab='lent', _mAllLoans=[], _mChatHistory=[];
 
 // ═══════════════ TOAST ═══════════════
 function toast(msg, ok=true) {
@@ -573,34 +577,67 @@ const PAGES = ['dashboard','transactions','analytics','budgets','chat','settings
 function showPage(id) {
   PAGES.forEach(p => {
     const el = document.getElementById('page-'+p);
-    if (el) { el.classList.remove('active'); el.style.display = 'none'; }
+    if (el) { el.classList.remove('active'); el.style.display='none'; }
     const nav = document.getElementById('nav-'+p);
     if (nav) nav.classList.remove('active');
   });
   const pg = document.getElementById('page-'+id);
-  if (pg) {
-    pg.style.display = (id === 'chat') ? 'flex' : 'block';
-    pg.classList.add('active');
-  }
+  if (pg) { pg.style.display=(id==='chat')?'flex':'block'; pg.classList.add('active'); }
   const nav = document.getElementById('nav-'+id);
   if (nav) nav.classList.add('active');
-
-  if (id === 'transactions') loadMTxs();
-  if (id === 'analytics')    { loadMAnalytics(); loadMInvestments(); }
-  if (id === 'budgets')      { loadMBudgetStatus(); loadMLoans(); }
+  if (id==='transactions') loadMTxs();
+  if (id==='analytics')    { loadMAnalytics(); loadMInvestments(); }
+  if (id==='budgets')      { loadMBudgetStatus(); loadMLoans(); }
 }
 
 // ═══════════════ SHEETS ═══════════════
-function openSheet(id) {
-  const el = document.getElementById('sheet-'+id);
-  if (el) el.classList.add('open');
+function openSheet(id)  { const el=document.getElementById('sheet-'+id); if(el) el.classList.add('open'); }
+function closeSheet(id) { const el=document.getElementById('sheet-'+id); if(el) el.classList.remove('open'); }
+function sheetOutside(e,id) { if(e.target===document.getElementById('sheet-'+id)) closeSheet(id); }
+
+// ═══════════════ GOOGLE AUTH ═══════════════
+const GOOGLE_CLIENT_ID = '512970671344-ulji7fuc31ub032vjdbl21lk7i93aios.apps.googleusercontent.com';
+let _gsiReady = false;
+
+function _initGSI() {
+  if (_gsiReady || typeof google === 'undefined' || !google.accounts) return;
+  _gsiReady = true;
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: onGoogleCredential,
+    ux_mode: 'popup',
+  });
+  ['gsi-btn-login','gsi-btn-signup'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    google.accounts.id.renderButton(el, {
+      type: 'standard',
+      theme: 'filled_black',
+      size: 'large',
+      text: id.includes('signup') ? 'signup_with' : 'continue_with',
+      shape: 'rectangular',
+      width: el.parentElement ? el.parentElement.offsetWidth || 320 : 320,
+    });
+  });
 }
-function closeSheet(id) {
-  const el = document.getElementById('sheet-'+id);
-  if (el) el.classList.remove('open');
-}
-function sheetOutside(e, id) {
-  if (e.target === document.getElementById('sheet-'+id)) closeSheet(id);
+window.onGoogleLibraryLoad = _initGSI;
+
+async function onGoogleCredential(response) {
+  try {
+    const res = await fetch(`${API}/auth/google`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id_token: response.credential }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Google sign-in failed');
+    setToken(data.access_token);
+    await boot(true);
+    showApp();
+    setTimeout(triggerPredictiveAlert, 800);
+  } catch(err) {
+    toast(err.message || 'Google sign-in failed', false);
+  }
 }
 
 // ═══════════════ AUTH ═══════════════
@@ -610,7 +647,7 @@ async function handleLogin() {
   const errEl = document.getElementById('login-error');
   const btn   = document.getElementById('login-btn');
   errEl.classList.add('hidden');
-  if (!email || !pass) { errEl.textContent='Fill in all fields.'; errEl.classList.remove('hidden'); return; }
+  if (!email||!pass) { errEl.textContent='Fill in all fields.'; errEl.classList.remove('hidden'); return; }
   btn.disabled=true; btn.textContent='Signing in...';
   try {
     const form = new URLSearchParams(); form.append('username',email); form.append('password',pass);
@@ -656,27 +693,22 @@ async function boot(fromLogin=false) {
     const d = await res.json();
     const txs = d.transactions || [];
     _mAllTxs = txs;
-
+    const balance = d.current_balance ?? (txs.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0) - txs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0));
     const income  = txs.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
     const expense = txs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
-    const balance = income - expense;
-
-    document.getElementById('m-balance').textContent  = fmt(balance);
-    document.getElementById('m-income').textContent   = fmt(income);
-    document.getElementById('m-expense').textContent  = fmt(expense);
-    document.getElementById('m-count').textContent    = txs.length;
-
-    // Try to get email from token
+    document.getElementById('m-balance').textContent = fmt(balance);
+    document.getElementById('m-balance').className   = `text-4xl font-bold mb-1 ${balance>=0?'text-white':'text-red-400'}`;
+    document.getElementById('m-income').textContent  = fmt(income);
+    document.getElementById('m-expense').textContent = fmt(expense);
+    document.getElementById('m-count').textContent   = txs.length;
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      const email = payload.sub || '';
-      const initials = email.slice(0,2).toUpperCase();
-      document.getElementById('m-avatar').textContent         = initials;
-      document.getElementById('m-settings-avatar').textContent = initials;
-      document.getElementById('m-settings-email').textContent  = email;
-      document.getElementById('m-user-name').textContent = email.split('@')[0];
+      const uid  = payload.user_id || payload.sub || '?';
+      const initials = String(uid).slice(0,2).toUpperCase();
+      ['m-avatar','m-settings-avatar'].forEach(id => document.getElementById(id).textContent=initials);
+      document.getElementById('m-settings-email').textContent = `User #${uid}`;
+      document.getElementById('m-user-name').textContent = `User #${uid}`;
     } catch {}
-
     renderMRecentTxs(txs.slice(-5).reverse());
     if (!fromLogin) showApp();
   } catch(e) { console.error(e); }
@@ -687,57 +719,43 @@ function renderMRecentTxs(txs) {
   const el = document.getElementById('m-recent-txs');
   if (!txs.length) { el.innerHTML='<p class="text-gray-500 text-sm py-4 text-center">No transactions yet</p>'; return; }
   el.innerHTML = txs.map(tx => {
-    const cat = normCat(tx.category||'Others');
-    const emoji = CAT_EMOJI[cat]||'📦';
-    const isInc = tx.type==='income';
+    const cat=normCat(tx.category||'Others'), emoji=CAT_EMOJI[cat]||'📦', isInc=tx.type==='income';
     return `<div class="tx-row">
       <div class="w-9 h-9 rounded-xl flex items-center justify-center text-base flex-shrink-0" style="background:${isInc?'rgba(34,197,94,0.15)':'rgba(239,68,68,0.15)'};">${emoji}</div>
-      <div class="flex-1 min-w-0">
-        <p class="text-white text-sm font-medium truncate">${tx.description||'—'}</p>
-        <p class="text-gray-500 text-xs">${fmtDate(tx.transaction_date)} · ${cat}</p>
-      </div>
+      <div class="flex-1 min-w-0"><p class="text-white text-sm font-medium truncate">${tx.description||'—'}</p><p class="text-gray-500 text-xs">${fmtDate(tx.transaction_date)} · ${cat}</p></div>
       <p class="text-sm font-semibold flex-shrink-0 ${isInc?'text-green-400':'text-red-400'}">${isInc?'+':'−'}${fmt(tx.amount)}</p>
     </div>`;
   }).join('');
 }
 
 // ═══════════════ TRANSACTIONS ═══════════════
-let _mTxFilter = 'all';
 function setTxTab(tab) {
-  _mTxFilter = tab;
+  _mTxFilter=tab;
   ['all','expense','income'].forEach(t => {
-    const btn = document.getElementById('tx-tab-'+t);
-    if (t===tab) { btn.className='flex-1 py-2 rounded-xl text-xs font-medium bg-teal-500/20 text-teal-400 border border-teal-500/30 transition-all'; }
-    else { btn.className='flex-1 py-2 rounded-xl text-xs font-medium bg-[#1a1a2e] text-gray-400 border border-gray-700 transition-all'; }
+    const btn=document.getElementById('tx-tab-'+t);
+    btn.className=`flex-1 py-2 rounded-xl text-xs font-medium transition-all ${t===tab?'bg-teal-500/20 text-teal-400 border border-teal-500/30':'bg-[#1a1a2e] text-gray-400 border border-gray-700'}`;
   });
   renderMTxList();
 }
 
 async function loadMTxs() {
   try {
-    const res = await fetch(`${API}/transactions/`, { headers:authH() });
-    if (res.status===401) { handleLogout(); return; }
-    const d = await res.json();
-    _mAllTxs = d.transactions || [];
-    renderMTxList();
+    const res=await fetch(`${API}/transactions/`,{headers:authH()});
+    if(res.status===401){handleLogout();return;}
+    const d=await res.json(); _mAllTxs=d.transactions||[]; renderMTxList();
   } catch {}
 }
 
 function renderMTxList() {
-  const el = document.getElementById('m-tx-list');
-  const filtered = _mTxFilter==='all' ? _mAllTxs : _mAllTxs.filter(t=>t.type===_mTxFilter);
-  const sorted = [...filtered].sort((a,b)=>new Date(b.transaction_date)-new Date(a.transaction_date));
-  if (!sorted.length) { el.innerHTML='<p class="text-gray-500 text-sm py-4 text-center">No transactions found</p>'; return; }
-  el.innerHTML = sorted.map(tx => {
-    const cat = normCat(tx.category||'Others');
-    const emoji = CAT_EMOJI[cat]||'📦';
-    const isInc = tx.type==='income';
+  const el=document.getElementById('m-tx-list');
+  const filtered=_mTxFilter==='all'?_mAllTxs:_mAllTxs.filter(t=>t.type===_mTxFilter);
+  const sorted=[...filtered].sort((a,b)=>new Date(b.transaction_date)-new Date(a.transaction_date));
+  if(!sorted.length){el.innerHTML='<p class="text-gray-500 text-sm py-4 text-center">No transactions found</p>';return;}
+  el.innerHTML=sorted.map(tx=>{
+    const cat=normCat(tx.category||'Others'),emoji=CAT_EMOJI[cat]||'📦',isInc=tx.type==='income';
     return `<div class="tx-row">
       <div class="w-9 h-9 rounded-xl flex items-center justify-center text-base flex-shrink-0" style="background:${isInc?'rgba(34,197,94,0.15)':'rgba(239,68,68,0.15)'};">${emoji}</div>
-      <div class="flex-1 min-w-0">
-        <p class="text-white text-sm font-medium truncate">${tx.description||'—'}</p>
-        <p class="text-gray-500 text-xs">${fmtDate(tx.transaction_date)} · ${cat}</p>
-      </div>
+      <div class="flex-1 min-w-0"><p class="text-white text-sm font-medium truncate">${tx.description||'—'}</p><p class="text-gray-500 text-xs">${fmtDate(tx.transaction_date)} · ${cat}</p></div>
       <div class="text-right flex-shrink-0">
         <p class="text-sm font-semibold ${isInc?'text-green-400':'text-red-400'}">${isInc?'+':'−'}${fmt(tx.amount)}</p>
         <button onclick="deleteMTx(${tx.id})" class="text-gray-600 text-xs hover:text-red-400 transition-colors">del</button>
@@ -747,113 +765,113 @@ function renderMTxList() {
 }
 
 async function deleteMTx(id) {
-  if (!confirm('Delete?')) return;
-  const res = await fetch(`${API}/transactions/${id}`, { method:'DELETE', headers:authH() });
-  if (res.ok) { toast('Deleted'); loadMTxs(); boot(); } else toast('Failed', false);
+  if(!confirm('Delete?')) return;
+  const res=await fetch(`${API}/transactions/${id}`,{method:'DELETE',headers:authH()});
+  if(res.ok){toast('Deleted');loadMTxs();boot(true);}else toast('Failed',false);
 }
 
-// ═══════════════ ADD EXPENSE ═══════════════
+// ═══════════════ ADD EXPENSE / INCOME ═══════════════
 async function submitMExpense() {
-  const amount = parseFloat(document.getElementById('m-exp-amount').value);
-  const date   = document.getElementById('m-exp-date').value;
-  const desc   = document.getElementById('m-exp-desc').value.trim();
-  const msgEl  = document.getElementById('m-exp-msg');
-  if (!amount||!date||!desc) { msgEl.textContent='Fill all fields'; msgEl.className='text-xs text-red-400 block'; return; }
-  msgEl.textContent='Adding...'; msgEl.className='text-xs text-gray-400 block';
+  const amount=parseFloat(document.getElementById('m-exp-amount').value);
+  const date  =document.getElementById('m-exp-date').value;
+  const desc  =document.getElementById('m-exp-desc').value.trim();
+  const msgEl =document.getElementById('m-exp-msg');
+  if(!amount||!date||!desc){msgEl.textContent='Fill all fields';msgEl.className='text-xs text-red-400 block';return;}
+  msgEl.textContent='Adding...';msgEl.className='text-xs text-gray-400 block';
   try {
-    const res = await fetch(`${API}/transactions/`, {
-      method:'POST', headers:authH(),
-      body: JSON.stringify({ amount, type:'expense', description:desc, transaction_date:new Date(date).toISOString() })
-    });
-    const d = await res.json();
-    if (res.ok) {
-      const cat = normCat(d.transaction?.category);
-      toast(`✓ Expense added · AI category: ${cat}`);
-      msgEl.textContent=`Added! Category: ${d.predicted_category||cat}`; msgEl.className='text-xs text-teal-400 block';
-      document.getElementById('m-exp-amount').value='';
-      document.getElementById('m-exp-desc').value='';
-      closeSheet('add-expense'); boot();
-    } else { msgEl.textContent=d.detail||'Failed'; msgEl.className='text-xs text-red-400 block'; }
-  } catch { msgEl.textContent='Server unreachable'; msgEl.className='text-xs text-red-400 block'; }
+    const res=await fetch(`${API}/transactions/`,{method:'POST',headers:authH(),body:JSON.stringify({amount,type:'expense',description:desc,transaction_date:new Date(date).toISOString()})});
+    const d=await res.json();
+    if(res.ok){toast(`✓ Expense · AI: ${normCat(d.transaction?.category||d.predicted_category)}`);msgEl.textContent='';document.getElementById('m-exp-amount').value='';document.getElementById('m-exp-desc').value='';closeSheet('add-expense');boot(true);}
+    else{msgEl.textContent=d.detail||'Failed';msgEl.className='text-xs text-red-400 block';}
+  } catch{msgEl.textContent='Server unreachable';msgEl.className='text-xs text-red-400 block';}
 }
 
-// ═══════════════ ADD INCOME ═══════════════
 async function submitMIncome() {
-  const amount = parseFloat(document.getElementById('m-inc-amount').value);
-  const date   = document.getElementById('m-inc-date').value;
-  const desc   = document.getElementById('m-inc-desc').value.trim();
-  const msgEl  = document.getElementById('m-inc-msg');
-  if (!amount||!date||!desc) { msgEl.textContent='Fill all fields'; msgEl.className='text-xs text-red-400 block'; return; }
-  msgEl.textContent='Adding...'; msgEl.className='text-xs text-gray-400 block';
+  const amount=parseFloat(document.getElementById('m-inc-amount').value);
+  const date  =document.getElementById('m-inc-date').value;
+  const desc  =document.getElementById('m-inc-desc').value.trim();
+  const msgEl =document.getElementById('m-inc-msg');
+  if(!amount||!date||!desc){msgEl.textContent='Fill all fields';msgEl.className='text-xs text-red-400 block';return;}
+  msgEl.textContent='Adding...';msgEl.className='text-xs text-gray-400 block';
   try {
-    const res = await fetch(`${API}/transactions/`, {
-      method:'POST', headers:authH(),
-      body: JSON.stringify({ amount, type:'income', description:desc, transaction_date:new Date(date).toISOString() })
-    });
-    const d = await res.json();
-    if (res.ok) {
-      toast('✓ Income added');
-      msgEl.textContent=`Added! Category: ${d.predicted_category||''}`; msgEl.className='text-xs text-teal-400 block';
-      document.getElementById('m-inc-amount').value='';
-      document.getElementById('m-inc-desc').value='';
-      closeSheet('add-income'); boot();
-    } else { msgEl.textContent=d.detail||'Failed'; msgEl.className='text-xs text-red-400 block'; }
-  } catch { msgEl.textContent='Server unreachable'; msgEl.className='text-xs text-red-400 block'; }
+    const res=await fetch(`${API}/transactions/`,{method:'POST',headers:authH(),body:JSON.stringify({amount,type:'income',description:desc,transaction_date:new Date(date).toISOString()})});
+    const d=await res.json();
+    if(res.ok){toast('✓ Income added');msgEl.textContent='';document.getElementById('m-inc-amount').value='';document.getElementById('m-inc-desc').value='';closeSheet('add-income');boot(true);}
+    else{msgEl.textContent=d.detail||'Failed';msgEl.className='text-xs text-red-400 block';}
+  } catch{msgEl.textContent='Server unreachable';msgEl.className='text-xs text-red-400 block';}
 }
 
 // ═══════════════ ANALYTICS ═══════════════
 async function loadMAnalytics() {
   try {
     const [sumRes, catRes] = await Promise.all([
-      fetch(`${API}/reports/summary`, { headers:authH() }),
-      fetch(`${API}/reports/category-breakdown`, { headers:authH() })
+      fetch(`${API}/reports/summary`,{headers:authH()}),
+      fetch(`${API}/reports/category-breakdown`,{headers:authH()})
     ]);
-    if (sumRes.status===401) { handleLogout(); return; }
-    const sum = await sumRes.json();
+    if(sumRes.status===401){handleLogout();return;}
+    const sum=await sumRes.json();
     document.getElementById('an-income').textContent  = fmt(sum.total_income||0);
     document.getElementById('an-expense').textContent = fmt(sum.total_expense||0);
     document.getElementById('an-savings').textContent = fmt(sum.balance||0);
-
-    const catData = await catRes.json();
-    if (_mPieChart) _mPieChart.destroy();
-    const ctx = document.getElementById('m-pie-chart').getContext('2d');
-    _mPieChart = new Chart(ctx, {
+    const catData=await catRes.json();
+    if(_mPieChart) _mPieChart.destroy();
+    const ctx=document.getElementById('m-pie-chart').getContext('2d');
+    _mPieChart=new Chart(ctx,{
       type:'doughnut',
-      data:{ labels:catData.map(d=>`${CAT_EMOJI[normCat(d.category)]||'📦'} ${normCat(d.category)}`), datasets:[{ data:catData.map(d=>d.total), backgroundColor:catData.map(d=>CAT_COLOR[normCat(d.category)]||'#64748b'), borderColor:'#0f0f1a', borderWidth:3, hoverOffset:6 }] },
-      options:{ cutout:'58%', plugins:{ legend:{ position:'bottom', labels:{ color:'#94a3b8', font:{size:10}, boxWidth:10 } }, tooltip:{ callbacks:{ label:c=>` ${fmt(c.parsed)}` } } } }
+      data:{labels:catData.map(d=>`${CAT_EMOJI[normCat(d.category)]||'📦'} ${normCat(d.category)}`),datasets:[{data:catData.map(d=>d.total),backgroundColor:catData.map(d=>CAT_COLOR[normCat(d.category)]||'#64748b'),borderColor:'#0f0f1a',borderWidth:3,hoverOffset:6}]},
+      options:{cutout:'58%',plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',font:{size:10},boxWidth:10}},tooltip:{callbacks:{label:c=>` ${fmt(c.parsed)}`}}}}
     });
     loadMBarChart();
+    loadMLineChart();
     loadMInsights();
-  } catch(e) { console.error(e); }
+  } catch(e){console.error(e);}
 }
 
 async function loadMBarChart() {
-  const year = document.getElementById('m-bar-year').value;
+  const year=document.getElementById('m-bar-year').value;
   try {
-    const res  = await fetch(`${API}/reports/monthly-spending?year=${year}`, { headers:authH() });
-    const data = await res.json();
-    if (_mBarChart) _mBarChart.destroy();
-    const ctx = document.getElementById('m-bar-chart').getContext('2d');
-    _mBarChart = new Chart(ctx, {
+    const res=await fetch(`${API}/reports/monthly-spending?year=${year}`,{headers:authH()});
+    const data=await res.json();
+    if(_mBarChart) _mBarChart.destroy();
+    const ctx=document.getElementById('m-bar-chart').getContext('2d');
+    _mBarChart=new Chart(ctx,{
       type:'bar',
-      data:{ labels:data.map(d=>d.month.slice(0,3)), datasets:[{ label:'Expenses', data:data.map(d=>d.total), backgroundColor:'rgba(20,184,166,0.6)', borderColor:'rgba(20,184,166,1)', borderWidth:1, borderRadius:4 }] },
-      options:{ scales:{ x:{ticks:{color:'#64748b',font:{size:9}},grid:{color:'rgba(255,255,255,0.04)'}}, y:{ticks:{color:'#64748b',font:{size:9},callback:v=>'₹'+(v/1000).toFixed(0)+'K'},grid:{color:'rgba(255,255,255,0.04)'}} }, plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:c=>` ${fmt(c.parsed.y)}` } } } }
+      data:{labels:data.map(d=>d.month.slice(0,3)),datasets:[{label:'Expenses',data:data.map(d=>d.total),backgroundColor:'rgba(20,184,166,0.6)',borderColor:'rgba(20,184,166,1)',borderWidth:1,borderRadius:4}]},
+      options:{scales:{x:{ticks:{color:'#64748b',font:{size:9}},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#64748b',font:{size:9},callback:v=>'₹'+(v/1000).toFixed(0)+'K'},grid:{color:'rgba(255,255,255,0.04)'}}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${fmt(c.parsed.y)}`}}}}
+    });
+  } catch {}
+}
+
+async function loadMLineChart() {
+  const month=document.getElementById('m-line-month').value;
+  const year =document.getElementById('m-line-year').value;
+  try {
+    const res=await fetch(`${API}/reports/daily-trend?month=${month}&year=${year}`,{headers:authH()});
+    const data=await res.json();
+    if(_mLineChart) _mLineChart.destroy();
+    const ctx=document.getElementById('m-line-chart').getContext('2d');
+    _mLineChart=new Chart(ctx,{
+      type:'line',
+      data:{labels:data.map(d=>`${d.day}`),datasets:[{label:'Daily Spend',data:data.map(d=>d.total),borderColor:'#14b8a6',backgroundColor:'rgba(20,184,166,0.1)',fill:true,tension:0.4,pointBackgroundColor:'#14b8a6',pointRadius:3}]},
+      options:{scales:{x:{ticks:{color:'#64748b',font:{size:9}},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#64748b',font:{size:9},callback:v=>'₹'+(v/1000).toFixed(0)+'K'},grid:{color:'rgba(255,255,255,0.04)'}}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${fmt(c.parsed.y)}`}}}}
     });
   } catch {}
 }
 
 async function loadMInsights() {
   try {
-    const res = await fetch(`${API}/reports/insights`, { headers:authH() });
-    if (res.status===401) { handleLogout(); return; }
-    const d = await res.json();
-    document.getElementById('m-ins-top').textContent = d.top_category || '—';
-    document.getElementById('m-ins-sr').textContent  = `${d.savings_rate||0}%`;
-    const lines = d.insights || [];
-    const el = document.getElementById('m-insight-list');
-    if (!lines.length) { el.innerHTML='<p class="text-gray-500 text-xs">No insights yet.</p>'; return; }
-    el.innerHTML = lines.slice(0,4).map(item => {
-      const cleaned = item.replace(/\*\*(.+?)\*\*/g,'<strong class="text-white">$1</strong>');
+    const res=await fetch(`${API}/reports/insights`,{headers:authH()});
+    if(res.status===401){handleLogout();return;}
+    const d=await res.json();
+    document.getElementById('m-ins-top').textContent  = d.top_category||'—';
+    document.getElementById('m-ins-sr').textContent   = `${d.savings_rate||0}%`;
+    document.getElementById('m-ins-avg').textContent  = fmt(d.avg_expense||0);
+    document.getElementById('m-ins-month').textContent= fmt(d.this_month_spend||0);
+    const lines=d.insights||[];
+    const el=document.getElementById('m-insight-list');
+    if(!lines.length){el.innerHTML='<p class="text-gray-500 text-xs">No insights yet. Add more transactions.</p>';return;}
+    el.innerHTML=lines.slice(0,4).map(item=>{
+      const cleaned=item.replace(/\*\*(.+?)\*\*/g,'<strong class="text-white">$1</strong>');
       return `<div class="flex items-start gap-2 p-2.5 rounded-xl bg-[#1a1a2e]"><span class="text-sm flex-shrink-0">${item.charAt(0)}</span><p class="text-xs text-gray-300">${cleaned.slice(2)}</p></div>`;
     }).join('');
   } catch {}
@@ -861,16 +879,16 @@ async function loadMInsights() {
 
 // ═══════════════ BUDGETS ═══════════════
 async function loadMBudgetStatus() {
-  const el = document.getElementById('m-budget-status');
+  const el=document.getElementById('m-budget-status');
   try {
-    const now = new Date();
-    const res = await fetch(`${API}/budgets/status?month=${now.getMonth()+1}&year=${now.getFullYear()}`, { headers:authH() });
-    if (!res.ok) { el.innerHTML='<p class="text-gray-500 text-sm text-center py-4">No budget set for this month.<br><button onclick="openSheet(\'set-budget\')" class="text-teal-400 mt-2 text-sm">Set Budget →</button></p>'; return; }
-    const d = await res.json();
-    const pct = d.monthly_limit>0 ? Math.round(d.total_spent/d.monthly_limit*100) : 0;
-    const color = pct>=100?'#ef4444':pct>=80?'#f59e0b':'#14b8a6';
-    const remaining = d.monthly_limit - d.total_spent;
-    el.innerHTML = `
+    const now=new Date();
+    const res=await fetch(`${API}/budgets/status?month=${now.getMonth()+1}&year=${now.getFullYear()}`,{headers:authH()});
+    if(!res.ok){el.innerHTML='<p class="text-gray-500 text-sm text-center py-4">No budget set.<br><button onclick="openSheet(\'set-budget\')" class="text-teal-400 mt-2 text-sm">Set Budget →</button></p>';return;}
+    const d=await res.json();
+    const pct=d.monthly_limit>0?Math.round(d.total_spent/d.monthly_limit*100):0;
+    const color=pct>=100?'#ef4444':pct>=80?'#f59e0b':'#14b8a6';
+    const remaining=d.monthly_limit-d.total_spent;
+    el.innerHTML=`
       <div class="flex items-center justify-between mb-3">
         <h3 class="font-semibold text-white text-sm">This Month's Budget</h3>
         <span class="text-xs font-bold" style="color:${color}">${pct}% used</span>
@@ -878,60 +896,62 @@ async function loadMBudgetStatus() {
       <div class="grid grid-cols-3 gap-2 mb-3">
         <div class="stat text-center"><p class="text-gray-400 text-xs mb-0.5">Limit</p><p class="text-sm font-bold text-white">${fmt(d.monthly_limit)}</p></div>
         <div class="stat text-center"><p class="text-gray-400 text-xs mb-0.5">Spent</p><p class="text-sm font-bold text-red-400">${fmt(d.total_spent)}</p></div>
-        <div class="stat text-center"><p class="text-gray-400 text-xs mb-0.5">Left</p><p class="text-sm font-bold" style="color:${color}">${fmt(remaining)}</p></div>
+        <div class="stat text-center"><p class="text-gray-400 text-xs mb-0.5">Left</p><p class="text-sm font-bold" style="color:${color}">${fmt(Math.abs(remaining))}</p></div>
       </div>
       <div class="h-3 rounded-full overflow-hidden" style="background:#1a1a2e;">
         <div class="h-full rounded-full transition-all duration-700" style="width:${Math.min(pct,100)}%;background:${color};"></div>
-      </div>`;
-  } catch { el.innerHTML='<p class="text-gray-500 text-sm text-center py-4">Failed to load budget</p>'; }
+      </div>
+      ${d.overspending?`<p class="text-xs text-red-400 mt-2">⚠️ Over budget by ${fmt(Math.abs(remaining))}</p>`:`<p class="text-xs text-gray-500 mt-2">✓ ${fmt(remaining)} remaining</p>`}`;
+  } catch{el.innerHTML='<p class="text-gray-500 text-sm text-center py-4">Failed to load budget</p>';}
 }
 
 async function submitMBudget() {
-  const limit = document.getElementById('m-budget-limit').value;
-  const month = document.getElementById('m-budget-month').value;
-  const year  = document.getElementById('m-budget-year').value;
-  const msgEl = document.getElementById('m-budget-msg');
-  if (!limit) { msgEl.textContent='Enter a limit'; msgEl.className='text-xs text-red-400 block'; return; }
+  const limit=document.getElementById('m-budget-limit').value;
+  const month=document.getElementById('m-budget-month').value;
+  const year =document.getElementById('m-budget-year').value;
+  const msgEl=document.getElementById('m-budget-msg');
+  if(!limit){msgEl.textContent='Enter a limit';msgEl.className='text-xs text-red-400 block';return;}
   try {
-    const res = await fetch(`${API}/budgets/`, { method:'POST', headers:authH(), body:JSON.stringify({ monthly_limit:parseFloat(limit), month:parseInt(month), year:parseInt(year) }) });
-    if (res.ok) { toast('Budget set!'); closeSheet('set-budget'); loadMBudgetStatus(); }
-    else { const d=await res.json(); msgEl.textContent=d.detail||'Failed'; msgEl.className='text-xs text-red-400 block'; }
-  } catch { msgEl.textContent='Server unreachable'; msgEl.className='text-xs text-red-400 block'; }
+    const res=await fetch(`${API}/budgets/`,{method:'POST',headers:authH(),body:JSON.stringify({monthly_limit:parseFloat(limit),month:parseInt(month),year:parseInt(year)})});
+    if(res.ok){toast('Budget set!');closeSheet('set-budget');loadMBudgetStatus();}
+    else{const d=await res.json();msgEl.textContent=d.detail||'Failed';msgEl.className='text-xs text-red-400 block';}
+  } catch{msgEl.textContent='Server unreachable';msgEl.className='text-xs text-red-400 block';}
 }
 
 // ═══════════════ LOANS ═══════════════
 async function loadMLoans() {
   try {
-    const res = await fetch(`${API}/loans/`, { headers:authH() });
-    if (res.status===401) { handleLogout(); return; }
-    const d = await res.json();
-    _mAllLoans = d.loans || [];
-    const lent     = _mAllLoans.filter(l=>l.loan_type==='lent').reduce((s,l)=>s+l.amount,0);
-    const borrowed = _mAllLoans.filter(l=>l.loan_type==='borrowed').reduce((s,l)=>s+l.amount,0);
-    const pending  = _mAllLoans.filter(l=>l.status==='pending').length;
-    document.getElementById('m-loan-lent').textContent     = fmt(lent);
-    document.getElementById('m-loan-borrowed').textContent = fmt(borrowed);
-    document.getElementById('m-loan-pending').textContent  = pending;
+    const res=await fetch(`${API}/loans/`,{headers:authH()});
+    if(res.status===401){handleLogout();return;}
+    _mAllLoans=await res.json();
+    const lent    =_mAllLoans.filter(l=>l.loan_type==='lent').reduce((s,l)=>s+l.amount,0);
+    const borrowed=_mAllLoans.filter(l=>l.loan_type==='borrowed').reduce((s,l)=>s+l.amount,0);
+    const pending =_mAllLoans.filter(l=>l.status==='pending').length;
+    document.getElementById('m-loan-lent').textContent    =fmt(lent);
+    document.getElementById('m-loan-borrowed').textContent=fmt(borrowed);
+    document.getElementById('m-loan-pending').textContent =pending;
     renderMLoans();
   } catch {}
 }
 
 function setMLoanTab(tab) {
-  _mLoanTab = tab;
-  ['lent','borrowed'].forEach(t => {
-    const btn = document.getElementById('m-tab-'+t);
-    if (t===tab) btn.className='flex-1 py-2 rounded-xl text-xs font-medium bg-green-500/20 text-green-400 border border-green-500/30';
-    else         btn.className='flex-1 py-2 rounded-xl text-xs font-medium bg-[#1a1a2e] text-gray-400 border border-gray-700';
+  _mLoanTab=tab;
+  ['lent','borrowed'].forEach(t=>{
+    const btn=document.getElementById('m-tab-'+t);
+    btn.className=`flex-1 py-2 rounded-xl text-xs font-medium ${t===tab?'bg-green-500/20 text-green-400 border border-green-500/30':'bg-[#1a1a2e] text-gray-400 border border-gray-700'}`;
   });
   renderMLoans();
 }
 
 function renderMLoans() {
-  const el = document.getElementById('m-loan-list');
-  const filtered = _mAllLoans.filter(l=>l.loan_type===_mLoanTab);
-  if (!filtered.length) { el.innerHTML=`<p class="text-gray-500 text-sm py-4 text-center">No ${_mLoanTab} entries</p>`; return; }
-  el.innerHTML = filtered.map(l => {
-    const statusColor = l.status==='pending'?'text-amber-400':l.status==='settled'?'text-green-400':'text-gray-400';
+  const el=document.getElementById('m-loan-list');
+  const filtered=_mAllLoans.filter(l=>l.loan_type===_mLoanTab);
+  if(!filtered.length){el.innerHTML=`<p class="text-gray-500 text-sm py-4 text-center">No ${_mLoanTab} entries</p>`;return;}
+  el.innerHTML=filtered.map(l=>{
+    const isOverdue=l.due_date&&new Date(l.due_date)<new Date()&&l.status==='pending';
+    const status=isOverdue?'overdue':l.status;
+    const statusColor={pending:'text-amber-400',settled:'text-green-400',overdue:'text-red-400'}[status]||'text-gray-400';
+    const statusLabel={pending:'⏳ Pending',settled:'✓ Settled',overdue:'⚠️ Overdue'}[status]||status;
     return `<div class="tx-row">
       <div class="flex-1 min-w-0">
         <p class="text-white text-sm font-medium">${l.person_name}</p>
@@ -940,282 +960,332 @@ function renderMLoans() {
       </div>
       <div class="text-right flex-shrink-0">
         <p class="text-sm font-bold ${_mLoanTab==='lent'?'text-green-400':'text-red-400'}">${fmt(l.amount)}</p>
-        <p class="text-xs ${statusColor}">${l.status}</p>
+        <p class="text-xs ${statusColor}">${statusLabel}</p>
+        ${l.status!=='settled'?`<button onclick="updateMLoanStatus(${l.id},'settled')" class="text-xs text-teal-400 hover:text-teal-300 transition-colors mt-0.5">Settle</button>`:''}
       </div>
     </div>`;
   }).join('');
 }
 
+async function updateMLoanStatus(id, status) {
+  const res=await fetch(`${API}/loans/${id}/status`,{method:'PATCH',headers:authH(),body:JSON.stringify({status})});
+  if(res.ok){toast('Updated!');loadMLoans();}else toast('Failed',false);
+}
+
 async function submitMLoan() {
-  const type   = document.getElementById('m-loan-type').value;
-  const person = document.getElementById('m-loan-person').value.trim();
-  const amount = document.getElementById('m-loan-amount').value;
-  const date   = document.getElementById('m-loan-date').value;
-  const due    = document.getElementById('m-loan-due').value;
-  const desc   = document.getElementById('m-loan-desc').value.trim();
-  const msgEl  = document.getElementById('m-loan-msg');
-  if (!person||!amount||!date) { msgEl.textContent='Fill required fields'; msgEl.className='text-xs text-red-400 block'; return; }
+  const type  =document.getElementById('m-loan-type').value;
+  const person=document.getElementById('m-loan-person').value.trim();
+  const amount=document.getElementById('m-loan-amount').value;
+  const date  =document.getElementById('m-loan-date').value;
+  const due   =document.getElementById('m-loan-due').value;
+  const desc  =document.getElementById('m-loan-desc').value.trim();
+  const msgEl =document.getElementById('m-loan-msg');
+  if(!person||!amount||!date){msgEl.textContent='Fill required fields';msgEl.className='text-xs text-red-400 block';return;}
   try {
-    const body = { loan_type:type, person_name:person, amount:parseFloat(amount), loan_date:date };
-    if (due) body.due_date = due;
-    if (desc) body.description = desc;
-    const res = await fetch(`${API}/loans/`, { method:'POST', headers:authH(), body:JSON.stringify(body) });
-    if (res.ok) { toast('Loan entry added!'); closeSheet('add-loan'); loadMLoans(); }
-    else { const d=await res.json(); msgEl.textContent=d.detail||'Failed'; msgEl.className='text-xs text-red-400 block'; }
-  } catch { msgEl.textContent='Server unreachable'; msgEl.className='text-xs text-red-400 block'; }
+    const body={loan_type:type,person_name:person,amount:parseFloat(amount),loan_date:new Date(date).toISOString()};
+    if(due) body.due_date=new Date(due).toISOString();
+    if(desc) body.description=desc;
+    const res=await fetch(`${API}/loans/`,{method:'POST',headers:authH(),body:JSON.stringify(body)});
+    if(res.ok){toast('Loan entry added!');closeSheet('add-loan');loadMLoans();}
+    else{const d=await res.json();msgEl.textContent=d.detail||'Failed';msgEl.className='text-xs text-red-400 block';}
+  } catch{msgEl.textContent='Server unreachable';msgEl.className='text-xs text-red-400 block';}
 }
 
 // ═══════════════ CHAT ═══════════════
 async function sendMChatMessage() {
-  const input = document.getElementById('m-chat-input');
-  const msg   = input.value.trim();
-  if (!msg) return;
-  input.value = '';
-  appendMChat('user', msg);
+  const input=document.getElementById('m-chat-input');
+  const msg=input.value.trim();
+  if(!msg) return;
+  input.value='';
+  appendMChat('user',msg);
   appendMTyping();
   try {
-    const res = await fetch(`${API}/chat/`, {
-      method: 'POST',
-      headers: authH(),
-      body: JSON.stringify({ message: msg })
-    });
+    const res=await fetch(`${API}/chat/`,{method:'POST',headers:authH(),body:JSON.stringify({message:msg})});
     removeTyping();
-    if (res.ok) {
-      const d = await res.json();
-      const reply = d.reply || d.response || d.message || 'No response';
-      appendMChat('assistant', reply);
-      _mChatHistory.push({ role:'user', content:msg }, { role:'assistant', content:reply });
-    } else { appendMChat('assistant', 'Sorry, something went wrong.'); }
-  } catch { removeTyping(); appendMChat('assistant', 'Could not reach the server.'); }
+    if(res.ok){const d=await res.json();appendMChat('assistant',d.reply||d.response||'No response');}
+    else appendMChat('assistant','Sorry, something went wrong.');
+  } catch{removeTyping();appendMChat('assistant','Could not reach the server.');}
 }
 
-function sendMQuick(msg) {
-  document.getElementById('m-chat-input').value = msg;
-  sendMChatMessage();
-}
+function sendMQuick(msg){document.getElementById('m-chat-input').value=msg;sendMChatMessage();}
 
-function appendMChat(role, text) {
-  const el = document.getElementById('m-chat-messages');
-  const isUser = role === 'user';
-  const cleaned = text.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
-  el.innerHTML += isUser
-    ? `<div class="flex justify-end"><div class="bubble-user px-3 py-2.5 max-w-xs"><p class="text-white text-sm">${cleaned}</p></div></div>`
-    : `<div class="flex gap-2"><div class="w-7 h-7 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center flex-shrink-0 text-xs">🤖</div><div class="bubble-ai px-3 py-2.5 max-w-xs"><p class="text-gray-200 text-sm">${cleaned}</p></div></div>`;
-  el.scrollTop = el.scrollHeight;
+function appendMChat(role,text) {
+  const el=document.getElementById('m-chat-messages');
+  const isUser=role==='user';
+  const cleaned=text.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+  el.innerHTML+=isUser
+    ?`<div class="flex justify-end"><div class="bubble-user px-3 py-2.5 max-w-xs"><p class="text-white text-sm">${cleaned}</p></div></div>`
+    :`<div class="flex gap-2"><div class="w-7 h-7 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center flex-shrink-0 text-xs">🤖</div><div class="bubble-ai px-3 py-2.5 max-w-xs"><p class="text-gray-200 text-sm">${cleaned}</p></div></div>`;
+  el.scrollTop=el.scrollHeight;
 }
 
 function appendMTyping() {
-  const el = document.getElementById('m-chat-messages');
-  el.innerHTML += `<div id="m-typing" class="flex gap-2"><div class="w-7 h-7 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center flex-shrink-0 text-xs">🤖</div><div class="bubble-ai px-4 py-3"><span class="dot1 text-gray-400 text-lg">●</span><span class="dot2 text-gray-400 text-lg ml-1">●</span><span class="dot3 text-gray-400 text-lg ml-1">●</span></div></div>`;
-  el.scrollTop = el.scrollHeight;
+  const el=document.getElementById('m-chat-messages');
+  el.innerHTML+=`<div id="m-typing" class="flex gap-2"><div class="w-7 h-7 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center flex-shrink-0 text-xs">🤖</div><div class="bubble-ai px-4 py-3"><span class="dot1 text-gray-400">●</span><span class="dot2 text-gray-400 ml-1">●</span><span class="dot3 text-gray-400 ml-1">●</span></div></div>`;
+  el.scrollTop=el.scrollHeight;
+}
+function removeTyping(){const t=document.getElementById('m-typing');if(t)t.remove();}
+function clearMChat(){
+  _mChatHistory=[];
+  document.getElementById('m-chat-messages').innerHTML=`<div class="flex gap-2"><div class="w-7 h-7 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center flex-shrink-0 text-xs">🤖</div><div class="bubble-ai px-3 py-2.5 max-w-xs"><p class="text-gray-200 text-sm">Chat cleared! Ask me anything.</p></div></div>`;
 }
 
-function removeTyping() {
-  const t = document.getElementById('m-typing');
-  if (t) t.remove();
-}
-
-function clearMChat() {
-  _mChatHistory = [];
-  document.getElementById('m-chat-messages').innerHTML = `<div class="flex gap-2"><div class="w-7 h-7 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center flex-shrink-0 text-xs">🤖</div><div class="bubble-ai px-3 py-2.5 max-w-xs"><p class="text-gray-200 text-sm">Chat cleared! Ask me anything.</p></div></div>`;
-}
-
-
-
-// ═══════════════ PREDICTIVE ALERT ═══════════════
-function _daysInMonth(year, month) { return new Date(year, month, 0).getDate(); }
-function _linearSlope(xs, ys) {
-  const n=xs.length; if(n<2) return 0;
+// ═══════════════ PREDICTIVE ALERT ENGINE (same logic as index.html) ═══════════════
+function _daysInMonth(y,m){return new Date(y,m,0).getDate();}
+function _linearSlope(xs,ys){
+  const n=xs.length; if(n<2)return 0;
   const mx=xs.reduce((a,b)=>a+b,0)/n, my=ys.reduce((a,b)=>a+b,0)/n;
   const num=xs.reduce((s,x,i)=>s+(x-mx)*(ys[i]-my),0);
   const den=xs.reduce((s,x)=>s+(x-mx)**2,0);
   return den===0?0:num/den;
 }
 
+function runPrediction(transactions, budgetLimit, month, year) {
+  const now=new Date(), totalDays=_daysInMonth(year,month), daysElapsed=now.getDate(), daysRemaining=totalDays-daysElapsed;
+  const dailySpend={};
+  transactions.forEach(t=>{
+    const d=new Date(t.transaction_date);
+    if(t.type==='expense'&&d.getMonth()+1===month&&d.getFullYear()===year){
+      const day=d.getDate(); dailySpend[day]=(dailySpend[day]||0)+t.amount;
+    }
+  });
+  const currentSpend=Object.values(dailySpend).reduce((a,b)=>a+b,0);
+  const xs=[],ys=[]; let cum=0;
+  for(let d=1;d<=daysElapsed;d++){cum+=(dailySpend[d]||0);xs.push(d);ys.push(cum);}
+  const slope=xs.length>=3?_linearSlope(xs,ys):(daysElapsed>0?currentSpend/daysElapsed:0);
+  const n=xs.length,mx=n>0?xs.reduce((a,b)=>a+b,0)/n:0,my=n>0?ys.reduce((a,b)=>a+b,0)/n:0,intercept=n>0?my-slope*mx:0;
+  const projectedSpend=Math.max(intercept+slope*totalDays,currentSpend);
+  const mid=Math.floor(daysElapsed/2);
+  const h1=Array.from({length:mid},(_,i)=>dailySpend[i+1]||0).reduce((a,b)=>a+b,0)/Math.max(mid,1);
+  const h2=Array.from({length:daysElapsed-mid},(_,i)=>dailySpend[mid+i+1]||0).reduce((a,b)=>a+b,0)/Math.max(daysElapsed-mid,1);
+  const trendAcc=Math.round(h2-h1);
+  const catTotals={};
+  transactions.forEach(t=>{
+    const d=new Date(t.transaction_date);
+    if(t.type==='expense'&&d.getMonth()+1===month&&d.getFullYear()===year){
+      const c=(t.category||'Others').replace(/\b\w/g,l=>l.toUpperCase());
+      catTotals[c]=(catTotals[c]||0)+t.amount;
+    }
+  });
+  const topCats=Object.entries(catTotals).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([cat,amt])=>({category:cat,amount:amt,pctOfSpend:currentSpend>0?Math.round(amt/currentSpend*100):0}));
+  const dataPoints=Array.from({length:daysElapsed},(_,i)=>dailySpend[i+1]||0).filter(v=>v>0).length;
+  const confidence=Math.min(dataPoints/7,1);
+  const pctUsed=budgetLimit>0?Math.round(currentSpend/budgetLimit*100):0;
+  const projPct=budgetLimit>0?Math.round(projectedSpend/budgetLimit*100):0;
+  const overshoot=Math.max(projectedSpend-budgetLimit,0);
+  let riskLevel;
+  if(currentSpend>budgetLimit) riskLevel='exceeded';
+  else if(projPct>=100) riskLevel='danger';
+  else if(projPct>=80) riskLevel='warning';
+  else riskLevel='safe';
+  return{projectedSpend,currentSpend,budgetLimit,daysElapsed,daysRemaining,totalDays,dailyRate:Math.max(slope,0),confidence,riskLevel,overshoot,pctUsed,projPct,topCats,trendAcc};
+}
+
+const PA_RISK_M={
+  safe:    {dot:'#22c55e',label:'HEALTHY', barColor:'#22c55e',projColor:'#22c55e',ctaBg:'linear-gradient(135deg,#16a34a,#15803d)',ctaText:'View Budget'},
+  warning: {dot:'#f59e0b',label:'WARNING', barColor:'#f59e0b',projColor:'#f59e0b',ctaBg:'linear-gradient(135deg,#d97706,#b45309)',ctaText:'Review Budget'},
+  danger:  {dot:'#ef4444',label:'AT RISK', barColor:'#ef4444',projColor:'#ef4444',ctaBg:'linear-gradient(135deg,#ef4444,#dc2626)',ctaText:'Cut Spending'},
+  exceeded:{dot:'#b91c1c',label:'EXCEEDED',barColor:'#b91c1c',projColor:'#b91c1c',ctaBg:'linear-gradient(135deg,#dc2626,#b91c1c)',ctaText:'Cut Spending'},
+};
+
+const PA_NOTIF_STYLE_M={
+  danger: {bg:'#1f0707',border:'#7f1d1d',dot:'#ef4444'},
+  warning:{bg:'#1f1507',border:'#78350f',dot:'#f59e0b'},
+  success:{bg:'#071a0f',border:'#14532d',dot:'#22c55e'},
+  tip:    {bg:'#07101a',border:'#1e3a5f',dot:'#60a5fa'},
+};
+
+function buildNotifications(pred) {
+  const notes=[], rl=pred.riskLevel;
+  if(rl==='exceeded') notes.push({type:'danger',title:'🚨 Budget Exceeded!',message:`You've spent ${fmt(pred.currentSpend)} vs ${fmt(pred.budgetLimit)} budget — ${fmt(Math.abs(pred.currentSpend-pred.budgetLimit))} over.`});
+  else if(rl==='danger') notes.push({type:'danger',title:'🔴 Projected to Exceed',message:`At ${fmt(pred.dailyRate)}/day, projected spend: ${fmt(pred.projectedSpend)} (${fmt(pred.overshoot)} over budget).`});
+  else if(rl==='warning') notes.push({type:'warning',title:'⚠️ Approaching Limit',message:`You've used ${pred.pctUsed}% of your budget with ${pred.daysRemaining} days left. Projected: ${fmt(pred.projectedSpend)}.`});
+  else notes.push({type:'success',title:'✅ Budget On Track',message:`Projected spend: ${fmt(pred.projectedSpend)} — ${pred.projPct}% of your ${fmt(pred.budgetLimit)} budget.`});
+  if(pred.trendAcc>200&&['warning','danger'].includes(rl)) notes.push({type:'warning',title:'📈 Spending Accelerating',message:`Daily spend rose by ${fmt(pred.trendAcc)}/day. Top driver: ${pred.topCats[0]?.category||'various'}.`});
+  if(pred.topCats[0]?.pctOfSpend>40&&['warning','danger','exceeded'].includes(rl)){
+    const t=pred.topCats[0];
+    notes.push({type:'tip',title:`💡 ${t.category} is your biggest spend`,message:`${fmt(t.amount)} (${t.pctOfSpend}% of spend). Reducing this could save your budget.`});
+  }
+  if(pred.daysRemaining<=5&&['warning','danger'].includes(rl)){
+    const safe=Math.max((pred.budgetLimit-pred.currentSpend)/Math.max(pred.daysRemaining,1),0);
+    notes.push({type:'tip',title:`📅 ${pred.daysRemaining} days left`,message:`Limit daily spend to ${fmt(safe)}/day to stay within budget.`});
+  }
+  return notes;
+}
+
 async function triggerPredictiveAlert() {
   try {
-    const now = new Date();
-    const month = now.getMonth()+1, year = now.getFullYear();
-    const [txRes, budgetRes] = await Promise.all([
-      fetch(`${API}/transactions/`, { headers:authH() }),
-      fetch(`${API}/budgets/status?month=${month}&year=${year}`, { headers:authH() })
+    const now=new Date(), month=now.getMonth()+1, year=now.getFullYear();
+    const [txRes,budgetRes]=await Promise.all([
+      fetch(`${API}/transactions/`,{headers:authH()}),
+      fetch(`${API}/budgets/status?month=${month}&year=${year}`,{headers:authH()})
     ]);
-    if (txRes.status===401) return;
-    const { transactions } = await txRes.json();
-    let budgetLimit = null;
-    if (budgetRes.ok) { const bd=await budgetRes.json(); budgetLimit=bd.monthly_limit; }
-
+    if(txRes.status===401) return;
+    const {transactions}=await txRes.json();
+    let budgetLimit=null;
+    if(budgetRes.ok){const bd=await budgetRes.json();budgetLimit=bd.monthly_limit;}
     openSheet('predictive');
-
-    if (!budgetLimit) {
+    if(!budgetLimit){
       document.getElementById('pa-m-headline').textContent='No budget set this month';
       document.getElementById('pa-m-subline').textContent='Set a budget to enable predictions';
       document.getElementById('pa-m-body').classList.add('hidden');
       document.getElementById('pa-m-no-budget').classList.remove('hidden');
       return;
     }
-
     document.getElementById('pa-m-body').classList.remove('hidden');
     document.getElementById('pa-m-no-budget').classList.add('hidden');
-
-    const totalDays=_daysInMonth(year,month), daysElapsed=now.getDate();
-    const dailySpend={};
-    transactions.forEach(t=>{ const d=new Date(t.transaction_date); if(t.type==='expense'&&d.getMonth()+1===month&&d.getFullYear()===year){ const day=d.getDate(); dailySpend[day]=(dailySpend[day]||0)+t.amount; } });
-    const currentSpend=Object.values(dailySpend).reduce((a,b)=>a+b,0);
-    const xs=[],ys=[]; let cum=0;
-    for(let d=1;d<=daysElapsed;d++){cum+=(dailySpend[d]||0);xs.push(d);ys.push(cum);}
-    const slope=xs.length>=3?_linearSlope(xs,ys):(daysElapsed>0?currentSpend/daysElapsed:0);
-    const n=xs.length,mx=n>0?xs.reduce((a,b)=>a+b,0)/n:0,my=n>0?ys.reduce((a,b)=>a+b,0)/n:0;
-    const intercept=n>0?my-slope*mx:0;
-    const projectedSpend=Math.max(intercept+slope*totalDays, currentSpend);
-    const pctUsed=budgetLimit>0?Math.round(currentSpend/budgetLimit*100):0;
-    const projPct=budgetLimit>0?Math.round(projectedSpend/budgetLimit*100):0;
-    let riskColor='#14b8a6';
-    if(currentSpend>budgetLimit) riskColor='#ef4444';
-    else if(projPct>=100) riskColor='#ef4444';
-    else if(projPct>=80) riskColor='#f59e0b';
-
-    document.getElementById('pa-m-headline').textContent = currentSpend>budgetLimit?'🚨 Budget Already Exceeded!':projPct>=100?'🔴 Projected to Exceed Budget':projPct>=80?'⚠️ Approaching Budget Limit':'✅ Budget On Track';
-    document.getElementById('pa-m-subline').textContent  = `${daysElapsed} days tracked · ${totalDays-daysElapsed} days remaining`;
-    document.getElementById('pa-m-spent').textContent     = fmt(currentSpend);
-    document.getElementById('pa-m-projected').textContent = fmt(projectedSpend);
-    document.getElementById('pa-m-projected').style.color = riskColor;
-    document.getElementById('pa-m-budget').textContent    = fmt(budgetLimit);
-    document.getElementById('pa-m-meter-label').innerHTML = `<span style="color:${riskColor}">${pctUsed}% used</span>`;
-    document.getElementById('pa-m-cap').textContent       = fmt(budgetLimit);
-    document.getElementById('pa-m-dot').style.background  = riskColor;
-    document.getElementById('pa-m-label').textContent     = projPct>=100?'DANGER':projPct>=80?'WARNING':'HEALTHY';
-    document.getElementById('pa-m-confidence').textContent = `${Math.min(Math.round(xs.filter((_,i)=>ys[i]>0).length/7*100),100)}% confident`;
-    setTimeout(()=>{ document.getElementById('pa-m-bar').style.width=Math.min(pctUsed,100)+'%'; document.getElementById('pa-m-bar').style.background=riskColor; },100);
-  } catch(e) { console.warn(e); }
+    const pred=runPrediction(transactions,budgetLimit,month,year);
+    const cfg=PA_RISK_M[pred.riskLevel];
+    // Header
+    document.getElementById('pa-m-dot').style.background=cfg.dot;
+    document.getElementById('pa-m-label').textContent=cfg.label;
+    document.getElementById('pa-m-confidence').textContent=`${Math.round(pred.confidence*100)}% confident`;
+    const headlines={safe:'✅ Budget is healthy',warning:'⚠️ Approaching your limit',danger:'🔴 Projected to exceed budget',exceeded:'🚨 Budget already exceeded!'};
+    document.getElementById('pa-m-headline').textContent=headlines[pred.riskLevel];
+    document.getElementById('pa-m-subline').textContent=`${pred.daysElapsed} days tracked · ${pred.daysRemaining} days remaining`;
+    // Stats
+    document.getElementById('pa-m-spent').textContent=fmt(pred.currentSpend);
+    document.getElementById('pa-m-projected').textContent=fmt(pred.projectedSpend);
+    document.getElementById('pa-m-projected').style.color=cfg.projColor;
+    document.getElementById('pa-m-budget').textContent=fmt(pred.budgetLimit);
+    // Meter
+    document.getElementById('pa-m-meter-label').innerHTML=`<span style="color:${cfg.dot}">${pred.pctUsed}% used</span>`;
+    document.getElementById('pa-m-cap').textContent=fmt(pred.budgetLimit);
+    setTimeout(()=>{
+      const bar=document.getElementById('pa-m-bar');
+      const barProj=document.getElementById('pa-m-bar-proj');
+      bar.style.width=Math.min(pred.pctUsed,100)+'%'; bar.style.background=`linear-gradient(90deg,${cfg.barColor}99,${cfg.barColor})`; bar.style.boxShadow=`0 0 6px ${cfg.barColor}66`;
+      barProj.style.width=Math.min(pred.projPct,100)+'%'; barProj.style.background=cfg.barColor;
+    },100);
+    // Notifications
+    const nl=document.getElementById('pa-m-notifs'); nl.innerHTML='';
+    buildNotifications(pred).forEach((n,i)=>{
+      const s=PA_NOTIF_STYLE_M[n.type]||PA_NOTIF_STYLE_M.tip;
+      const div=document.createElement('div');
+      div.className='pa-notif rounded-xl flex items-start gap-2 px-3 py-2.5';
+      div.style.cssText=`background:${s.bg};border:1px solid ${s.border};animation-delay:${i*100}ms;`;
+      div.innerHTML=`<div class="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style="background:${s.dot};"></div><div><p class="text-xs font-semibold text-gray-200">${n.title}</p><p class="text-xs text-gray-400 mt-0.5 leading-relaxed">${n.message}</p></div>`;
+      nl.appendChild(div);
+    });
+    // Rate row
+    document.getElementById('pa-m-daily-rate').textContent=fmt(pred.dailyRate)+'/day';
+    const tEl=document.getElementById('pa-m-trend');
+    if(pred.trendAcc>0){tEl.textContent='▲ +'+fmt(pred.trendAcc)+'/day';tEl.style.color='#ef4444';}
+    else{tEl.textContent='▼ '+fmt(Math.abs(pred.trendAcc))+'/day';tEl.style.color='#22c55e';}
+    document.getElementById('pa-m-days-left').textContent=pred.daysRemaining+'d';
+    // CTA
+    const cta=document.getElementById('pa-m-cta');
+    cta.style.background=cfg.ctaBg; cta.textContent=cfg.ctaText;
+    if(pred.riskLevel==='safe'){
+      cta.onclick=()=>{closeSheet('predictive');showPage('budgets');};
+    } else {
+      cta.onclick=()=>{closeSheet('predictive');setTimeout(triggerMCutSpending,300);};
+    }
+  } catch(e){console.warn('Predictive alert error:',e);}
 }
 
-// ═══════════════ INIT ═══════════════
-(async function init() {
-  const today = new Date().toISOString().split('T')[0];
-  ['m-exp-date','m-inc-date','m-loan-date'].forEach(id => { const el=document.getElementById(id); if(el) el.value=today; });
-  const now=new Date();
-  const bm=document.getElementById('m-budget-month'); if(bm) bm.value=now.getMonth()+1;
-  await boot();
-})();
+// ═══════════════ CUT SPENDING (mobile) ═══════════════
+const SPEND_BENCHMARKS_M={
+  'Food':         {healthy:15,icon:'🍽️',tips:['Cook at home 4+ days/week','Use Swiggy/Zomato only on weekends','Meal prep on Sundays','Switch to UPI cashback for groceries']},
+  'Transport':    {healthy:10,icon:'🚗',tips:['Use Metro for daily commute','Carpool with colleagues','Walk trips under 2km','Book Ola/Uber in advance (cheaper)']},
+  'Shopping':     {healthy:10,icon:'🛍️',tips:['24-hour rule before non-essential purchases','Unsubscribe from promotional emails','Use wishlists — buy after 7 days','Check cashback via SmartBuy']},
+  'Entertainment':{healthy:5, icon:'🎬',tips:['Share OTT subscriptions with family','BookMyShow Tuesday offers','Explore free events','Cancel unused subscriptions']},
+  'Bills':        {healthy:8, icon:'💡',tips:['Switch off ACs 30 min before sleep','Compare internet plans annually','Prepay bills to avoid late fees']},
+  'Medical':      {healthy:5, icon:'💊',tips:['Buy generic medicines (70% cheaper)','Use Jan Aushadhi stores','Get family health insurance']},
+  'Others':       {healthy:5, icon:'📦',tips:['Audit this category — what are these?','Track with daily spending note for a week','Set a weekly misc cash limit']},
+};
 
-// ═══════════════ CSV EXPORT ═══════════════
-async function exportMCSV() {
-  toast('Preparing CSV...');
-  try {
-    const res = await fetch(`${API}/reports/export/csv`, { headers:authH() });
-    if (!res.ok) { toast('Export failed', false); return; }
-    const blob = await res.blob();
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href=url; a.download=`fintrack_${new Date().toISOString().split('T')[0]}.csv`; a.click();
-    URL.revokeObjectURL(url);
-    toast('CSV downloaded!');
-  } catch { toast('Export failed', false); }
+function getCategoryBenchmarkM(cat) {
+  for(const[key,val]of Object.entries(SPEND_BENCHMARKS_M)){
+    if(cat.toLowerCase().includes(key.toLowerCase())) return{key,...val};
+  }
+  return{key:cat,healthy:8,icon:'📦',tips:SPEND_BENCHMARKS_M['Others'].tips};
 }
 
-// ═══════════════ PDF EXPORT ═══════════════
-async function exportMPDF() {
-  toast('Generating PDF report...');
+async function triggerMCutSpending() {
+  openSheet('cut-spending');
+  document.getElementById('cs-m-potential').textContent='...';
+  document.getElementById('cs-m-target-rate').textContent='...';
+  document.getElementById('cs-m-cat-tips').innerHTML='<p class="text-gray-500 text-sm py-2">Loading your data...</p>';
   try {
-    const [summaryRes, catRes, insightsRes] = await Promise.all([
-      fetch(`${API}/reports/summary`, { headers:authH() }),
-      fetch(`${API}/reports/category-breakdown`, { headers:authH() }),
-      fetch(`${API}/reports/insights`, { headers:authH() }),
+    const [txRes,sumRes]=await Promise.all([
+      fetch(`${API}/transactions/`,{headers:authH()}),
+      fetch(`${API}/reports/summary`,{headers:authH()})
     ]);
-    const summary  = await summaryRes.json();
-    const cats     = await catRes.json();
-    const insights = await insightsRes.json();
-    const now      = new Date();
-    const dateStr  = now.toLocaleDateString('en-IN', { day:'2-digit', month:'long', year:'numeric' });
-    const monthStr = now.toLocaleDateString('en-IN', { month:'long', year:'numeric' });
-    const insightLines = (insights.insights || []).map(i =>
-      `<li>${i.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/📈|📉|🏆|💸|⚠️|🌟|👍|🚨/g,'')}</li>`
-    ).join('');
-    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>FinTrack Report — ${monthStr}</title>
-    <style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;padding:28px;line-height:1.6;}
-    .header{display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #14b8a6;padding-bottom:16px;margin-bottom:24px;}
-    .logo{display:flex;align-items:center;gap:10px;}.logo-icon{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#14b8a6,#0ea5e9);display:flex;align-items:center;justify-content:center;color:white;font-size:20px;font-weight:bold;}
-    .meta{text-align:right;font-size:11px;color:#64748b;line-height:1.8;}
-    .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
-    .card{border-radius:10px;padding:14px;background:#f8fafc;border:1px solid #e2e8f0;}
-    .card .lbl{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
-    .card .val{font-size:18px;font-weight:700;}
-    .card.income .val{color:#16a34a;}.card.expense .val{color:#dc2626;}.card.balance .val{color:#0ea5e9;}
-    .section-title{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin:20px 0 12px;}
-    table{width:100%;border-collapse:collapse;font-size:12px;}
-    thead tr{background:#f1f5f9;}th{padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#64748b;font-weight:600;}
-    td{padding:8px 12px;border-bottom:1px solid #f1f5f9;color:#374151;}tbody tr:last-child td{border-bottom:none;}
-    .bar-wrap{background:#e5e7eb;border-radius:99px;height:5px;width:100px;display:inline-block;vertical-align:middle;overflow:hidden;}
-    .bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#14b8a6,#0ea5e9);}
-    ul.insights{list-style:none;padding:0;}ul.insights li{padding:7px 0;border-bottom:1px solid #f1f5f9;font-size:12px;color:#374151;line-height:1.5;}
-    ul.insights li:last-child{border-bottom:none;}ul.insights li::before{content:"→ ";color:#14b8a6;font-weight:700;}
-    .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px;}
-    .panel{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;}
-    .panel h4{font-size:10px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;}
-    .stat-row{display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid #f1f5f9;}
-    .stat-row:last-child{border-bottom:none;}.stat-row .lbl{color:#64748b;}.stat-row .val{font-weight:600;color:#0f172a;}
-    .footer{margin-top:28px;padding-top:12px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;font-size:10px;color:#94a3b8;}
-    @media print{body{padding:16px;}}</style>
-    </head><body>
-    <div class="header">
-      <div class="logo"><div class="logo-icon">₹</div><div><h1 style="font-size:20px;font-weight:700;color:#0f172a;">FinTrack</h1><p style="font-size:11px;color:#64748b;">AI-Powered Finance Report</p></div></div>
-      <div class="meta"><div><strong>Generated:</strong> ${dateStr}</div><div><strong>Period:</strong> All-time</div><div><strong>This Month:</strong> ${monthStr}</div></div>
-    </div>
-    <div class="cards">
-      <div class="card income"><div class="lbl">Total Income</div><div class="val">₹${Number(summary.total_income||0).toLocaleString('en-IN',{maximumFractionDigits:0})}</div></div>
-      <div class="card expense"><div class="lbl">Total Expenses</div><div class="val">₹${Number(summary.total_expense||0).toLocaleString('en-IN',{maximumFractionDigits:0})}</div></div>
-      <div class="card balance"><div class="lbl">Net Balance</div><div class="val">₹${Number(summary.balance||0).toLocaleString('en-IN',{maximumFractionDigits:0})}</div></div>
-    </div>
-    <div class="stats-grid">
-      <div class="panel"><h4>Key Metrics</h4>
-        <div class="stat-row"><span class="lbl">Savings Rate</span><span class="val">${insights.savings_rate||0}%</span></div>
-        <div class="stat-row"><span class="lbl">Total Transactions</span><span class="val">${summary.transaction_count||0}</span></div>
-        <div class="stat-row"><span class="lbl">Top Category</span><span class="val">${insights.top_category||'—'}</span></div>
-        <div class="stat-row"><span class="lbl">Avg. Expense</span><span class="val">₹${Number(insights.avg_expense||0).toLocaleString('en-IN',{maximumFractionDigits:0})}</span></div>
-      </div>
-      <div class="panel"><h4>This vs Last Month</h4>
-        <div class="stat-row"><span class="lbl">This Month Spend</span><span class="val">₹${Number(insights.this_month_spend||0).toLocaleString('en-IN',{maximumFractionDigits:0})}</span></div>
-        <div class="stat-row"><span class="lbl">Last Month Spend</span><span class="val">₹${Number(insights.last_month_spend||0).toLocaleString('en-IN',{maximumFractionDigits:0})}</span></div>
-        <div class="stat-row"><span class="lbl">Investment Profile</span><span class="val">${(insights.investment_plan||{}).profile||'—'}</span></div>
-        <div class="stat-row"><span class="lbl">Monthly Investable</span><span class="val">₹${Number((insights.investment_plan||{}).monthly_investable||0).toLocaleString('en-IN',{maximumFractionDigits:0})}</span></div>
-      </div>
-    </div>
-    <div class="section-title" style="margin-top:20px;">Expense Breakdown by Category</div>
-    <table><thead><tr><th>Category</th><th style="text-align:right">Amount</th><th style="text-align:right">% of Total</th><th>Proportion</th></tr></thead><tbody>
-    ${cats.map(c => {
-      const pct = summary.total_expense > 0 ? Math.round(c.total/summary.total_expense*100) : 0;
-      return `<tr><td>${(c.category||'Others').replace(/\b\w/g,l=>l.toUpperCase())}</td><td style="text-align:right;color:#dc2626;font-weight:600;">₹${Number(c.total).toLocaleString('en-IN',{maximumFractionDigits:0})}</td><td style="text-align:right;color:#6b7280;">${pct}%</td><td><div class="bar-wrap"><div class="bar-fill" style="width:${pct}%"></div></div></td></tr>`;
-    }).join('')}
-    </tbody></table>
-    <div class="section-title" style="margin-top:20px;">AI-Generated Insights</div>
-    <div class="panel" style="background:#fff;border:1px solid #e2e8f0;"><ul class="insights">${insightLines||'<li>No insights yet. Add more transactions.</li>'}</ul></div>
-    <div class="footer"><span>FinTrack — AI-Powered Personal Finance</span><span>Confidential · ${dateStr}</span></div>
-    </body></html>`;
-    const w = window.open('','_blank');
-    w.document.write(html);
-    w.document.close();
-    setTimeout(()=>w.print(), 500);
-    toast('PDF ready — use Share → Print to save');
-  } catch(e) { console.error(e); toast('Export failed', false); }
+    const{transactions}=await txRes.json();
+    const summary=await sumRes.json();
+    const now=new Date();
+    const thisMonth=transactions.filter(t=>{
+      const d=new Date(t.transaction_date);
+      return t.type==='expense'&&d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();
+    });
+    const totalIncome=summary.total_income||0, totalExpense=summary.total_expense||0;
+    const currentSR=totalIncome>0?Math.round((totalIncome-totalExpense)/totalIncome*100):0;
+    const incomeMonths=new Set(transactions.filter(t=>t.type==='income').map(t=>{const d=new Date(t.transaction_date);return`${d.getFullYear()}-${d.getMonth()}`;})).size;
+    const monthlyInc=totalIncome/Math.max(incomeMonths,1);
+    const catMap={};
+    thisMonth.forEach(t=>{const c=(t.category||'Others').replace(/\w/g,l=>l.toUpperCase());catMap[c]=(catMap[c]||0)+t.amount;});
+    const totalThisMonth=Object.values(catMap).reduce((a,b)=>a+b,0);
+    const sortedCats=Object.entries(catMap).sort((a,b)=>b[1]-a[1]);
+    let totalPotential=0;
+    const catTips=sortedCats.map(([cat,spent])=>{
+      const bm=getCategoryBenchmarkM(cat);
+      const benchmarkAmt=(bm.healthy/100)*monthlyInc;
+      const excess=Math.max(spent-benchmarkAmt,0);
+      const pctOfInc=monthlyInc>0?Math.round(spent/monthlyInc*100):0;
+      const isOver=pctOfInc>bm.healthy;
+      totalPotential+=excess;
+      return{cat,spent,excess,pctOfInc,isOver,bm};
+    });
+    const targetSR=Math.min(currentSR+Math.round(totalPotential/Math.max(monthlyInc,1)*100),50);
+    document.getElementById('cs-m-potential').textContent=fmt(Math.round(totalPotential));
+    document.getElementById('cs-m-target-rate').textContent=`${targetSR}%`;
+    // Category tips
+    const ctEl=document.getElementById('cs-m-cat-tips');
+    if(!catTips.length){ctEl.innerHTML='<p class="text-gray-500 text-sm">No expenses this month yet.</p>';return;}
+    ctEl.innerHTML=catTips.map(({cat,spent,excess,pctOfInc,isOver,bm})=>{
+      const barColor=isOver?(pctOfInc/bm.healthy>1.5?'#ef4444':'#f59e0b'):'#22c55e';
+      const tipHtml=bm.tips.slice(0,2).map(t=>`<p class="text-xs text-gray-400 mt-0.5">• ${t}</p>`).join('');
+      return `<div class="rounded-xl p-3" style="background:#111120;border:1px solid ${isOver?'#3a1515':'#0a2a18'};">
+        <div class="flex items-center justify-between mb-1.5">
+          <div class="flex items-center gap-1.5"><span>${bm.icon}</span><p class="text-sm font-semibold text-white">${cat}</p></div>
+          <div class="text-right"><p class="text-sm font-bold" style="color:${barColor}">${fmt(spent)}</p>${isOver?`<p class="text-xs text-red-400">+${fmt(excess)} over</p>`:`<p class="text-xs text-green-400">✓ On track</p>`}</div>
+        </div>
+        <div class="h-1 rounded-full mb-2" style="background:#1e1e2e;"><div class="h-full rounded-full" style="width:${Math.min((pctOfInc/bm.healthy)*50,100)}%;background:${barColor};"></div></div>
+        ${isOver?tipHtml:''}
+      </div>`;
+    }).join('');
+    // Quick wins
+    const overCats=catTips.filter(c=>c.isOver).sort((a,b)=>b.excess-a.excess).slice(0,3);
+    const qwEl=document.getElementById('cs-m-quick-wins');
+    if(!overCats.length){qwEl.innerHTML='<div class="rounded-xl px-3 py-2.5 text-xs text-green-400" style="background:#071a0f;border:1px solid #14532d;">🎉 All categories within healthy limits!</div>';}
+    else{qwEl.innerHTML=overCats.map((c,i)=>`<div class="flex items-start gap-2 rounded-xl px-3 py-2.5" style="background:#111120;border:1px solid #2a1515;"><div class="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style="background:#ef444422;color:#ef4444;">${i+1}</div><div><p class="text-sm font-semibold text-white">${c.bm.icon} Cut ${c.cat} by ${fmt(c.excess)}</p><p class="text-xs text-gray-400 mt-0.5">${c.bm.tips[0]}</p></div></div>`).join('');}
+    // 30-day plan
+    const allTips=catTips.filter(c=>c.isOver).flatMap(c=>c.bm.tips.map(t=>({icon:c.bm.icon,tip:t})));
+    const planTips=allTips.slice(0,6);
+    const weeks=['This week','Week 2','Week 3','Week 4'];
+    const apEl=document.getElementById('cs-m-action-plan');
+    if(!planTips.length){apEl.innerHTML='<p class="text-gray-500 text-sm">Your spending is healthy! Keep it up.</p>';}
+    else{apEl.innerHTML=planTips.map((pt,i)=>`<div class="flex items-center gap-2 rounded-xl px-3 py-2" style="background:#0a0a14;border:1px solid #1e1e2e;"><span class="text-xs font-bold text-teal-400 w-16 flex-shrink-0">${weeks[Math.floor(i/1.5)]||'Week 4'}</span><span>${pt.icon}</span><p class="text-xs text-gray-300">${pt.tip}</p></div>`).join('');}
+  } catch(e){console.error(e);document.getElementById('cs-m-cat-tips').innerHTML='<p class="text-red-400 text-sm">Failed to load data.</p>';}
 }
 
 // ═══════════════ INVESTMENTS ═══════════════
 async function loadMInvestments() {
   try {
-    const res = await fetch(`${API}/reports/insights`, { headers:authH() });
-    if (res.status===401) { handleLogout(); return; }
-    const d = await res.json();
-    const inv = d.investment_plan || {};
-    const allocs = inv.allocations || [];
-    document.getElementById('m-inv-profile').textContent  = inv.profile || '—';
-    document.getElementById('m-inv-monthly').textContent  = fmt(inv.monthly_investable || 0);
-    document.getElementById('m-inv-sr').textContent       = `${inv.savings_rate || 0}%`;
-    document.getElementById('m-inv-message').textContent  = inv.message || 'Add more transactions for a personalised plan.';
-    const el = document.getElementById('m-inv-allocations');
-    if (!allocs.length) { el.innerHTML='<p class="text-gray-500 text-xs">No allocations yet — add income and expenses first.</p>'; return; }
-    el.innerHTML = allocs.map((a) => {
-      return `<div class="flex items-center gap-3 p-2.5 rounded-xl" style="background:#0a0a14;border:1px solid #1e1e2e;">
+    const res=await fetch(`${API}/reports/insights`,{headers:authH()});
+    if(res.status===401){handleLogout();return;}
+    const d=await res.json();
+    const inv=d.investment_plan||{};
+    const allocs=inv.allocations||[];
+    document.getElementById('m-inv-profile').textContent =inv.profile||'—';
+    document.getElementById('m-inv-monthly').textContent =fmt(inv.monthly_investable||0);
+    document.getElementById('m-inv-sr').textContent      =`${inv.savings_rate||0}%`;
+    document.getElementById('m-inv-message').textContent =inv.message||'Add more transactions for a personalised plan.';
+    const el=document.getElementById('m-inv-allocations');
+    if(!allocs.length){el.innerHTML='<p class="text-gray-500 text-xs">No allocations yet — add income and expenses first.</p>';return;}
+    el.innerHTML=allocs.map(a=>`
+      <div class="flex items-center gap-3 p-2.5 rounded-xl" style="background:#0a0a14;border:1px solid #1e1e2e;">
         <div class="w-8 h-8 rounded-xl flex items-center justify-center text-base flex-shrink-0" style="background:${a.color}22;border:1px solid ${a.color}44">${a.icon}</div>
         <div class="flex-1 min-w-0">
           <p class="text-white text-xs font-semibold">${a.instrument}</p>
@@ -1225,85 +1295,177 @@ async function loadMInvestments() {
           <p class="text-xs font-bold" style="color:${a.color}">${fmt(a.amount)}</p>
           <p class="text-gray-600 text-xs">${a.pct||0}%</p>
         </div>
-      </div>`;
-    }).join('');
-  } catch(e) { console.error(e); document.getElementById('m-inv-allocations').innerHTML='<p class="text-red-400 text-xs">Failed to load. Is backend running?</p>'; }
+      </div>`).join('');
+  } catch(e){console.error(e);document.getElementById('m-inv-allocations').innerHTML='<p class="text-red-400 text-xs">Failed to load. Is backend running?</p>';}
 }
 
 async function exportMInvestmentPDF() {
   toast('Building investment PDF...');
   try {
-    const res = await fetch(`${API}/reports/insights`, { headers:authH() });
-    if (!res.ok) { toast('Failed to load data', false); return; }
-    const d = await res.json();
-    const inv = d.investment_plan || {};
-    const allocs = inv.allocations || [];
-    if (!allocs.length) { toast('No investment plan yet — add transactions first', false); return; }
-    const now = new Date();
-    const dateStr = now.toLocaleDateString('en-IN', { day:'2-digit', month:'long', year:'numeric' });
-    const sr = inv.savings_rate || 0;
-    let profileColor = sr >= 30 ? '#22c55e' : sr >= 15 ? '#14b8a6' : '#f59e0b';
-    let profileReason = sr >= 30
-      ? `Your savings rate is <strong>${sr}%</strong> (≥30%) → <strong>Aggressive</strong> profile. Strong surplus means you can absorb market risk and maximise long-term compounding.`
-      : sr >= 15
-      ? `Your savings rate is <strong>${sr}%</strong> (15–30%) → <strong>Moderate</strong> profile. Balanced equity-debt allocation suits your current stage.`
-      : `Your savings rate is <strong>${sr}%</strong> (<15%) → <strong>Conservative</strong> profile. Capital protection prioritised over growth.`;
-    const allocHTML = allocs.map((a,i) => `
+    const res=await fetch(`${API}/reports/insights`,{headers:authH()});
+    if(!res.ok){toast('Failed to load data',false);return;}
+    const d=await res.json();
+    const inv=d.investment_plan||{};
+    const allocs=inv.allocations||[];
+    if(!allocs.length){toast('No investment plan yet — add transactions first',false);return;}
+    const now=new Date(), dateStr=now.toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'});
+    const sr=inv.savings_rate||0;
+    let profileColor=sr>=30?'#22c55e':sr>=15?'#14b8a6':'#f59e0b';
+    let profileReason=sr>=30?`Savings rate <strong>${sr}%</strong> (≥30%) → <strong>Aggressive</strong>. Strong surplus for equity-heavy allocation.`
+      :sr>=15?`Savings rate <strong>${sr}%</strong> (15–30%) → <strong>Moderate</strong>. Balanced equity-debt mix.`
+      :`Savings rate <strong>${sr}%</strong> (<15%) → <strong>Conservative</strong>. Capital protection prioritised.`;
+    let ruleSummary=sr>=30?'savings_rate ≥ 30% → Aggressive':sr>=15?'15% ≤ savings_rate < 30% → Moderate':'savings_rate < 15% → Conservative';
+    const allocHTML=allocs.map((a,i)=>`
       <div style="display:flex;gap:12px;align-items:flex-start;padding:14px;background:${i%2===0?'#f8fafc':'#fff'};border-radius:10px;margin-bottom:8px;border:1px solid #e2e8f0;">
         <div style="width:40px;height:40px;border-radius:10px;background:${a.color}18;border:2px solid ${a.color}44;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">${a.icon}</div>
         <div style="flex:1;">
           <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
             <strong style="font-size:13px;color:#0f172a;">${a.instrument}</strong>
-            <span style="font-size:15px;font-weight:700;color:${a.color};">₹${Number(a.amount).toLocaleString('en-IN',{maximumFractionDigits:0})} <span style="font-size:11px;color:#94a3b8;">(${a.pct}%)</span></span>
+            <span style="font-size:14px;font-weight:700;color:${a.color};">₹${Number(a.amount).toLocaleString('en-IN',{maximumFractionDigits:0})} <span style="font-size:11px;color:#94a3b8;">(${a.pct}%)</span></span>
           </div>
-          <p style="font-size:12px;color:#374151;line-height:1.5;margin:0;">${a.rationale}</p>
-          <div style="height:5px;background:#e5e7eb;border-radius:99px;margin-top:8px;overflow:hidden;">
-            <div style="height:100%;width:${a.pct}%;background:${a.color};border-radius:99px;"></div>
-          </div>
+          <p style="font-size:12px;color:#374151;line-height:1.5;margin:0 0 6px 0;">${a.rationale}</p>
+          <div style="height:5px;background:#e5e7eb;border-radius:99px;overflow:hidden;"><div style="height:100%;width:${a.pct}%;background:${a.color};border-radius:99px;"></div></div>
         </div>
       </div>`).join('');
-    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>FinTrack — Investment Plan</title>
-      <style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;padding:32px;line-height:1.6;}
-      .header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:16px;margin-bottom:24px;border-bottom:3px solid ${profileColor};}
+    const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>FinTrack Investment Plan</title>
+      <style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;padding:28px;line-height:1.6;}
+      .header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:16px;margin-bottom:20px;border-bottom:3px solid ${profileColor};}
       .logo{display:flex;align-items:center;gap:10px;}.logo-icon{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#14b8a6,#0ea5e9);display:flex;align-items:center;justify-content:center;color:white;font-size:20px;font-weight:bold;}
-      .meta{text-align:right;font-size:12px;color:#64748b;line-height:1.8;}
-      .profile-card{background:linear-gradient(135deg,${profileColor}15,${profileColor}08);border:2px solid ${profileColor}44;border-radius:14px;padding:20px;margin-bottom:20px;}
-      .badge{display:inline-block;padding:3px 12px;border-radius:99px;font-size:11px;font-weight:700;background:${profileColor}22;color:${profileColor};border:1px solid ${profileColor}55;margin-bottom:10px;}
-      .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
-      .card{padding:14px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;}
-      .card .lbl{font-size:11px;color:#64748b;text-transform:uppercase;margin-bottom:4px;}
-      .card .val{font-size:18px;font-weight:700;}
-      .section-title{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin:20px 0 12px;}
-      .disclaimer{margin-top:28px;padding:12px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;font-size:11px;color:#92400e;}
-      .footer{margin-top:24px;padding-top:12px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;font-size:10px;color:#94a3b8;}
+      .meta{text-align:right;font-size:11px;color:#64748b;line-height:1.8;}
+      .profile-card{background:linear-gradient(135deg,${profileColor}15,${profileColor}08);border:2px solid ${profileColor}44;border-radius:12px;padding:18px;margin-bottom:18px;}
+      .badge{display:inline-block;padding:3px 12px;border-radius:99px;font-size:11px;font-weight:700;background:${profileColor}22;color:${profileColor};border:1px solid ${profileColor}55;margin-bottom:8px;}
+      .formula-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 16px;margin-bottom:14px;}
+      .formula-box h4{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;}
+      .formula{font-family:monospace;font-size:12px;color:#374151;background:#e2e8f0;padding:6px 10px;border-radius:6px;display:inline-block;}
+      .section-title{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin:18px 0 10px;}
+      .disclaimer{margin-top:24px;padding:10px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;font-size:11px;color:#92400e;}
+      .footer{margin-top:20px;padding-top:10px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;font-size:10px;color:#94a3b8;}
       @media print{body{padding:16px;}}</style>
       </head><body>
       <div class="header">
-        <div class="logo"><div class="logo-icon">₹</div><div><h1 style="font-size:20px;font-weight:700;color:#0f172a;">FinTrack</h1><p style="font-size:11px;color:#64748b;">Investment Plan</p></div></div>
+        <div class="logo"><div class="logo-icon">₹</div><div><h1 style="font-size:20px;font-weight:700;color:#0f172a;">FinTrack</h1><p style="font-size:11px;color:#64748b;">Investment Decision Rationale</p></div></div>
         <div class="meta"><div><strong>Generated:</strong> ${dateStr}</div><div><strong>Profile:</strong> ${inv.profile||'—'}</div><div><strong>Investable:</strong> ₹${Number(inv.monthly_investable||0).toLocaleString('en-IN',{maximumFractionDigits:0})}/mo</div></div>
       </div>
-      <div class="profile-card"><div class="badge">${inv.profile||'Unknown'}</div><h2 style="font-size:16px;font-weight:700;color:#0f172a;margin-bottom:8px;">Why this profile?</h2><p style="font-size:12px;color:#374151;">${profileReason}</p></div>
-      <div class="cards">
-        <div class="card"><div class="lbl">Savings Rate</div><div class="val" style="color:${profileColor}">${sr}%</div></div>
-        <div class="card"><div class="lbl">Monthly Investable</div><div class="val" style="color:#16a34a">₹${Number(inv.monthly_investable||0).toLocaleString('en-IN',{maximumFractionDigits:0})}</div></div>
-        <div class="card"><div class="lbl">Risk Profile</div><div class="val" style="color:${profileColor}">${inv.profile||'—'}</div></div>
-      </div>
-      <div class="section-title">Allocation Breakdown</div>
+      <div class="profile-card"><div class="badge">${inv.profile||'Unknown'}</div><h2 style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:8px;">Why this profile?</h2><p style="font-size:12px;color:#374151;">${profileReason}</p></div>
+      <div class="section-title">Decision Logic</div>
+      <div class="formula-box"><h4>Savings Rate Calculation</h4><div class="formula">savings_rate = (income − expense) / income × 100</div><p style="font-size:11px;color:#64748b;margin-top:6px;">Your rate: <strong>${sr}%</strong> → Rule: ${ruleSummary}</p></div>
+      <div class="formula-box"><h4>Monthly Investable Amount</h4><div class="formula">monthly_investable = monthly_savings_avg × 0.90</div><p style="font-size:11px;color:#64748b;margin-top:6px;">10% retained as liquid buffer. Your investable: <strong>₹${Number(inv.monthly_investable||0).toLocaleString('en-IN',{maximumFractionDigits:0})}</strong></p></div>
+      <div class="section-title">Allocation Rationale</div>
       ${allocHTML}
-      <div class="disclaimer">⚠️ <strong>Disclaimer:</strong> Algorithmic suggestions only. Consult a SEBI-registered advisor before investing. Past performance is not a guarantee of future returns.</div>
+      <div class="disclaimer">⚠️ <strong>Disclaimer:</strong> Algorithmic suggestions only. Consult a SEBI-registered advisor before investing.</div>
       <div class="footer"><span>FinTrack — AI-Powered Personal Finance</span><span>Confidential · ${dateStr}</span></div>
       </body></html>`;
-    const w = window.open('','_blank');
+    const w=window.open('','_blank');
     w.document.write(html);
     w.document.close();
-    setTimeout(()=>w.print(), 500);
+    setTimeout(()=>w.print(),500);
     toast('Investment PDF opened!');
-  } catch(e) { console.error(e); toast('Failed to generate PDF', false); }
+  } catch(e){console.error(e);toast('Failed to generate PDF',false);}
 }
 
-document.getElementById('login-password').addEventListener('keydown', e => { if(e.key==='Enter') handleLogin(); });
-document.getElementById('signup-password').addEventListener('keydown', e => { if(e.key==='Enter') handleSignup(); });
-document.getElementById('m-chat-input').addEventListener('keydown', e => { if(e.key==='Enter') sendMChatMessage(); });
+// ═══════════════ CSV / PDF EXPORT ═══════════════
+async function exportMCSV() {
+  toast('Preparing CSV...');
+  try {
+    const res=await fetch(`${API}/reports/export/csv`,{headers:authH()});
+    if(!res.ok){toast('Export failed',false);return;}
+    const blob=await res.blob();
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download=`fintrack_${new Date().toISOString().split('T')[0]}.csv`;a.click();
+    URL.revokeObjectURL(url);
+    toast('CSV downloaded!');
+  } catch{toast('Export failed',false);}
+}
+
+async function exportMPDF() {
+  toast('Generating PDF report...');
+  try {
+    const [summaryRes,catRes,insightsRes]=await Promise.all([
+      fetch(`${API}/reports/summary`,{headers:authH()}),
+      fetch(`${API}/reports/category-breakdown`,{headers:authH()}),
+      fetch(`${API}/reports/insights`,{headers:authH()}),
+    ]);
+    const summary=await summaryRes.json(),cats=await catRes.json(),insights=await insightsRes.json();
+    const now=new Date(),dateStr=now.toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'}),monthStr=now.toLocaleDateString('en-IN',{month:'long',year:'numeric'});
+    const insightLines=(insights.insights||[]).map(i=>`<li>${i.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/📈|📉|🏆|💸|⚠️|🌟|👍|🚨/g,'')}</li>`).join('');
+    const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>FinTrack Report — ${monthStr}</title>
+    <style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;padding:28px;line-height:1.6;}
+    .header{display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #14b8a6;padding-bottom:14px;margin-bottom:20px;}
+    .logo{display:flex;align-items:center;gap:10px;}.logo-icon{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#14b8a6,#0ea5e9);display:flex;align-items:center;justify-content:center;color:white;font-size:20px;font-weight:bold;}
+    .meta{text-align:right;font-size:11px;color:#64748b;line-height:1.8;}
+    .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px;}
+    .card{border-radius:10px;padding:14px;background:#f8fafc;border:1px solid #e2e8f0;}
+    .card .lbl{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
+    .card .val{font-size:18px;font-weight:700;}
+    .card.income .val{color:#16a34a;}.card.expense .val{color:#dc2626;}.card.balance .val{color:#0ea5e9;}
+    .section-title{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin:18px 0 10px;}
+    table{width:100%;border-collapse:collapse;font-size:12px;}thead tr{background:#f1f5f9;}
+    th{padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#64748b;font-weight:600;}
+    td{padding:8px 12px;border-bottom:1px solid #f1f5f9;color:#374151;}tbody tr:last-child td{border-bottom:none;}
+    .bar-wrap{background:#e5e7eb;border-radius:99px;height:5px;width:90px;display:inline-block;vertical-align:middle;overflow:hidden;}
+    .bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#14b8a6,#0ea5e9);}
+    ul.insights{list-style:none;padding:0;}ul.insights li{padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:12px;color:#374151;line-height:1.5;}
+    ul.insights li:last-child{border-bottom:none;}ul.insights li::before{content:"→ ";color:#14b8a6;font-weight:700;}
+    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;}.panel{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;}
+    .panel h4{font-size:10px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;}
+    .stat-row{display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid #f1f5f9;}.stat-row:last-child{border-bottom:none;}
+    .stat-row .lbl{color:#64748b;}.stat-row .val{font-weight:600;color:#0f172a;}
+    .footer{margin-top:24px;padding-top:12px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;font-size:10px;color:#94a3b8;}
+    @media print{body{padding:16px;}}</style>
+    </head><body>
+    <div class="header">
+      <div class="logo"><div class="logo-icon">₹</div><div><h1 style="font-size:20px;font-weight:700;color:#0f172a;">FinTrack</h1><p style="font-size:11px;color:#64748b;">AI-Powered Finance Report</p></div></div>
+      <div class="meta"><div><strong>Generated:</strong> ${dateStr}</div><div><strong>This Month:</strong> ${monthStr}</div></div>
+    </div>
+    <div class="cards">
+      <div class="card income"><div class="lbl">Total Income</div><div class="val">₹${Number(summary.total_income||0).toLocaleString('en-IN',{maximumFractionDigits:0})}</div></div>
+      <div class="card expense"><div class="lbl">Total Expenses</div><div class="val">₹${Number(summary.total_expense||0).toLocaleString('en-IN',{maximumFractionDigits:0})}</div></div>
+      <div class="card balance"><div class="lbl">Net Balance</div><div class="val">₹${Number(summary.balance||0).toLocaleString('en-IN',{maximumFractionDigits:0})}</div></div>
+    </div>
+    <div class="two-col">
+      <div class="panel"><h4>Key Metrics</h4>
+        <div class="stat-row"><span class="lbl">Savings Rate</span><span class="val">${insights.savings_rate||0}%</span></div>
+        <div class="stat-row"><span class="lbl">Top Category</span><span class="val">${insights.top_category||'—'}</span></div>
+        <div class="stat-row"><span class="lbl">Avg. Expense</span><span class="val">₹${Number(insights.avg_expense||0).toLocaleString('en-IN',{maximumFractionDigits:0})}</span></div>
+        <div class="stat-row"><span class="lbl">This Month Spend</span><span class="val">₹${Number(insights.this_month_spend||0).toLocaleString('en-IN',{maximumFractionDigits:0})}</span></div>
+      </div>
+      <div class="panel"><h4>Investment</h4>
+        <div class="stat-row"><span class="lbl">Profile</span><span class="val">${(insights.investment_plan||{}).profile||'—'}</span></div>
+        <div class="stat-row"><span class="lbl">Investable/mo</span><span class="val">₹${Number((insights.investment_plan||{}).monthly_investable||0).toLocaleString('en-IN',{maximumFractionDigits:0})}</span></div>
+      </div>
+    </div>
+    <div class="section-title" style="margin-top:18px;">Category Breakdown</div>
+    <table><thead><tr><th>Category</th><th style="text-align:right">Amount</th><th style="text-align:right">%</th><th>Bar</th></tr></thead><tbody>
+    ${cats.map(c=>{const pct=summary.total_expense>0?Math.round(c.total/summary.total_expense*100):0;return`<tr><td>${(c.category||'Others').replace(/\b\w/g,l=>l.toUpperCase())}</td><td style="text-align:right;color:#dc2626;font-weight:600;">₹${Number(c.total).toLocaleString('en-IN',{maximumFractionDigits:0})}</td><td style="text-align:right;color:#6b7280;">${pct}%</td><td><div class="bar-wrap"><div class="bar-fill" style="width:${pct}%"></div></div></td></tr>`;}).join('')}
+    </tbody></table>
+    <div class="section-title" style="margin-top:18px;">AI-Generated Insights</div>
+    <div class="panel" style="background:#fff;border:1px solid #e2e8f0;"><ul class="insights">${insightLines||'<li>No insights yet. Add more transactions.</li>'}</ul></div>
+    <div class="footer"><span>FinTrack — AI-Powered Personal Finance</span><span>Confidential · ${dateStr}</span></div>
+    </body></html>`;
+    const w=window.open('','_blank');
+    w.document.write(html);
+    w.document.close();
+    setTimeout(()=>w.print(),500);
+    toast('PDF ready — use Share → Print to save');
+  } catch(e){console.error(e);toast('Export failed',false);}
+}
+
+// ═══════════════ INIT ═══════════════
+(async function init() {
+  const today=new Date().toISOString().split('T')[0];
+  ['m-exp-date','m-inc-date','m-loan-date'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=today;});
+  const now=new Date();
+  const bm=document.getElementById('m-budget-month');if(bm)bm.value=now.getMonth()+1;
+  const lm=document.getElementById('m-line-month');if(lm)lm.value=now.getMonth()+1;
+  // Try GSI init in case script already loaded
+  setTimeout(_initGSI, 500);
+  await boot();
+})();
+
+document.getElementById('login-password').addEventListener('keydown',  e=>{if(e.key==='Enter')handleLogin();});
+document.getElementById('signup-password').addEventListener('keydown', e=>{if(e.key==='Enter')handleSignup();});
+document.getElementById('m-chat-input').addEventListener('keydown',    e=>{if(e.key==='Enter')sendMChatMessage();});
 </script>
 </body>
 </html>
