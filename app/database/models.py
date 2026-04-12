@@ -32,6 +32,11 @@ class User(Base):
     transactions = relationship("Transaction", back_populates="user", cascade="all, delete-orphan")
     budgets = relationship("Budget", back_populates="user")
     loans = relationship("Loan", back_populates="user", cascade="all, delete-orphan")
+    password_reset_tokens = relationship(
+          "PasswordResetToken",
+          back_populates="user",
+          cascade="all, delete-orphan",
+      )
 
 
 class Transaction(Base):
@@ -45,8 +50,10 @@ class Transaction(Base):
     description = Column(String(255), nullable=True)
     transaction_date = Column(DateTime, nullable=False, default=datetime.utcnow)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    method = Column(String(50), nullable=True)
 
     user = relationship("User", back_populates="transactions")
+    
 
 
 class Budget(Base):
@@ -82,3 +89,19 @@ class Loan(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     user = relationship("User", back_populates="loans")
+
+class PasswordResetToken(Base):
+    __tablename__ = "password_reset_tokens"
+
+    id               = Column(Integer, primary_key=True, index=True)
+    user_id          = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    otp_hash         = Column(String(64), nullable=False)
+    reset_token_hash = Column(String(64), nullable=False)
+    channel          = Column(String(10), nullable=False, server_default="email")
+    phone            = Column(String(20), nullable=True)
+    created_at       = Column(DateTime, nullable=False, server_default=func.now())
+    expires_at       = Column(DateTime, nullable=False)
+    otp_verified     = Column(Boolean, nullable=False, server_default="false")
+    used             = Column(Boolean, nullable=False, server_default="false")
+
+    user = relationship("User", back_populates="password_reset_tokens")

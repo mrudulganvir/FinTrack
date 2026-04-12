@@ -65,7 +65,10 @@ def _project_end_of_month(transactions, budget_limit: float, month: int, year: i
     else:
         intercept = 0
  
-    projected_spend = max(intercept + slope * total_days, current_spend)
+    regression_projected = max(intercept + slope * total_days, current_spend)
+
+    naive_projected = (current_spend / days_elapsed * total_days) if days_elapsed > 0 else current_spend
+    projected_spend = max(regression_projected, naive_projected)
  
     # ── Trend acceleration (2nd derivative proxy) ─────────────────────────────
     # Compare avg spend in first half vs second half of elapsed days
@@ -234,6 +237,60 @@ def _build_notifications(pred: dict) -> list:
             "icon": "✅",
             "actionable": False,
         })
+
+    if rl in ("danger", "exceeded"):
+        # Category breakdown insight
+        if pred["category_breakdown"]:
+            lines = []
+            for item in pred["category_breakdown"]:
+                lines.append(
+                    f"• {item['category']}: ₹{item['amount']:,.0f} ({item['pct_of_spend']}%)"
+                )
+            notes.append({
+                "id": "cut_spending_categories",
+                "type": "tip",
+                "title": "💡 Where your money is going",
+                "message": (
+                    "Here's a breakdown of your top spending categories this month:\n"
+                    + "\n".join(lines)
+                    + "\nFocus on reducing the largest categories to get back on track."
+                ),
+                "icon": "💡",
+                "actionable": False,
+            })
+
+        # Safe daily spend target
+        if pred["days_remaining"] > 0:
+            remaining_budget = max(pred["budget_limit"] - pred["current_spend"], 0)
+            safe_daily = remaining_budget / pred["days_remaining"]
+            notes.append({
+                "id": "cut_spending_daily_target",
+                "type": "tip",
+                "title": f"📅 Daily spend target for remaining {pred['days_remaining']} days",
+                "message": (
+                    f"You have ₹{remaining_budget:,.0f} left in your budget for {pred['days_remaining']} more days. "
+                    f"To avoid going further over, keep daily spending under ₹{safe_daily:,.0f}/day."
+                    if remaining_budget > 0 else
+                    f"Your budget of ₹{pred['budget_limit']:,.0f} is fully consumed. "
+                    f"Avoid any new expenses for the remaining {pred['days_remaining']} days if possible."
+                ),
+                "icon": "📅",
+                "actionable": False,
+            })
+        else:
+            # Month is over but budget was exceeded — show retrospective note
+            notes.append({
+                "id": "cut_spending_retrospective",
+                "type": "tip",
+                "title": "📋 Month-end summary",
+                "message": (
+                    f"This month's budget of ₹{pred['budget_limit']:,.0f} was exceeded by "
+                    f"₹{pred['current_spend'] - pred['budget_limit']:,.0f}. "
+                    f"Review your top categories above and set a revised budget for next month."
+                ),
+                "icon": "📋",
+                "actionable": False,
+            })
  
     # ── Acceleration warning ──────────────────────────────────────────────────
     if pred["trend_acceleration"] > 200 and rl in ("warning", "danger"):
@@ -250,10 +307,10 @@ def _build_notifications(pred: dict) -> list:
             "actionable": False,
         })
  
-    # ── Top category tip ─────────────────────────────────────────────────────
+    # ── Top category tip (warning-level only; danger/exceeded is handled above) ─
     if pred["category_breakdown"]:
         top = pred["category_breakdown"][0]
-        if top["pct_of_spend"] > 40 and rl in ("warning", "danger", "exceeded"):
+        if top["pct_of_spend"] > 40 and rl == "warning":
             notes.append({
                 "id": "top_category_tip",
                 "type": "tip",
@@ -266,8 +323,8 @@ def _build_notifications(pred: dict) -> list:
                 "actionable": False,
             })
  
-    # ── Days remaining tip ────────────────────────────────────────────────────
-    if pred["days_remaining"] <= 5 and rl in ("warning", "danger"):
+    # ── Days remaining tip (warning-level only; danger/exceeded handled above) ─
+    if pred["days_remaining"] <= 5 and rl == "warning":
         safe_daily = max((pred["budget_limit"] - pred["current_spend"]) / max(pred["days_remaining"], 1), 0)
         notes.append({
             "id": "end_of_month_tip",
@@ -293,4 +350,3 @@ def _build_summary(pred: dict) -> str:
         return f"Caution: projected to use {pred['projected_pct']}% of budget by month-end."
     else:
         return f"Spending is healthy. Projected to use {pred['projected_pct']}% of budget."
- 
