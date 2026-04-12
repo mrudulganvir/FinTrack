@@ -61,14 +61,30 @@ def login(
 def google_login(payload: GoogleTokenRequest, db: Session = Depends(get_db_connection)):
     """Authenticate via Google Sign-In. Verifies the ID token, creates or
     finds the user, and returns a JWT access token."""
+
+    # Guard: GOOGLE_CLIENT_ID must be set as an env var on the server
+    if not GOOGLE_CLIENT_ID:
+        raise HTTPException(
+            status_code=500,
+            detail="Google auth not configured on server — set GOOGLE_CLIENT_ID env var in Render"
+        )
+
     try:
         idinfo = google_id_token.verify_oauth2_token(
             payload.id_token,
             google_requests.Request(),
             GOOGLE_CLIENT_ID,
         )
-    except ValueError:
-        raise HTTPException(status_code=401, detail="Invalid Google token")
+    except ValueError as e:
+        # Token is malformed, expired, wrong audience, or bad signature
+        raise HTTPException(status_code=401, detail=f"Invalid Google token: {str(e)}")
+    except Exception as e:
+        # Network/transport errors fetching Google's public certs
+        raise HTTPException(status_code=401, detail=f"Google verification failed: {str(e)}")
+
+    # Reject accounts where Google hasn't confirmed the email
+    if not idinfo.get("email_verified"):
+        raise HTTPException(status_code=400, detail="Google account email is not verified")
 
     email = idinfo.get("email")
     if not email:
