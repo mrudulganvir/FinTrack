@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FinTrack — Personal Finance Manager</title>
   <script>window.tailwind={config:{}}</script>
+  <script>window.tailwind={config:{}}</script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://accounts.google.com/gsi/client" async defer onload="window.onGoogleLibraryLoad && window.onGoogleLibraryLoad()"></script>
@@ -150,24 +151,24 @@
           <h1 class="text-2xl font-bold text-white">FinTrack</h1>
           <p class="text-gray-400 mt-1 text-sm">AI-Powered Personal Finance</p>
         </div>
-        <div class="space-y-4">
+        <form class="space-y-4" onsubmit="handleLogin(); return false;" autocomplete="on">
           <div>
             <label class="block text-sm font-medium text-gray-300 mb-1">Email</label>
-            <input id="login-email" type="email" placeholder="you@example.com" class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-teal-500 transition-colors">
+            <input id="login-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-teal-500 transition-colors">
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-300 mb-1">Password</label>
-            <input id="login-password" type="password" placeholder="••••••••" class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-teal-500 transition-colors">
+            <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="••••••••" class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-teal-500 transition-colors">
           </div>
           <div class="flex justify-end -mt-1">
-            <button onclick="showForgotPassword()" class="text-teal-400 hover:text-teal-300 text-xs font-medium">Forgot password?</button>
+            <button type="button" onclick="showForgotPassword()" class="text-teal-400 hover:text-teal-300 text-xs font-medium">Forgot password?</button>
           </div>
           <div id="login-error" class="hidden text-red-400 text-sm px-1"></div>
-          <button id="login-btn" onclick="handleLogin()" class="w-full py-3 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-semibold hover:opacity-90 transition-all">Sign In</button>
+          <button type="submit" id="login-btn" class="w-full py-3 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-semibold hover:opacity-90 transition-all">Sign In</button>
           <div class="auth-divider"><span>or</span></div>
           <!-- Google Sign-In (rendered by GSI SDK) -->
           <div id="gsi-btn-login" class="flex justify-center rounded-xl overflow-hidden" style="min-height:44px;"></div>
-        </div>
+        </form>
         <p class="mt-6 text-center text-gray-400 text-sm">No account? <button onclick="showSignup()" class="text-teal-400 hover:text-teal-300 font-medium">Sign up</button></p>
       </div>
     </div>
@@ -388,14 +389,18 @@
             <p class="text-gray-400 text-sm mt-1" id="dash-subtitle">Loading overview...</p>
           </div>
           <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#1a1a2e] text-xs text-gray-400">
-            <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>Live
+            <span class="relative flex h-2 w-2">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+            </span>
+            Live
           </div>
         </div>
         <div class="glass rounded-2xl p-6 mb-5" style="border:1px solid rgba(20,184,166,0.3)">
           <div class="flex items-center justify-between">
             <div>
               <p class="text-gray-400 text-sm mb-1">Total Balance</p>
-              <h2 class="text-4xl font-bold text-white" id="total-balance">₹—</h2>
+              <h2 class="text-4xl font-bold text-white" id="total-balance">₹0</h2>
               <p class="text-gray-500 text-xs mt-2">All time income minus expenses</p>
             </div>
             <div class="w-20 h-20 float">
@@ -404,16 +409,23 @@
           </div>
         </div>
         <div class="grid grid-cols-3 gap-4 mb-5">
-          <div class="glass rounded-2xl p-5"><p class="text-gray-400 text-xs mb-1">Total Income</p><p class="text-xl font-bold text-green-400" id="stat-income">₹—</p></div>
-          <div class="glass rounded-2xl p-5"><p class="text-gray-400 text-xs mb-1">Total Expenses</p><p class="text-xl font-bold text-red-400" id="stat-expense">₹—</p></div>
-          <div class="glass rounded-2xl p-5"><p class="text-gray-400 text-xs mb-1">Transactions</p><p class="text-xl font-bold text-blue-400" id="stat-count">—</p></div>
+          <div class="glass rounded-2xl p-5"><p class="text-gray-400 text-xs mb-1">Total Income</p><p class="text-xl font-bold text-green-400" id="stat-income">₹0</p></div>
+          <div class="glass rounded-2xl p-5"><p class="text-gray-400 text-xs mb-1">Total Expenses</p><p class="text-xl font-bold text-red-400" id="stat-expense">₹0</p></div>
+          <div class="glass rounded-2xl p-5"><p class="text-gray-400 text-xs mb-1">Transactions</p><p class="text-xl font-bold text-blue-400" id="stat-count">0</p></div>
         </div>
-        <div class="glass rounded-2xl p-5">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="font-semibold text-white text-sm">Recent Transactions</h3>
+        
+        <div class="glass rounded-2xl p-5 relative overflow-hidden">
+          <div class="absolute inset-0 bg-gradient-to-r from-teal-500/5 to-cyan-500/5 opacity-50 animate-pulse pointer-events-none"></div>
+          <div class="flex items-center justify-between mb-4 relative z-10">
+            <h3 class="font-semibold text-white text-sm flex items-center gap-2">
+              <svg class="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+              Live Transaction Feed
+            </h3>
             <button onclick="showSection('expenses')" class="text-teal-400 text-xs hover:text-teal-300">View All →</button>
           </div>
-          <div id="recent-txs" class="space-y-3"><p class="text-gray-500 text-sm">Loading...</p></div>
+          <div id="recent-txs" class="space-y-3 relative z-10 max-h-80 overflow-y-auto pr-1">
+            <p class="text-gray-500 text-sm">Listening for live updates...</p>
+          </div>
         </div>
       </section>
 
@@ -527,11 +539,11 @@
           </form>
         </div>
         <div id="budget-status" class="hidden glass rounded-2xl p-5">
-          <h3 class="font-semibold text-white mb-4 text-sm">Budget Status</h3>
+          <h3 class="font-semibold text-white mb-4 text-sm">Budget Status <span class="text-teal-400 text-xs ml-2 animate-pulse">(Live Data)</span></h3>
           <div class="grid grid-cols-3 gap-4 mb-4">
-            <div><p class="text-xs text-gray-400">Monthly Limit</p><p class="text-xl font-bold text-white mt-1" id="bs-limit">—</p></div>
-            <div><p class="text-xs text-gray-400">Total Spent</p><p class="text-xl font-bold text-red-400 mt-1" id="bs-spent">—</p></div>
-            <div><p class="text-xs text-gray-400">Remaining</p><p class="text-xl font-bold mt-1" id="bs-remaining">—</p></div>
+            <div><p class="text-xs text-gray-400">Monthly Limit</p><p class="text-xl font-bold text-white mt-1" id="bs-limit">₹0</p></div>
+            <div><p class="text-xs text-gray-400">Total Spent</p><p class="text-xl font-bold text-red-400 mt-1" id="bs-spent">₹0</p></div>
+            <div><p class="text-xs text-gray-400">Remaining</p><p class="text-xl font-bold mt-1" id="bs-remaining">₹0</p></div>
           </div>
           <div class="w-full h-3 rounded-full bg-[#1a1a2e]"><div id="bs-bar" class="h-full rounded-full transition-all duration-700" style="width:0%"></div></div>
           <p class="mt-2 text-sm" id="bs-text"></p>
@@ -542,9 +554,9 @@
       <section id="section-loans" class="p-6 hidden">
         <h1 class="text-2xl font-bold text-white mb-6">Lending & Borrowing</h1>
         <div class="grid grid-cols-3 gap-4 mb-5">
-          <div class="glass rounded-2xl p-4"><p class="text-xs text-gray-400">Total Lent</p><p class="text-xl font-bold text-green-400 mt-1" id="loan-total-lent">₹—</p></div>
-          <div class="glass rounded-2xl p-4"><p class="text-xs text-gray-400">Total Borrowed</p><p class="text-xl font-bold text-red-400 mt-1" id="loan-total-borrowed">₹—</p></div>
-          <div class="glass rounded-2xl p-4"><p class="text-xs text-gray-400">Pending Entries</p><p class="text-xl font-bold text-amber-400 mt-1" id="loan-pending">—</p></div>
+          <div class="glass rounded-2xl p-4"><p class="text-xs text-gray-400">Total Lent</p><p class="text-xl font-bold text-green-400 mt-1" id="loan-total-lent">₹0</p></div>
+          <div class="glass rounded-2xl p-4"><p class="text-xs text-gray-400">Total Borrowed</p><p class="text-xl font-bold text-red-400 mt-1" id="loan-total-borrowed">₹0</p></div>
+          <div class="glass rounded-2xl p-4"><p class="text-xs text-gray-400">Pending Entries</p><p class="text-xl font-bold text-amber-400 mt-1 flex items-center" id="loan-pending"><span class="animate-pulse w-2 h-2 bg-amber-400 rounded-full mr-2"></span>0</p></div>
         </div>
         <div class="glass rounded-2xl p-5 mb-5">
           <h3 class="font-semibold text-white mb-4 text-sm">Add New Entry</h3>
@@ -593,7 +605,10 @@
       <section id="section-reports" class="p-6 hidden">
         <div class="flex items-center justify-between mb-6">
           <div>
-            <h1 class="text-2xl font-bold text-white">Reports & Analytics 📊</h1>
+            <h1 class="text-2xl font-bold text-white flex items-center">
+              Reports & Analytics 📊 
+              <span class="ml-3 px-2 py-0.5 rounded-md bg-[#1a1a2e] text-[10px] text-teal-400 uppercase tracking-widest border border-teal-500/30 flex items-center"><span class="w-1.5 h-1.5 rounded-full bg-teal-400 mr-1 animate-pulse"></span>Live Feed</span>
+            </h1>
             <p class="text-gray-400 text-sm mt-1">Visual breakdown of your finances</p>
           </div>
           <div class="flex gap-3 no-print">
@@ -606,9 +621,9 @@
           </div>
         </div>
         <div class="grid grid-cols-3 gap-4 mb-6">
-          <div class="glass rounded-2xl p-5"><p class="text-xs text-gray-400">Total Income</p><p class="text-2xl font-bold text-green-400 mt-1" id="rep-income">₹—</p></div>
-          <div class="glass rounded-2xl p-5"><p class="text-xs text-gray-400">Total Expenses</p><p class="text-2xl font-bold text-red-400 mt-1" id="rep-expense">₹—</p></div>
-          <div class="glass rounded-2xl p-5"><p class="text-xs text-gray-400">Net Savings</p><p class="text-2xl font-bold text-blue-400 mt-1" id="rep-savings">₹—</p></div>
+          <div class="glass rounded-2xl p-5"><p class="text-xs text-gray-400">Total Income</p><p class="text-2xl font-bold text-green-400 mt-1" id="rep-income">₹0</p></div>
+          <div class="glass rounded-2xl p-5"><p class="text-xs text-gray-400">Total Expenses</p><p class="text-2xl font-bold text-red-400 mt-1" id="rep-expense">₹0</p></div>
+          <div class="glass rounded-2xl p-5"><p class="text-xs text-gray-400">Net Savings</p><p class="text-2xl font-bold text-blue-400 mt-1" id="rep-savings">₹0</p></div>
         </div>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
           <div class="glass rounded-2xl p-5">
@@ -645,7 +660,10 @@
       <section id="section-insights" class="p-6 hidden">
         <div class="flex items-center justify-between mb-6">
           <div>
-            <h1 class="text-2xl font-bold text-white">AI Insights 🧠</h1>
+            <h1 class="text-2xl font-bold text-white flex items-center">
+              AI Insights 🧠
+              <span class="ml-3 px-2 py-0.5 rounded-md bg-[#1a1a2e] text-[10px] text-teal-400 uppercase tracking-widest border border-teal-500/30 animate-pulse">Live</span>
+            </h1>
             <p class="text-gray-400 text-sm mt-1">Pattern analysis of your spending behaviour</p>
           </div>
           <button onclick="loadInsights()" class="px-4 py-2 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white text-sm hover:bg-[#252540] transition-colors">↻ Refresh</button>
@@ -653,21 +671,21 @@
 
         <!-- Key metrics -->
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div class="glass rounded-2xl p-4"><p class="text-xs text-gray-400">Top Category</p><p class="text-lg font-bold text-white mt-1" id="ins-top-category">—</p></div>
-          <div class="glass rounded-2xl p-4"><p class="text-xs text-gray-400">Largest Expense</p><p class="text-lg font-bold text-white mt-1" id="ins-largest-expense">—</p></div>
-          <div class="glass rounded-2xl p-4"><p class="text-xs text-gray-400">Avg. Expense</p><p class="text-lg font-bold text-white mt-1" id="ins-avg-expense">—</p></div>
-          <div class="glass rounded-2xl p-4"><p class="text-xs text-gray-400">Savings Rate</p><p class="text-lg font-bold text-teal-400 mt-1" id="ins-savings-rate">—</p></div>
+          <div class="glass rounded-2xl p-4"><p class="text-xs text-gray-400">Top Category</p><p class="text-lg font-bold text-white mt-1" id="ins-top-category">Tracking...</p></div>
+          <div class="glass rounded-2xl p-4"><p class="text-xs text-gray-400">Largest Expense</p><p class="text-lg font-bold text-white mt-1" id="ins-largest-expense">Tracking...</p></div>
+          <div class="glass rounded-2xl p-4"><p class="text-xs text-gray-400">Avg. Expense</p><p class="text-lg font-bold text-white mt-1" id="ins-avg-expense">Tracking...</p></div>
+          <div class="glass rounded-2xl p-4"><p class="text-xs text-gray-400">Savings Rate</p><p class="text-lg font-bold text-teal-400 mt-1" id="ins-savings-rate">0%</p></div>
         </div>
 
         <!-- Month comparison -->
         <div class="grid grid-cols-2 gap-4 mb-6">
           <div class="glass rounded-2xl p-4">
             <p class="text-xs text-gray-400 mb-1">This Month Spend</p>
-            <p class="text-2xl font-bold text-red-400" id="ins-this-month">₹—</p>
+            <p class="text-2xl font-bold text-red-400" id="ins-this-month">₹0</p>
           </div>
           <div class="glass rounded-2xl p-4">
             <p class="text-xs text-gray-400 mb-1">Last Month Spend</p>
-            <p class="text-2xl font-bold text-gray-300" id="ins-last-month">₹—</p>
+            <p class="text-2xl font-bold text-gray-300" id="ins-last-month">₹0</p>
             <p class="text-xs mt-1" id="ins-change"></p>
           </div>
         </div>
@@ -685,7 +703,10 @@
       <section id="section-investments" class="p-6 hidden">
         <div class="flex items-center justify-between mb-6">
           <div>
-            <h1 class="text-2xl font-bold text-white">Investment Plan 💹</h1>
+            <h1 class="text-2xl font-bold text-white flex items-center">
+              Investment Plan 💹
+              <span class="ml-3 px-2 py-0.5 rounded-md bg-[#1a1a2e] text-[10px] text-green-400 uppercase tracking-widest border border-green-500/30 animate-pulse">Live</span>
+            </h1>
             <p class="text-gray-400 text-sm mt-1">Personalised monthly allocation based on your savings pattern</p>
           </div>
           <div class="flex gap-2">
@@ -700,15 +721,15 @@
         <div class="grid grid-cols-3 gap-4 mb-6">
           <div class="glass rounded-2xl p-5" style="border:1px solid rgba(20,184,166,0.3)">
             <p class="text-xs text-gray-400 mb-1">Risk Profile</p>
-            <p class="text-xl font-bold text-teal-400" id="inv-profile">—</p>
+            <p class="text-xl font-bold text-teal-400" id="inv-profile">Calculating...</p>
           </div>
           <div class="glass rounded-2xl p-5">
             <p class="text-xs text-gray-400 mb-1">Monthly Investable</p>
-            <p class="text-xl font-bold text-green-400" id="inv-monthly">₹—</p>
+            <p class="text-xl font-bold text-green-400" id="inv-monthly">₹0</p>
           </div>
           <div class="glass rounded-2xl p-5">
             <p class="text-xs text-gray-400 mb-1">Savings Rate</p>
-            <p class="text-xl font-bold text-blue-400" id="inv-savings-rate">—%</p>
+            <p class="text-xl font-bold text-blue-400" id="inv-savings-rate">0%</p>
           </div>
         </div>
 
@@ -839,7 +860,10 @@ const getToken = () => localStorage.getItem('ft_token');
 const setToken = t  => localStorage.setItem('ft_token', t);
 const clearToken = () => localStorage.removeItem('ft_token');
 const authH = () => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` });
-
+let _fpToken  = null;   // reset token from /verify-otp
+let _fpTimer  = null;   // countdown interval handle
+let _fpEmail  = '';     // stored at send-time
+let _fpPhone  = ''; 
 // FIX: These are constants, not evaluated in a floating expression
 // All category lookup happens inside functions where `tx` is a local variable
 const CAT_EMOJI = {
@@ -852,6 +876,26 @@ const CAT_COLOR = {
   Medical:'#10b981', Taxes:'#3b82f6', Salary:'#22c55e', Income:'#22c55e',
   Bills:'#06b6d4', Others:'#64748b'
 };
+
+function _fpSetBtn(id, disabled, text) {
+  const btn = document.getElementById(id);
+  if (!btn) return;
+  btn.disabled = disabled;
+  btn.textContent = text;
+}
+ 
+function _fpShowErr(elId, msg) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
+ 
+function _fpClearErr(elId) {
+  const el = document.getElementById(elId);
+  if (el) el.classList.add('hidden');
+}
+
 
 // Chart instances — stored so we can destroy before re-creating
 let _pieChart, _barChart, _lineChart, _invPieChart;
@@ -934,10 +978,66 @@ function showDashboard() {
   document.getElementById('main-app').classList.remove('hidden'); document.getElementById('main-app').classList.add('flex');
 }
 
+let _liveFeedInterval = null;
+
+function startLiveFeed() {
+  if (_liveFeedInterval) clearInterval(_liveFeedInterval);
+  _liveFeedInterval = setInterval(pollLiveData, 5000);
+}
+
+async function pollLiveData() {
+  const token = getToken();
+  if (!token) return;
+  try {
+    const res = await fetch(`${API}/transactions/`, { headers: authH() });
+    if (!res.ok) return;
+    const d = await res.json();
+    const txs = d.transactions || [];
+    const bal = d.current_balance ?? 0;
+    
+    const income  = txs.filter(t => t.type === 'income').reduce((s,t)  => s+t.amount, 0);
+    const expense = txs.filter(t => t.type === 'expense').reduce((s,t) => s+t.amount, 0);
+    
+    // Update Dashboard passively
+    const tb = document.getElementById('total-balance'); if(tb) tb.textContent = fmt(bal);
+    const si = document.getElementById('stat-income');   if(si) si.textContent = fmt(income);
+    const se = document.getElementById('stat-expense');  if(se) se.textContent = fmt(expense);
+    const sc = document.getElementById('stat-count');    if(sc) sc.textContent = txs.length;
+
+    // Update Live Transaction Feed quietly
+    const rtx = document.getElementById('recent-txs');
+    if (rtx && txs.length) {
+      rtx.innerHTML = txs.slice(0, 15).map(tx => {
+        const inc = tx.type === 'income';
+        const cat = normCat(tx.category);
+        const emoji = CAT_EMOJI[cat] || '💰';
+        return `<div class="flex items-center justify-between p-3 rounded-xl bg-[#1a1a2e] hover:bg-[#252540] transition-colors">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl ${inc ? 'bg-green-500/15':'bg-red-500/15'} flex items-center justify-center text-lg">${emoji}</div>
+            <div>
+              <p class="font-medium text-white text-sm">${tx.description || cat || tx.type}</p>
+              <p class="text-xs text-gray-500">${cat} · ${fmtDate(tx.transaction_date)}</p>
+            </div>
+          </div>
+          <span class="font-semibold text-sm ${inc ? 'text-green-400':'text-red-400'}">${inc ? '+':'-'}${fmt(tx.amount)}</span>
+        </div>`;
+      }).join('');
+    }
+
+    // Passively update Reports
+    const ri = document.getElementById('rep-income'); if(ri) ri.textContent = fmt(income);
+    const re = document.getElementById('rep-expense'); if(re) re.textContent = fmt(expense);
+    const rs = document.getElementById('rep-savings'); if(rs) rs.textContent = fmt(income - expense);
+    
+  } catch(e) {}
+}
+
 function showSection(id) {
   document.querySelectorAll('main section').forEach(s => s.classList.add('hidden'));
-  document.getElementById('section-' + id).classList.remove('hidden');
+  const target = document.getElementById('section-' + id);
+  if (target) target.classList.remove('hidden');
   document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.section === id));
+  if (id === 'dashboard')   boot(true);
   if (id === 'expenses')    loadExpenses();
   if (id === 'income')      loadIncome();
   if (id === 'reports')     loadReports();
@@ -994,25 +1094,23 @@ function handleLogout() {
 // ═══════════════════════════════════════════════════════════
 //  FORGOT PASSWORD
 // ═══════════════════════════════════════════════════════════
-let _fpToken = null;
-let _fpTimer = null;
 
 function showForgotPassword() {
-  ['login-screen','signup-screen','main-app'].forEach(id => {
-    document.getElementById(id).classList.add('hidden');
-    document.getElementById(id).classList.remove('flex');
+  ['login-screen', 'signup-screen', 'main-app'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.classList.add('hidden'); el.classList.remove('flex'); }
   });
   const el = document.getElementById('forgot-screen');
   el.classList.remove('hidden'); el.classList.add('flex');
-  fpGoBack();
+  fpGoBack();                           // always reset to step 1
   document.getElementById('fp-email').value = '';
   document.getElementById('fp-phone').value = '';
 }
 
 function showLogin() {
-  ['signup-screen','forgot-screen','main-app'].forEach(id => {
-    document.getElementById(id).classList.add('hidden');
-    document.getElementById(id).classList.remove('flex');
+  ['signup-screen', 'forgot-screen', 'main-app'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.classList.add('hidden'); el.classList.remove('flex'); }
   });
   document.getElementById('login-screen').classList.remove('hidden');
   document.getElementById('login-screen').classList.add('flex');
@@ -1021,100 +1119,222 @@ function showLogin() {
 
 async function fpSendOtp() {
   const email = document.getElementById('fp-email').value.trim();
-  const phone = document.getElementById('fp-phone').value.trim();
-  const errEl = document.getElementById('fp-step1-error');
-  const btn   = document.getElementById('fp-send-btn');
-  errEl.classList.add('hidden');
-
-  if (!email) { errEl.textContent = 'Please enter your email address.'; errEl.classList.remove('hidden'); return; }
-  if (!/^\d{10}$/.test(phone)) { errEl.textContent = 'Please enter a valid 10-digit mobile number.'; errEl.classList.remove('hidden'); return; }
-
-  // populate hidden username hint so password manager can link the new password
+  const rawPhone = document.getElementById('fp-phone').value.trim();
+  _fpClearErr('fp-step1-error');
+ 
+  // Client-side validation
+  if (!email || !/\S+@\S+\.\S+/.test(email)) {
+    _fpShowErr('fp-step1-error', 'Please enter a valid email address.'); return;
+  }
+  if (!/^\d{10}$/.test(rawPhone)) {
+    _fpShowErr('fp-step1-error', 'Enter a valid 10-digit mobile number (without +91).'); return;
+  }
+ 
+  // Store for reuse by Resend
+  _fpEmail = email;
+  _fpPhone = '+91' + rawPhone;
+ 
+  // Populate hidden username hint for password managers
   const hint = document.getElementById('fp-username-hint');
   if (hint) hint.value = email;
-
-  btn.disabled = true; btn.textContent = 'Sending...';
+ 
+  _fpSetBtn('fp-send-btn', true, 'Sending…');
   try {
     const res = await fetch(`${API}/auth/forgot-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, phone: '+91' + phone })
+      body: JSON.stringify({ email, phone: _fpPhone }),
     });
     const d = await res.json();
-    if (!res.ok) { errEl.textContent = d.detail || 'Failed to send OTP. Try again.'; errEl.classList.remove('hidden'); return; }
-
+ 
+    if (res.status === 429) {
+      // WHY: New — server now returns 429 when rate limit is hit
+      _fpShowErr('fp-step1-error', 'Too many OTP requests. Please wait 10 minutes and try again.'); return;
+    }
+    if (!res.ok) {
+      _fpShowErr('fp-step1-error', d.detail || 'Failed to send OTP. Please try again.'); return;
+    }
+ 
+    // Advance to step 2
     document.getElementById('fp-step-1').classList.add('hidden');
     document.getElementById('fp-step-2').classList.remove('hidden');
-    document.getElementById('fp-otp-hint').textContent = `OTP sent to +91 ${phone}`;
-    document.getElementById('fp-otp').value = '';
-    document.getElementById('fp-step2-error').classList.add('hidden');
+ 
+    // FIX: hint says SMS (was incorrectly saying "email")
+    document.getElementById('fp-otp-hint').textContent = `OTP sent via SMS to ${_fpPhone}`;
+ 
+    // FIX: clear OTP input and error, then focus for faster entry
+    const otpInput = document.getElementById('fp-otp');
+    otpInput.value = '';
+    _fpClearErr('fp-step2-error');
+    setTimeout(() => otpInput.focus(), 100); // WHY: auto-focus opens numpad on mobile
+ 
     fpStartCountdown();
   } catch {
-    errEl.textContent = 'Server unreachable. Please try again.'; errEl.classList.remove('hidden');
+    _fpShowErr('fp-step1-error', 'Server unreachable. Check your connection.');
   } finally {
-    btn.disabled = false; btn.textContent = '📱 Send OTP via SMS';
+    _fpSetBtn('fp-send-btn', false, '📱 Send OTP via SMS');
   }
 }
 
 function fpStartCountdown() {
   clearInterval(_fpTimer);
   let secs = 60;
-  document.getElementById('fp-countdown').textContent = secs;
-  document.getElementById('fp-resend-timer').classList.remove('hidden');
-  document.getElementById('fp-resend-btn').classList.add('hidden');
+  const timerEl  = document.getElementById('fp-resend-timer');
+  const countEl  = document.getElementById('fp-countdown');
+  const resendBtn = document.getElementById('fp-resend-btn');
+ 
+  timerEl.classList.remove('hidden');
+  resendBtn.classList.add('hidden');
+  if (countEl) countEl.textContent = secs;
+ 
   _fpTimer = setInterval(() => {
     secs--;
-    document.getElementById('fp-countdown').textContent = secs;
+    if (countEl) countEl.textContent = secs;
     if (secs <= 0) {
       clearInterval(_fpTimer);
-      document.getElementById('fp-resend-timer').classList.add('hidden');
-      document.getElementById('fp-resend-btn').classList.remove('hidden');
+      timerEl.classList.add('hidden');
+      resendBtn.classList.remove('hidden');
     }
   }, 1000);
 }
 
 async function fpResendOtp() {
+  /**
+   * FIX (was buggy):
+   * Old code called fpSendOtp() which re-reads the input fields AND transitions
+   * to step 2 again — causing a flash or broken state if inputs were cleared.
+   *
+   * New approach: use stored _fpEmail and _fpPhone, call the API directly,
+   * and stay on step 2. No step transition needed.
+   */
+  _fpClearErr('fp-step2-error');
   document.getElementById('fp-resend-btn').classList.add('hidden');
-  await fpSendOtp();           // reuses step-1 values, re-sends, restarts timer
-  // Keep user on step 2 — fpSendOtp would advance but we're already there
-  // so manually ensure step 2 stays visible (no harm if already shown)
-  document.getElementById('fp-step-1').classList.add('hidden');
-  document.getElementById('fp-step-2').classList.remove('hidden');
+ 
+  try {
+    const res = await fetch(`${API}/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: _fpEmail, phone: _fpPhone }),
+    });
+    const d = await res.json();
+ 
+    if (res.status === 429) {
+      _fpShowErr('fp-step2-error', 'Too many OTP requests. Please wait 10 minutes.');
+      return;
+    }
+    if (!res.ok) {
+      _fpShowErr('fp-step2-error', d.detail || 'Failed to resend OTP.');
+      // Show button again so user isn't stuck
+      document.getElementById('fp-resend-btn').classList.remove('hidden');
+      return;
+    }
+ 
+    // Clear OTP field and restart countdown
+    document.getElementById('fp-otp').value = '';
+    document.getElementById('fp-otp').focus();
+    fpStartCountdown();
+ 
+  } catch {
+    _fpShowErr('fp-step2-error', 'Server unreachable. Please try again.');
+    document.getElementById('fp-resend-btn').classList.remove('hidden');
+  }
 }
 
 async function fpVerifyOtp() {
   const otp   = document.getElementById('fp-otp').value.trim();
-  const email = document.getElementById('fp-email').value.trim();
-  const errEl = document.getElementById('fp-step2-error');
-  const btn   = document.getElementById('fp-verify-btn');
-  errEl.classList.add('hidden');
-
-  if (otp.length !== 6) { errEl.textContent = 'Enter the complete 6-digit code.'; errEl.classList.remove('hidden'); return; }
-
-  btn.disabled = true; btn.textContent = 'Verifying...';
+  const errEl = 'fp-step2-error';
+  _fpClearErr(errEl);
+ 
+  if (!/^\d{6}$/.test(otp)) {
+    _fpShowErr(errEl, 'Enter the complete 6-digit numeric code.'); return;
+  }
+ 
+  _fpSetBtn('fp-verify-btn', true, 'Verifying…');
   try {
     const res = await fetch(`${API}/auth/verify-otp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, otp })
+      body: JSON.stringify({ email: _fpEmail, otp }),
     });
     const d = await res.json();
-    if (!res.ok) { errEl.textContent = d.detail || 'Invalid or expired OTP.'; errEl.classList.remove('hidden'); return; }
-
-    _fpToken = d.reset_token;     // backend returns a short-lived reset token
+ 
+    if (res.status === 429) {
+      // WHY: New — server returns 429 after MAX_OTP_ATTEMPTS wrong tries
+      _fpShowErr(errEl, 'Too many incorrect attempts. Please request a new OTP.');
+      // Auto-return to step 1 after 3s so user can request fresh OTP
+      setTimeout(() => fpGoBack(), 3000);
+      return;
+    }
+    if (!res.ok) {
+      _fpShowErr(errEl, d.detail || 'Invalid or expired OTP.'); return;
+    }
+ 
+    _fpToken = d.reset_token;
     clearInterval(_fpTimer);
     document.getElementById('fp-step-2').classList.add('hidden');
     document.getElementById('fp-step-3').classList.remove('hidden');
+ 
     document.getElementById('fp-new-pass').value = '';
     document.getElementById('fp-confirm-pass').value = '';
     document.getElementById('fp-strength-bar').style.width = '0%';
     document.getElementById('fp-strength-label').textContent = '—';
-    document.getElementById('fp-step3-error').classList.add('hidden');
+    _fpClearErr('fp-step3-error');
+    setTimeout(() => document.getElementById('fp-new-pass').focus(), 100);
+ 
   } catch {
-    errEl.textContent = 'Server unreachable. Please try again.'; errEl.classList.remove('hidden');
+    _fpShowErr(errEl, 'Server unreachable. Please try again.');
   } finally {
-    btn.disabled = false; btn.textContent = 'Verify OTP';
+    _fpSetBtn('fp-verify-btn', false, 'Verify OTP');
   }
+}
+
+async function fpResetPassword() {
+  const newPass = document.getElementById('fp-new-pass').value;
+  const confirm = document.getElementById('fp-confirm-pass').value;
+  const errEl   = 'fp-step3-error';
+  _fpClearErr(errEl);
+ 
+  if (newPass.length < 6) {
+    _fpShowErr(errEl, 'Password must be at least 6 characters.'); return;
+  }
+  if (newPass !== confirm) {
+    _fpShowErr(errEl, 'Passwords do not match.'); return;
+  }
+ 
+  _fpSetBtn('fp-reset-btn', true, 'Resetting…');
+  try {
+    const res = await fetch(`${API}/auth/reset-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: _fpEmail, reset_token: _fpToken, new_password: newPass }),
+    });
+    const d = await res.json();
+ 
+    if (!res.ok) {
+      _fpShowErr(errEl, d.detail || 'Reset failed. The link may have expired — please start over.');
+      return;
+    }
+ 
+    toast('✅ Password reset successfully! Please sign in.');
+    _fpToken = null;
+    showLogin();
+    // Pre-fill email so user doesn't have to retype it
+    const loginEmail = document.getElementById('login-email');
+    if (loginEmail) loginEmail.value = _fpEmail;
+ 
+  } catch {
+    _fpShowErr(errEl, 'Server unreachable. Please try again.');
+  } finally {
+    _fpSetBtn('fp-reset-btn', false, 'Reset Password');
+  }
+}
+
+function fpGoBack() {
+  clearInterval(_fpTimer);
+  _fpToken = null;
+  ['fp-step-2', 'fp-step-3'].forEach(id => document.getElementById(id)?.classList.add('hidden'));
+  document.getElementById('fp-step-1')?.classList.remove('hidden');
+  ['fp-step1-error', 'fp-step2-error', 'fp-step3-error'].forEach(id => _fpClearErr(id));
 }
 
 // Live password strength meter
@@ -1217,6 +1437,7 @@ async function boot(fromLogin = false) {
     document.getElementById('dash-subtitle').textContent = `Overview for ${now.toLocaleString('en-IN',{month:'long',year:'numeric'})}`;
     renderRecentTxs(txs.slice(0, 6));
     if (!fromLogin) { showDashboard(); setTimeout(triggerPredictiveAlert, 1000); }
+    startLiveFeed();
   } catch { if (!fromLogin) showLogin(); }
 }
 
@@ -2429,7 +2650,7 @@ function closeCutSpending() {
   setTimeout(() => { overlay.style.display = 'none'; overlay.classList.add('hidden'); }, 350);
 }
 
-document.getElementById('cut-spending-overlay').addEventListener('click', function(e) {
+document.getElementById('cut-spending-overlay')?.addEventListener('click', function(e) {
   if (e.target === this) closeCutSpending();
 });
 

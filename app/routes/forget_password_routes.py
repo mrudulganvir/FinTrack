@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, EmailStr, field_validator
 from sqlalchemy.orm import Session
-
+ 
 from app.database.db import get_db_connection
 from app.services.forget_password_service import (
     request_otp,
@@ -9,64 +9,9 @@ from app.services.forget_password_service import (
     reset_password,
 )
 
+from app.database.models import ForgotPasswordRequest, ForgotPasswordResponse, VerifyOtpRequest, VerifyOtpResponse, ResetPasswordRequest, ResetPasswordResponse
+
 router = APIRouter(prefix="/auth", tags=["Forgot Password"])
-
-
-# ── Request / Response schemas ─────────────────────────────────────────────────
-
-class ForgotPasswordRequest(BaseModel):
-    email: EmailStr
-    phone: str              # e.g. +919876543210  — OTP sent via SMS
-
-    @field_validator("phone")
-    @classmethod
-    def phone_must_have_country_code(cls, v):
-        v = v.strip()
-        if not v.startswith("+"):
-            raise ValueError("Phone number must include country code, e.g. +919876543210")
-        if not v[1:].isdigit():
-            raise ValueError("Phone number must contain only digits after the + sign")
-        if len(v) < 10:
-            raise ValueError("Phone number is too short")
-        return v
-
-
-class ForgotPasswordResponse(BaseModel):
-    message: str
-
-
-class VerifyOtpRequest(BaseModel):
-    email: EmailStr
-    otp:   str
-
-    @field_validator("otp")
-    @classmethod
-    def otp_must_be_six_digits(cls, v):
-        if not v.isdigit() or len(v) != 6:
-            raise ValueError("OTP must be exactly 6 digits")
-        return v
-
-
-class VerifyOtpResponse(BaseModel):
-    message:     str
-    reset_token: str
-
-
-class ResetPasswordRequest(BaseModel):
-    email:        EmailStr
-    reset_token:  str
-    new_password: str
-
-    @field_validator("new_password")
-    @classmethod
-    def password_min_length(cls, v):
-        if len(v) < 6:
-            raise ValueError("Password must be at least 6 characters")
-        return v
-
-
-class ResetPasswordResponse(BaseModel):
-    message: str
 
 
 # ── Endpoints ──────────────────────────────────────────────────────────────────
@@ -93,8 +38,8 @@ def forgot_password(
     return ForgotPasswordResponse(
         message=f"If that account exists, an OTP has been sent to {payload.phone}."
     )
-
-
+ 
+ 
 @router.post(
     "/verify-otp",
     response_model=VerifyOtpResponse,
@@ -117,8 +62,8 @@ def verify_otp_endpoint(
         message     = "OTP verified. Proceed to reset your password.",
         reset_token = token,
     )
-
-
+ 
+ 
 @router.post(
     "/reset-password",
     response_model=ResetPasswordResponse,
