@@ -3,7 +3,9 @@ from datetime import datetime
 
 
 class UserCreate(BaseModel):
+    name: str
     email: EmailStr
+    phone: str
     password: str
 
 
@@ -14,6 +16,7 @@ class UserLogin(BaseModel):
 
 class UserResponse(BaseModel):
     id: int
+    name: str | None = None
     email: EmailStr
     created_at: datetime
 

@@ -20,6 +20,8 @@ class GoogleTokenRequest(BaseModel):
     id_token: str
 
 
+from app.services.forget_password_service import _normalise_phone
+
 @router.post("/signup", response_model=UserResponse)
 def signup(user: UserCreate, db: Session = Depends(get_db_connection)):
 
@@ -28,7 +30,9 @@ def signup(user: UserCreate, db: Session = Depends(get_db_connection)):
         raise HTTPException(status_code=400, detail="Email already registered")
 
     new_user = User(
+        name=user.name,
         email=user.email,
+        phone=_normalise_phone(user.phone),
         hashed_password=hash_password(user.password)
     )
 
@@ -49,7 +53,7 @@ def login(
     if not db_user or not db_user.hashed_password or not verify_password(form_data.password, db_user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    access_token = create_access_token({"user_id": db_user.id})
+    access_token = create_access_token({"user_id": db_user.id, "name": db_user.name})
 
     return {
         "access_token": access_token,
@@ -89,6 +93,8 @@ def google_login(payload: GoogleTokenRequest, db: Session = Depends(get_db_conne
     email = idinfo.get("email")
     if not email:
         raise HTTPException(status_code=400, detail="Google account has no email")
+        
+    google_name = idinfo.get("name")
 
     # Find or create user
     db_user = db.query(User).filter(User.email == email).first()
@@ -96,12 +102,15 @@ def google_login(payload: GoogleTokenRequest, db: Session = Depends(get_db_conne
         # Generate a random unusable password so the DB NOT NULL constraint is satisfied.
         # This password is unguessable — Google users can only sign in via Google.
         random_pw = secrets.token_urlsafe(48)
-        db_user = User(email=email, hashed_password=hash_password(random_pw))
+        db_user = User(name=google_name, email=email, phone="", hashed_password=hash_password(random_pw))
         db.add(db_user)
         db.commit()
         db.refresh(db_user)
+    elif not db_user.name and google_name:
+        db_user.name = google_name
+        db.commit()
 
-    access_token = create_access_token({"user_id": db_user.id})
+    access_token = create_access_token({"user_id": db_user.id, "name": db_user.name})
 
     return {
         "access_token": access_token,

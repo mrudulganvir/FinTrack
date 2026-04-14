@@ -184,8 +184,16 @@
         </div>
         <form class="space-y-4" onsubmit="handleSignup(); return false;" autocomplete="on">
           <div>
+            <label class="block text-sm font-medium text-gray-300 mb-1">Full Name</label>
+            <input id="signup-name" name="name" type="text" autocomplete="name" placeholder="John Doe" class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-teal-500 transition-colors">
+          </div>
+          <div>
             <label class="block text-sm font-medium text-gray-300 mb-1">Email</label>
             <input id="signup-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-teal-500 transition-colors">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-1">Phone Number</label>
+            <input id="signup-phone" name="phone" type="tel" placeholder="10-digit mobile number" class="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-teal-500 transition-colors">
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-300 mb-1">Password</label>
@@ -1068,16 +1076,19 @@ async function handleLogin() {
 }
 
 async function handleSignup() {
+  const name  = document.getElementById('signup-name').value.trim();
   const email = document.getElementById('signup-email').value.trim();
+  const phone = document.getElementById('signup-phone').value.trim();
   const pass  = document.getElementById('signup-password').value;
   const errEl = document.getElementById('signup-error');
   const btn   = document.getElementById('signup-btn');
   errEl.classList.add('hidden');
-  if (!email || !pass) { errEl.textContent = 'Fill in all fields.'; errEl.classList.remove('hidden'); return; }
+  if (!name || !email || !phone || !pass) { errEl.textContent = 'Fill in all fields.'; errEl.classList.remove('hidden'); return; }
+  if (!/^\d{10}$/.test(phone)) { errEl.textContent = 'Enter a valid 10-digit mobile number.'; errEl.classList.remove('hidden'); return; }
   if (pass.length < 6) { errEl.textContent = 'Password must be 6+ characters.'; errEl.classList.remove('hidden'); return; }
   btn.disabled = true; btn.textContent = 'Creating...';
   try {
-    const res = await fetch(`${API}/auth/signup`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ email, password:pass }) });
+    const res = await fetch(`${API}/auth/signup`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name, email, phone, password:pass }) });
     const d = await res.json();
     if (res.ok) { toast('Account created! Please sign in.'); showLogin(); document.getElementById('login-email').value = email; }
     else { errEl.textContent = d.detail || 'Registration failed.'; errEl.classList.remove('hidden'); }
@@ -1417,12 +1428,14 @@ async function boot(fromLogin = false) {
     const txs = d.transactions || [];
     const bal = d.current_balance ?? 0;
 
-    // User ID from JWT
+    // User ID/Name from JWT
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      const uid = payload.user_id || payload.sub || '?';
-      ['user-avatar','settings-avatar'].forEach(id => document.getElementById(id).textContent = String(uid).slice(0,2).toUpperCase());
-      ['sidebar-email','settings-email'].forEach(id => document.getElementById(id).textContent = `User #${uid}`);
+      const uid = payload.user_id || '?';
+      const name = payload.name || `User #${uid}`;
+      const initials = payload.name ? payload.name.slice(0,2).toUpperCase() : String(uid).slice(0,2).toUpperCase();
+      ['user-avatar','settings-avatar'].forEach(id => document.getElementById(id).textContent = initials);
+      ['sidebar-email','settings-email'].forEach(id => document.getElementById(id).textContent = name);
     } catch {}
 
     const income  = txs.filter(t => t.type === 'income').reduce((s,t)  => s+t.amount, 0);

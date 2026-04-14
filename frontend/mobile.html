@@ -104,8 +104,15 @@
       <div id="gsi-btn-signup" class="flex justify-center"></div>
       <div class="auth-divider"><span>or sign up with email</span></div>
       <div>
+        <label class="block text-xs font-medium text-gray-400 mb-2">Full Name</label>
+        <input id="signup-name" type="text" placeholder="John Doe" class="inp">
+      </div>
+      <div>
         <label class="block text-xs font-medium text-gray-400 mb-2">Email</label>
         <input id="signup-email" type="email" placeholder="you@example.com" class="inp">
+      </div>
+      <div>
+        <input id="signup-phone" type="tel" placeholder="10-digit mobile number" class="inp">
       </div>
       <div>
         <label class="block text-xs font-medium text-gray-400 mb-2">Password</label>
@@ -816,16 +823,19 @@ async function handleLogin() {
 }
 
 async function handleSignup() {
+  const name  = document.getElementById('signup-name').value.trim();
   const email = document.getElementById('signup-email').value.trim();
+  const phone = document.getElementById('signup-phone').value.trim();
   const pass  = document.getElementById('signup-password').value;
   const errEl = document.getElementById('signup-error');
   const btn   = document.getElementById('signup-btn');
   errEl.classList.add('hidden');
-  if (!email||!pass) { errEl.textContent='Fill in all fields.'; errEl.classList.remove('hidden'); return; }
+  if (!name || !email || !phone || !pass) { errEl.textContent='Fill in all fields.'; errEl.classList.remove('hidden'); return; }
+  if (!/^\d{10}$/.test(phone)) { errEl.textContent='Enter 10-digit mobile number.'; errEl.classList.remove('hidden'); return; }
   if (pass.length<6) { errEl.textContent='Password must be 6+ characters.'; errEl.classList.remove('hidden'); return; }
   btn.disabled=true; btn.textContent='Creating...';
   try {
-    const res = await fetch(`${API}/auth/signup`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email,password:pass}) });
+    const res = await fetch(`${API}/auth/signup`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name,email,phone,password:pass}) });
     const d = await res.json();
     if (res.ok) { toast('Account created! Sign in.'); showLogin(); document.getElementById('login-email').value=email; }
     else { errEl.textContent=d.detail||'Registration failed.'; errEl.classList.remove('hidden'); }
@@ -987,11 +997,12 @@ async function boot(fromLogin=false) {
     document.getElementById('m-count').textContent   = txs.length;
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      const uid  = payload.user_id || payload.sub || '?';
-      const initials = String(uid).slice(0,2).toUpperCase();
-      ['m-avatar','m-settings-avatar'].forEach(id => document.getElementById(id).textContent=initials);
-      document.getElementById('m-settings-email').textContent = `User #${uid}`;
-      document.getElementById('m-user-name').textContent = `User #${uid}`;
+      const uid  = payload.user_id || '?';
+      const name = payload.name || `User #${uid}`;
+      const initials = payload.name ? payload.name.slice(0,2).toUpperCase() : String(uid).slice(0,2).toUpperCase();
+      ['m-avatar','m-settings-avatar'].forEach(id => { const el=document.getElementById(id); if(el) el.textContent=initials; });
+      const emailEl = document.getElementById('m-settings-email'); if(emailEl) emailEl.textContent = name;
+      const nmEl = document.getElementById('m-user-name'); if(nmEl) nmEl.textContent = name;
     } catch {}
     renderMRecentTxs(txs.slice(-5).reverse());
     if (!fromLogin) showApp();
