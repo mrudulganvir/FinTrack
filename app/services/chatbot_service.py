@@ -15,44 +15,8 @@ print("MISTRAL KEY:", os.getenv("MISTRAL_API_KEY"))
 
 def clean_llm_response(text: str) -> str:
     import re
-
-    # Remove headings
-    text = re.sub(r'#{1,6}\s*', '', text)
-
-    # Convert bullets
-    text = re.sub(r'^\s*[-*]\s+', '• ', text, flags=re.MULTILINE)
-
-    # Remove horizontal lines
-    text = re.sub(r'---+', '', text)
-
-    # 🔥 HANDLE TABLES
-    lines = text.split("\n")
-    new_lines = []
-    table_mode = False
-
-    for line in lines:
-        # Detect table row
-        if "|" in line:
-            parts = [p.strip() for p in line.split("|") if p.strip()]
-
-            # Skip separator rows like ||||
-            if all(p == "" for p in parts):
-                continue
-
-            # Convert row to readable format
-            if len(parts) >= 2:
-                row_text = " | ".join(parts)
-                new_lines.append(f"• {row_text}")
-                table_mode = True
-            continue
-
-        new_lines.append(line)
-
-    text = "\n".join(new_lines)
-
-    # Fix spacing
+    # Just fix excessive spacing, keep markdown syntax for the frontend
     text = re.sub(r'\n{3,}', '\n\n', text)
-
     return text.strip()
 
 

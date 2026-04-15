@@ -139,10 +139,9 @@ class ForgotPasswordRequest(BaseModel):
     @classmethod
     def validate_phone(cls, v: str) -> str:
         v = v.strip()
-        if not v.startswith("+"):
-            raise ValueError("Phone must include country code (e.g. +91...)")
-        if not v[1:].isdigit():
-            raise ValueError("Invalid phone number — digits only after the +")
+        # Removal of strict '+' requirement to allow service-level normalisation
+        if not v.replace("+", "").isdigit():
+            raise ValueError("Invalid phone number — digits only (optional +)")
         return v
  
  

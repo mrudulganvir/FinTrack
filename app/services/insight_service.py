@@ -227,3 +227,67 @@ def _default_investment_plan():
         "emergency_fund_note":  "",
         "disclaimer":           "",
     }
+
+def get_ai_advisor_signals(investments_data, savings_rate):
+    """
+    Algorithmic advisor that evaluates current holdings against risk profile
+    to generate Buy/Sell/Hold signals.
+    """
+    if not investments_data:
+        return [
+            {"asset": "Index Funds (Nifty 50)", "action": "BUY", "type": "equity", "reason": "No investments detected. Start with a broad market index fund for baseline growth."},
+            {"asset": "Emergency Fund (Liquid)", "action": "BUY", "type": "debt", "reason": "Establish a 3-6 month cash buffer before exploring high-risk assets."}
+        ]
+
+    # Determine risk profile based on savings rate
+    profile = "conservative"
+    if savings_rate >= 30:
+        profile = "aggressive"
+    elif savings_rate >= 15:
+        profile = "moderate"
+
+    total_value = sum((item.get("current_value") or item.get("amount", 0)) for item in investments_data)
+    
+    # Calculate current allocation percentages
+    allocations = defaultdict(float)
+    for item in investments_data:
+        val = item.get("current_value") or item.get("amount", 0)
+        allocations[item.get("type", "unknown").lower()] += val
+        
+    signals = []
+
+    # ── CRYPTO LOGIC ──
+    crypto_val = allocations.get("crypto", 0)
+    crypto_pct = (crypto_val / total_value) * 100 if total_value > 0 else 0
+    
+    if crypto_pct > 0:
+        if profile == "conservative":
+            signals.append({"asset": "Cryptocurrency", "action": "SELL", "type": "crypto", "reason": "Your profile is conservative, but you hold highly volatile crypto assets. Consider reallocating to stable debt."})
+        elif crypto_pct > 15:
+            signals.append({"asset": "Cryptocurrency", "action": "SELL", "type": "crypto", "reason": f"Crypto makes up {crypto_pct:.1f}% of your portfolio. Take profits to reduce exposure below 10%."})
+        else:
+            signals.append({"asset": "Cryptocurrency", "action": "HOLD", "type": "crypto", "reason": "Crypto exposure is within acceptable limits for your profile. Monitor volatility."})
+    elif profile == "aggressive":
+        signals.append({"asset": "Bitcoin / Ethereum", "action": "BUY", "type": "crypto", "reason": "As an aggressive investor, a 2-5% allocation in blue-chip crypto can provide asymmetric upside."})
+
+    # ── EQUITY / MUTUAL FUND LOGIC ──
+    equity_val = allocations.get("equity", 0) + allocations.get("mutual funds", 0)
+    equity_pct = (equity_val / total_value) * 100 if total_value > 0 else 0
+
+    if profile == "aggressive" and equity_pct < 60:
+        signals.append({"asset": "Small/Mid-Cap Mutual Funds", "action": "BUY", "type": "equity", "reason": "Your equity exposure is too low for an aggressive profile. Accumulate growth-oriented funds."})
+    elif profile == "conservative" and equity_pct > 40:
+        signals.append({"asset": "Direct Equity", "action": "SELL", "type": "equity", "reason": "High equity exposure contradicts your conservative profile. Shift profits into Fixed Deposits or Bonds."})
+    else:
+        signals.append({"asset": "Nifty 50 Index", "action": "HOLD", "type": "equity", "reason": "Core equity allocation is balanced. Continue SIPs regardless of market fluctuations."})
+
+    # ── GOLD / COMMODITIES LOGIC ──
+    gold_val = allocations.get("gold", 0)
+    gold_pct = (gold_val / total_value) * 100 if total_value > 0 else 0
+
+    if gold_pct < 5:
+        signals.append({"asset": "Sovereign Gold Bonds (SGB)", "action": "BUY", "type": "commodity", "reason": "Zero or low gold exposure. Add SGBs as a hedge against inflation and equity market crashes."})
+    elif gold_pct > 15:
+        signals.append({"asset": "Physical Gold / Gold ETFs", "action": "SELL", "type": "commodity", "reason": "Gold allocation is dragging down overall portfolio returns. Cap it at 10%."})
+
+    return signals

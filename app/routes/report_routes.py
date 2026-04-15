@@ -5,7 +5,7 @@ from sqlalchemy import extract, func
 from app.database.db import get_db_connection
 from app.database.models import Transaction
 from app.core.security import get_current_user
-from app.services.insight_service import generate_insights
+from app.services.insight_service import generate_insights, get_ai_advisor_signals
 from pydantic import BaseModel
 from typing import List
 import csv, io, json
@@ -123,9 +123,14 @@ def export_csv(
     writer = csv.writer(output)
     writer.writerow(["ID", "Date", "Type", "Category", "Description", "Amount (INR)"])
     for t in txs:
+        # FIXED: Defend against databases returning standard string representations instead of Datetime objects
+        date_str = ""
+        if t.transaction_date:
+            date_str = t.transaction_date.strftime("%Y-%m-%d") if hasattr(t.transaction_date, 'strftime') else str(t.transaction_date)[:10]
+            
         writer.writerow([
             t.id,
-            t.transaction_date.strftime("%Y-%m-%d"),
+            date_str,
             t.type,
             t.category or "",
             t.description or "",
@@ -174,7 +179,7 @@ def chat(
     # Recent 10 transactions
     recent = sorted(txs, key=lambda x: x.transaction_date, reverse=True)[:10]
     recent_str = "\n".join(
-        f"- {t.transaction_date.strftime('%d %b')}: {t.type.upper()} ₹{t.amount:,.0f} | {t.category} | {t.description}"
+        f"- {t.transaction_date.strftime('%d %b') if hasattr(t.transaction_date, 'strftime') else str(t.transaction_date)[:10]}: {t.type.upper()} ₹{t.amount:,.0f} | {t.category} | {t.description}"
         for t in recent
     )
 
@@ -248,3 +253,32 @@ RULES:
         return {"reply": f"API error: {e.code} — {body}", "error": True}
     except Exception as e:
         return {"reply": f"Connection error: {str(e)}", "error": True}
+
+@router.get("/smart-advisor")
+def smart_advisor(
+    db: Session = Depends(get_db_connection),
+    current_user=Depends(get_current_user),
+):
+    # Get transaction history for savings rate calculation
+    txs = db.query(Transaction).filter(Transaction.user_id == current_user.id).all()
+    incomes = sum(t.amount for t in txs if t.type == "income")
+    expenses = sum(t.amount for t in txs if t.type == "expense")
+    savings_rate = round((incomes - expenses) / incomes * 100, 1) if incomes > 0 else 0
+
+    # Mocking investment fetch (replace with your actual DB query for investments)
+    # e.g., investments = db.query(Investment).filter(...).all()
+    # For now, we simulate the data structure expected by the advisor
+    mock_investments = [
+        {"type": "equity", "current_value": 85000},
+        {"type": "mutual funds", "current_value": 42000},
+        {"type": "gold", "current_value": 15000},
+        {"type": "crypto", "current_value": 5000}
+    ]
+
+    signals = get_ai_advisor_signals(mock_investments, savings_rate)
+    
+    return {
+        "risk_profile": "Aggressive" if savings_rate >= 30 else "Moderate" if savings_rate >= 15 else "Conservative",
+        "savings_rate": savings_rate,
+        "signals": signals
+    }

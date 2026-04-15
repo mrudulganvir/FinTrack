@@ -12,7 +12,7 @@ app = FastAPI(title="FinTrack", version="2.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://pfma-8c7b8.web.app", "https://pfma-8c7b8.firebaseapp.com", "http://localhost:3000", "http://localhost:5000", "http://localhost:8000", "http://127.0.0.1:8000"],
+    allow_origins=["https://pfma-8c7b8.web.app", "https://pfma-8c7b8.firebaseapp.com", "http://localhost:3000", "http://localhost:5000", "http://localhost:8000", "http://127.0.0.1:8000", "http://localhost:5173", "http://127.0.0.1:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

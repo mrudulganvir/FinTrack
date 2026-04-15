@@ -1,12 +1,10 @@
 {
   "hosting": {
-    "public": "frontend",
+    "public": "fintrack-react/dist",
     "ignore": [
       "firebase.json",
       "**/.*",
-      "**/node_modules/**",
-      "**/.venv/**",
-      "**/venv/**"
+      "**/node_modules/**"
     ],
     "rewrites": [
       {
