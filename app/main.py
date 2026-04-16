@@ -8,7 +8,7 @@ from app.routes import auth_route, transaction_route, budget_routes, report_rout
 
 models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="FinTrack", version="2.0.0")
+app = FastAPI(title="FinTrack", version="2.0.0") # Reloaded to fix connectivity issues
 
 app.add_middleware(
     CORSMiddleware,
