@@ -253,7 +253,18 @@ const generatePDF = async (chartRefs, transactions) => {
     const rect = el.getBoundingClientRect();
     if (!rect.width || !rect.height) continue;
 
-    const dataUrl = await htmlToImage.toJpeg(el, { quality: 0.95, backgroundColor: '#111827', pixelRatio: 2 });
+    const dataUrl = await htmlToImage.toJpeg(el, { 
+      quality: 0.95, 
+      backgroundColor: '#111827', 
+      pixelRatio: 2,
+      filter: (node) => {
+        // Skip external stylesheets that cause SecurityError (mostly Google Fonts)
+        if (node.tagName === 'LINK' && node.rel === 'stylesheet' && !node.href.includes(window.location.origin)) {
+          return false;
+        }
+        return true;
+      }
+    });
     const imgW = pw - 30;
     const imgH = (rect.height / rect.width) * imgW;
 

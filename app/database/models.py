@@ -25,6 +25,12 @@ class LoanStatus(str, enum.Enum):
     pending  = "pending"
     settled  = "settled"
     overdue  = "overdue"
+
+
+class KYCStatus(str, enum.Enum):
+    pending  = "pending"
+    verified = "verified"
+    rejected = "rejected"
  
  
 # ── ORM Models ─────────────────────────────────────────────────────────────────
@@ -47,12 +53,21 @@ class User(Base):
     name            = Column(String(255), nullable=True)
     phone           = Column(String,      nullable=False)
     hashed_password = Column(String(255), nullable=False)
+    kyc_status      = Column(String(20),  nullable=False, default=KYCStatus.pending)
+    is_onboarded    = Column(Boolean,     nullable=False, default=False)
+    biometric_enabled = Column(Boolean,   nullable=False, default=False)
+    biometric_credential_id = Column(String(512), nullable=True)
+    biometric_public_key = Column(String(1024), nullable=True)
+    biometric_type      = Column(String(20),   nullable=True) # 'face' or 'fingerprint'
     created_at      = Column(DateTime(timezone=True), server_default=func.now())
  
     transactions          = relationship("Transaction",      back_populates="user", cascade="all, delete-orphan")
     budgets               = relationship("Budget",           back_populates="user")
     loans                 = relationship("Loan",             back_populates="user", cascade="all, delete-orphan")
     password_reset_tokens = relationship("PasswordResetToken", back_populates="user", cascade="all, delete-orphan")
+    linked_accounts       = relationship("LinkedAccount",    back_populates="user", cascade="all, delete-orphan")
+    linked_cards          = relationship("LinkedCard",       back_populates="user", cascade="all, delete-orphan")
+    investments           = relationship("Investment",       back_populates="user", cascade="all, delete-orphan")
  
  
 class Transaction(Base):
@@ -127,6 +142,52 @@ class PasswordResetToken(Base):
     __table_args__ = (
         Index("ix_prt_user_active", "user_id", "used", "otp_verified"),
     )
+
+class LinkedAccount(Base):
+    __tablename__ = "linked_accounts"
+
+    id               = Column(Integer, primary_key=True, index=True)
+    user_id          = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    provider         = Column(String(50), nullable=False)  # e.g., 'plaid', 'finvu'
+    institution_name = Column(String(255))
+    account_id       = Column(String(255))
+    account_type     = Column(String(50))
+    access_token     = Column(String(512))  # Stored securely (OAuth/AA token)
+    balance          = Column(Float, default=0.0)
+    last_synced      = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    user = relationship("User", back_populates="linked_accounts")
+
+class LinkedCard(Base):
+    __tablename__ = "linked_cards"
+
+    id             = Column(Integer, primary_key=True, index=True)
+    user_id        = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    card_type      = Column(String(20)) # Debit / Credit
+    network        = Column(String(20)) # Visa / Mastercard
+    last4          = Column(String(4))
+    expiry_month   = Column(Integer)
+    expiry_year    = Column(Integer)
+    card_token     = Column(String(512)) # Secure token from gateway (e.g. Stripe, Razorpay)
+    created_at     = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User", back_populates="linked_cards")
+
+class Investment(Base):
+    __tablename__ = "investments"
+
+    id            = Column(Integer, primary_key=True, index=True)
+    user_id       = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    name          = Column(String(255), nullable=False)
+    ticker        = Column(String(50),  nullable=False)
+    type          = Column(String(50),  nullable=False) # Stocks, Mutual Funds, Gold, etc.
+    amount        = Column(Float,       nullable=False) # Total Invested
+    units         = Column(Float,       nullable=False) # Quantity owned
+    current_value = Column(Float,       nullable=True)  # Updated via live sync
+    created_at    = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User", back_populates="investments")
+
 
 # ── Request / Response schemas ─────────────────────────────────────────────────
 from pydantic import BaseModel, EmailStr, field_validator

@@ -40,6 +40,9 @@ const Investments = () => {
   const [advisorData, setAdvisorData] = useState({ signals: [], risk_profile: 'Scanning...' });
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [riskAppetite, setRiskAppetite] = useState('moderate');
+  const [suggestions, setSuggestions] = useState(null);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
   // ── Modal State ──
   const [showModal, setShowModal] = useState(false);
@@ -74,6 +77,29 @@ const Investments = () => {
     } finally {
        setLoading(false);
     }
+  };
+
+  const fetchSuggestions = async (appetite) => {
+    setLoadingSuggestions(true);
+    try {
+      const res = await api.get(`/advisor/suggest?risk_appetite=${appetite}`);
+      setSuggestions(res.data);
+    } catch (error) {
+       console.error("Failed to fetch suggestions", error);
+    } finally {
+       setLoadingSuggestions(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+    fetchSuggestions(riskAppetite);
+  }, []);
+
+  const handleRiskChange = (e) => {
+    const app = e.target.value;
+    setRiskAppetite(app);
+    fetchSuggestions(app);
   };
 
   useEffect(() => {
@@ -280,38 +306,100 @@ const Investments = () => {
           </div>
        </div>
 
-       {/* ── AI ADVISOR SECTION ── */}
-       <div className="glass p-8 rounded-[2.5rem] border-blue-500/20 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 blur-3xl rounded-full"></div>
-          <div className="flex items-center gap-3 mb-6 relative z-10">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
-              <Bot size={24} />
+        <div className="glass p-8 rounded-[2.5rem] border-blue-500/20 relative overflow-hidden bg-gradient-to-br from-[#1e293b] to-transparent">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/5 blur-[100px] rounded-full"></div>
+          
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10 relative z-10">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-[1.25rem] bg-gradient-to-tr from-blue-600 to-purple-600 flex items-center justify-center text-white shadow-xl shadow-blue-500/20">
+                <Bot size={32} />
+              </div>
+              <div>
+                <h3 className="text-2xl font-black flex items-center gap-2">Hybrid Suggestion Engine</h3>
+                <p className="text-sm text-gray-400">Ground Truth via yfinance • Personalized Strategy via ML</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-xl font-bold flex items-center gap-2">Robo-Advisor Signals</h3>
-              <p className="text-xs text-gray-400">Algorithmic recommendations based on your {advisorData.risk_profile?.toLowerCase() || 'current'} risk profile.</p>
+
+            <div className="flex items-center gap-3 bg-white/5 p-1.5 rounded-2xl border border-white/10">
+              {['conservative', 'moderate', 'aggressive'].map(app => (
+                 <button 
+                  key={app}
+                  onClick={() => handleRiskChange({ target: { value: app } })}
+                  className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${riskAppetite === app ? 'bg-blue-500 text-white shadow-lg' : 'text-gray-500 hover:text-white'}`}
+                 >
+                   {app}
+                 </button>
+              ))}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 relative z-10">
-            {advisorData.signals?.map((signal, idx) => {
-              const styles = getActionStyles(signal.action);
-              return (
-                <div key={idx} className={`p-5 rounded-3xl border bg-white/5 ${styles.border} flex flex-col justify-between hover:bg-white/10 transition-colors`}>
-                  <div>
-                    <div className="flex justify-between items-start mb-3">
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-black tracking-widest ${styles.bg} ${styles.color} flex items-center gap-1`}>
-                        {styles.icon} {signal.action}
-                      </span>
-                      <span className="text-xs text-gray-500 uppercase font-bold">{signal.type}</span>
-                    </div>
-                    <h4 className="font-bold text-white mb-2">{signal.asset}</h4>
-                    <p className="text-xs text-gray-400 leading-relaxed">{signal.reason}</p>
+          {!suggestions ? (
+            <div className="py-20 text-center text-gray-500 animate-pulse">Analyzing market data for {riskAppetite} profile...</div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 relative z-10">
+               {/* Strategy Recommendations */}
+               <div className="lg:col-span-2 space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {suggestions.recommendations.map((rec, i) => (
+                      <div key={i} className="p-6 rounded-[2rem] bg-white/5 border border-white/5 hover:border-blue-500/30 transition-all group">
+                         <div className="flex justify-between items-start mb-4">
+                            <span className="px-3 py-1 bg-blue-500/10 text-blue-400 text-[10px] font-black uppercase tracking-widest rounded-lg">{rec.weight} Allocation</span>
+                            <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform"><CheckCircle2 size={16} className="text-blue-500" /></div>
+                         </div>
+                         <h4 className="text-lg font-bold mb-2">{rec.asset}</h4>
+                         <p className="text-xs text-blue-400 font-bold mb-1">₹{rec.amount.toLocaleString()} suggested</p>
+                         <p className="text-[11px] text-gray-500 leading-relaxed italic">"{rec.why}"</p>
+                      </div>
+                    ))}
                   </div>
-                </div>
-              )
-            })}
-          </div>
+
+                  <div className="p-6 rounded-[2rem] bg-blue-500/5 border border-blue-500/10">
+                     <h5 className="text-[10px] font-black uppercase tracking-widest text-blue-400 mb-3 ml-1">The "Why" (Historical Backtesting)</h5>
+                     <p className="text-xs text-gray-300 leading-relaxed mb-4">{suggestions.explanation.summary}</p>
+                     <div className="flex items-center gap-6">
+                        <div>
+                           <p className="text-[9px] text-gray-500 uppercase font-black tracking-tighter">Avg Market Return (3Y)</p>
+                           <p className="text-xl font-black text-green-400">{suggestions.explanation.market_return_avg}%</p>
+                        </div>
+                        <div className="h-8 w-[1px] bg-white/10" />
+                        <div>
+                           <p className="text-[9px] text-gray-500 uppercase font-black tracking-tighter">Growth Projection (₹{suggestions.suggested_investment.toLocaleString()})</p>
+                           <p className="text-xl font-black text-blue-400">₹{suggestions.explanation.historic_3y_projection.toLocaleString()}</p>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+
+               {/* Ground Truth Assets (yfinance) */}
+               <div className="space-y-4">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Market Ground Truth (yfinance)</h4>
+                  <div className="space-y-3">
+                    {suggestions.market_context.map((mark, i) => (
+                      <div key={i} className="flex justify-between items-center p-4 rounded-2xl bg-white/5 border border-white/5">
+                        <div className="flex items-center gap-3">
+                           <div className={`w-2 h-2 rounded-full ${mark.trend === 'up' ? 'bg-green-500' : 'bg-red-500'} animate-pulse`}></div>
+                           <div>
+                              <p className="text-xs font-bold text-white uppercase">{mark.name}</p>
+                              <p className="text-[10px] text-gray-500">Live: ₹{mark.current_price.toLocaleString()}</p>
+                           </div>
+                        </div>
+                        <div className="text-right">
+                           <p className={`text-xs font-black ${mark.return_3y > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                             {mark.return_3y > 0 ? '+' : ''}{mark.return_3y}%
+                           </p>
+                           <p className="text-[9px] text-gray-500 uppercase tracking-tighter">3Y Return</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
+                    <p className="text-[10px] text-gray-500 italic text-center leading-relaxed">
+                      "Historical data provides the context; our ML model provides the personalization. Both work together to minimize your risk."
+                    </p>
+                  </div>
+               </div>
+            </div>
+          )}
        </div>
 
        {/* ── LEDGER & ALLOCATION ── */}

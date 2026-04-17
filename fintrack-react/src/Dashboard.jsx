@@ -10,7 +10,8 @@ import {
   Plus, 
   ChevronRight,
   Clock,
-  BrainCircuit
+  BrainCircuit,
+  CreditCard
 } from 'lucide-react';
 import { CAT_EMOJI } from './constants';
 import TransactionModal from './TransactionModal';
@@ -63,28 +64,32 @@ const TransactionRow = ({ tx }) => {
 const Dashboard = () => {
   const { user } = useUser();
   const navigate = useNavigate();
-  const [data, setData] = useState({ transactions: [], balance: 0, income: 0, expenses: 0 });
+  const [data, setData] = useState({ transactions: [], balance: 0, income: 0, expenses: 0, accounts: [], cards: [] });
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const [txRes, summaryRes, insightsRes] = await Promise.all([
+      const [txRes, summaryRes, insightsRes, accountsRes] = await Promise.all([
         api.get('/transactions/'),
         api.get('/reports/summary'),
-        api.get('/reports/insights')
+        api.get('/reports/insights'),
+        api.get('/accounts/summary')
       ]);
 
       const txs = txRes.data.transactions || [];
       const summary = summaryRes.data;
       const insights = insightsRes.data;
+      const accounts = accountsRes.data;
 
       setData({ 
         transactions: txs, 
         balance: summary.balance, 
         income: summary.total_income, 
         expenses: summary.total_expense, 
+        accounts: accounts.accounts || [],
+        cards: accounts.cards || [],
         topCategory: { 
           name: insights.top_category || 'None', 
           amount: insights.top_category_amount || 0 
@@ -99,7 +104,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchDashboardData();
-    const interval = setInterval(fetchDashboardData, 10000); // Live update every 10s
+    const interval = setInterval(fetchDashboardData, 30000); // 30s for accounts
     return () => clearInterval(interval);
   }, []);
 
@@ -190,7 +195,42 @@ const Dashboard = () => {
               </button>
            </div>
 
-           <div className="glass p-6 rounded-3xl border-glass-border">
+            <div className="glass p-6 rounded-3xl border-glass-border bg-gradient-to-br from-white/5 to-transparent">
+              <h3 className="font-bold mb-4 flex items-center gap-2">
+                <Wallet size={18} className="text-teal-400" />
+                Linked Accounts
+              </h3>
+              <div className="space-y-4">
+                {data.accounts.length > 0 ? (
+                  data.accounts.map(acc => (
+                    <div key={acc.id} className="flex justify-between items-center p-3 rounded-xl bg-white/5 transition-colors hover:bg-white/10">
+                      <div>
+                        <p className="text-sm font-bold text-white">{acc.institution_name}</p>
+                        <p className="text-[10px] text-gray-500 uppercase font-mono tracking-tighter">{acc.account_id}</p>
+                      </div>
+                      <p className="font-bold text-teal-400">₹{acc.balance.toLocaleString()}</p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="py-4 text-center">
+                    <p className="text-xs text-gray-500 italic">No bank accounts linked.</p>
+                  </div>
+                )}
+                
+                {data.cards.length > 0 && (
+                  <div className="pt-2 border-t border-white/5 space-y-2">
+                    {data.cards.map(card => (
+                      <div key={card.id} className="flex items-center gap-3 p-2 text-xs text-gray-400">
+                        <CreditCard size={14} className="text-gray-500" />
+                        <span>{card.network} • {card.last4}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="glass p-6 rounded-3xl border-glass-border">
               <h3 className="font-bold mb-4 flex items-center gap-2">
                 <ArrowUpRight size={18} className="text-teal-400" />
                 Top Category
@@ -202,8 +242,8 @@ const Dashboard = () => {
                     <p className="text-xs text-gray-500 truncate mt-1">₹{(data.topCategory?.amount || 0).toLocaleString()} spent this month</p>
                  </div>
               </div>
-           </div>
-        </div>
+            </div>
+          </div>
       </div>
     </div>
   );

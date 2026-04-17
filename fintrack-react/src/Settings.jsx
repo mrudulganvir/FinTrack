@@ -9,7 +9,9 @@ import {
   Activity,
   Globe,
   Palette,
-  Check
+  Check,
+  ArrowRight,
+  ShieldCheck
 } from 'lucide-react';
 
 const SettingsItem = ({ icon: Icon, title, description, active, onClick }) => (
@@ -97,7 +99,12 @@ const Settings = () => {
                           {user?.initials}
                        </div>
                        <div>
-                          <h3 className="text-2xl font-black mb-1">{user?.name}</h3>
+                          <div className="flex items-center gap-3 mb-1">
+                             <h3 className="text-2xl font-black">{user?.name}</h3>
+                             <span className="px-2 py-0.5 rounded-lg bg-teal-500/10 text-teal-400 text-[10px] font-black uppercase tracking-widest border border-teal-500/20 flex items-center gap-1">
+                                <ShieldCheck size={10} /> Verified
+                             </span>
+                          </div>
                           <p className="text-gray-500 text-sm">FinTrack Premium Member since 2024</p>
                           <button className="text-teal-400 text-xs font-bold mt-3 hover:underline">Change Avatar</button>
                        </div>

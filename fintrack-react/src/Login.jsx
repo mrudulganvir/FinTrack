@@ -3,7 +3,7 @@ import { useUser } from './UserContext';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { API_BASE_URL, GOOGLE_CLIENT_ID } from './constants';
-import { Mail, Lock, LogIn, AlertCircle } from 'lucide-react';
+import { Mail, Lock, LogIn, AlertCircle, Fingerprint } from 'lucide-react';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -33,34 +33,50 @@ const Login = () => {
     }
   };
 
-  const handleGoogleResponse = async (response) => {
-     try {
-        setLoading(true);
-        const res = await axios.post(`${API_BASE_URL}/auth/google`, { 
-           id_token: response.credential 
-        });
-        login(res.data.access_token);
-        navigate('/');
-     } catch (err) {
-        setError('Google Login failed');
-     } finally {
-        setLoading(false);
-     }
+
+  const handleBiometricLogin = async () => {
+    if (!email) {
+      setError('Please enter your email to login with biometrics');
+      return;
+    }
+    setError('');
+    setLoading(true);
+
+    try {
+      // 1. Get challenge
+      const chalRes = await axios.post(`${API_BASE_URL}/auth/biometric-challenge`, { email });
+      const { challenge, allowCredentials } = chalRes.data;
+
+      // 2. WebAuthn Ceremony (Proper Base64 decoding to avoid atob errors)
+      const credential = await navigator.credentials.get({
+        publicKey: {
+          challenge: Uint8Array.from(challenge, c => c.charCodeAt(0)),
+          allowCredentials: allowCredentials.map(c => ({
+            ...c,
+            id: Uint8Array.from(atob(c.id), c => c.charCodeAt(0))
+          })),
+          userVerification: "required"
+        }
+      });
+
+      // 3. Verify
+      const loginRes = await axios.post(`${API_BASE_URL}/auth/biometric-login`, {
+        email,
+        credential_id: window.btoa(String.fromCharCode(...new Uint8Array(credential.rawId))),
+        signature: "verified", // In real apps, send the signed challenge
+        challenge
+      });
+
+      login(loginRes.data.access_token);
+      navigate('/');
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.detail || 'Biometric login failed or not set up.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => {
-     /* global google */
-     if (typeof google !== 'undefined') {
-        google.accounts.id.initialize({
-           client_id: GOOGLE_CLIENT_ID,
-           callback: handleGoogleResponse
-        });
-        google.accounts.id.renderButton(
-           document.getElementById('gsi-login'),
-           { theme: 'outline', size: 'large', width: '100%', shape: 'pill' }
-        );
-     }
-  }, []);
 
   return (
     <div className="min-h-screen bg-dark flex items-center justify-center p-6 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-teal-500/10 via-transparent to-transparent">
@@ -127,14 +143,17 @@ const Login = () => {
                 </>
               )}
             </button>
+
+            <button 
+              type="button"
+              onClick={handleBiometricLogin}
+              disabled={loading}
+              className="w-full py-3.5 rounded-xl bg-white/5 border border-white/10 font-bold hover:bg-white/10 transition-all flex items-center justify-center gap-2 text-teal-400"
+            >
+              <Fingerprint size={20} />
+              Login with Biometrics
+            </button>
           </form>
-
-          <div className="relative my-8">
-            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-glass-border"></div></div>
-            <div className="relative flex justify-center text-xs uppercase"><span className="bg-[#0e0e16] px-2 text-gray-500 tracking-widest font-bold">Or continue with</span></div>
-          </div>
-
-          <div id="gsi-login" className="flex justify-center"></div>
 
           <p className="text-center text-gray-500 text-sm mt-8">
             New here? <Link to="/signup" className="text-teal-400 font-bold hover:underline">Create an account</Link>

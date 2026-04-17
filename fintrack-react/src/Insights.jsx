@@ -476,7 +476,7 @@ const Insights = () => {
     setLoading(true);
     try {
       const [alertRes, txRes] = await Promise.all([
-        api.get('/chat/predictive-alert').catch(() => ({ data: {} })),
+        api.get('/budgets/predict').catch(() => ({ data: {} })),
         api.get('/transactions/').catch(() => ({ data: { transactions: [] } })),
       ]);
 

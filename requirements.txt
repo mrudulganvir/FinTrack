@@ -53,3 +53,10 @@ seaborn==0.13.2
 # 🔄 Migrations
 # -------------------------------
 alembic==1.13.2
+
+# -------------------------------
+# 📊 External APIs & Queues
+# -------------------------------
+yfinance
+aiokafka
+requests

@@ -40,6 +40,6 @@ def get_budget_status(
     )
 
     if not result:
-        raise HTTPException(status_code=404, detail="Budget not set for this month")
+        return {"monthly_limit": 0, "total_spent": 0, "remaining_budget": 0, "overspending": False}
 
     return result

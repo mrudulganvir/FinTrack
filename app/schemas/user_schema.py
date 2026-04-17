@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
+from typing import Optional
 
 
 class UserCreate(BaseModel):
@@ -16,9 +17,25 @@ class UserLogin(BaseModel):
 
 class UserResponse(BaseModel):
     id: int
-    name: str | None = None
+    name: Optional[str] = None
     email: EmailStr
     created_at: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = {
+        "from_attributes": True
+    }
+
+
+class SignupResponse(BaseModel):
+    """
+    Returned by POST /auth/signup.
+    Includes an access_token so the client can skip a separate login call
+    and immediately proceed to the onboarding flow.
+    """
+    access_token: str
+    token_type: str = "bearer"
+    user: UserResponse
+
+    model_config = {
+        "from_attributes": True
+    }

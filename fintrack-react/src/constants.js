@@ -1,4 +1,4 @@
-export const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === 'http://127.0.0.1:8000'
+export const API_BASE_URL = ['localhost', '127.0.0.1', '0.0.0.0'].includes(window.location.hostname)
   ? 'http://localhost:8000'
   : 'https://fintrack-backend-8or0.onrender.com';
 

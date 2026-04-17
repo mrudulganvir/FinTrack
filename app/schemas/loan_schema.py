@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 
 class LoanCreate(BaseModel):
-    loan_type: LoanType
+    loan_type: str
     person_name: str
     amount: float
     description: Optional[str] = None
@@ -14,11 +14,12 @@ class LoanCreate(BaseModel):
     
 class LoanResponse(LoanCreate):
     id: int
-    status: LoanStatus
+    status: str
     created_at: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = {
+        "from_attributes": True
+    }
         
 class LoanUpdate(BaseModel):
     status: LoanStatus  

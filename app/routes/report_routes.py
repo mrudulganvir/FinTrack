@@ -22,14 +22,22 @@ def get_summary(
     db: Session = Depends(get_db_connection),
     current_user=Depends(get_current_user),
 ):
+    from app.database.models import LinkedAccount
+    
     txs = db.query(Transaction).filter(Transaction.user_id == current_user.id).all()
     income  = sum(t.amount for t in txs if t.type == "income")
     expense = sum(t.amount for t in txs if t.type == "expense")
+    
+    # ADDED: Fetch external balances from linked accounts
+    ext_accounts = db.query(LinkedAccount).filter(LinkedAccount.user_id == current_user.id).all()
+    ext_balance = sum(acc.balance for acc in ext_accounts)
+    
     return {
         "total_income":      income,
         "total_expense":     expense,
-        "balance":           income - expense,
+        "balance":           (income - expense) + ext_balance,
         "transaction_count": len(txs),
+        "external_balance":  ext_balance
     }
 
 
@@ -183,13 +191,18 @@ def chat(
         for t in recent
     )
 
+    # ADDED: Unified financial context
+    ext_accounts = db.query(LinkedAccount).filter(LinkedAccount.user_id == current_user.id).all()
+    ext_balance = sum(acc.balance for acc in ext_accounts)
+    unified_balance = (income - expense) + ext_balance
+
     system_prompt = f"""You are FinTrack AI, a personal finance assistant embedded in a financial tracking application.
 You have access to the user's actual financial data and must use it to answer questions accurately and helpfully.
 
 USER'S FINANCIAL SUMMARY:
 - Total Income (all time): ₹{income:,.0f}
 - Total Expenses (all time): ₹{expense:,.0f}
-- Current Balance: ₹{balance:,.0f}
+- Current Liquid Balance: ₹{unified_balance:,.0f} (includes ₹{ext_balance:,.0f} from linked accounts)
 - Savings Rate: {insights.get('savings_rate', 0)}%
 - Average Monthly Income: ₹{insights.get('monthly_income_avg', 0):,.0f}
 - Average Monthly Savings: ₹{insights.get('monthly_savings_avg', 0):,.0f}
