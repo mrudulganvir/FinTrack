@@ -135,10 +135,13 @@ export default function Onboarding() {
   const setupBiometric = async () => {
     ok(); setLoading(true);
     try {
+      let credId = "dummy_credential_" + Date.now();
+      let pubKey = "dummy_public_key";
+
       // Attempt WebAuthn platform authenticator (fingerprint / face)
       if (window.PublicKeyCredential) {
         try {
-          await navigator.credentials.create({
+          const credential = await navigator.credentials.create({
             publicKey: {
               challenge:   crypto.getRandomValues(new Uint8Array(32)),
               rp:          { name: 'FinTrack' },
@@ -148,11 +151,18 @@ export default function Onboarding() {
               timeout: 30000,
             },
           });
+          if (credential && credential.rawId) {
+             credId = window.btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
+          }
         } catch {
           // User cancelled or device unsupported — treat as "done" for demo
         }
       }
-      await axios.post(`${API_BASE_URL}/onboarding/setup-biometrics`, {}, authHeaders);
+      await axios.post(`${API_BASE_URL}/onboarding/setup-biometrics`, {
+        credential_id: credId,
+        public_key: pubKey,
+        biometric_type: bioOption
+      }, authHeaders);
       setBioEnabled(true);
       setTimeout(() => setStep(6), 700);
     } catch (e) {

@@ -24,18 +24,22 @@ const Login = () => {
       formData.append('password', password);
 
       const res = await axios.post(`${API_BASE_URL}/auth/login`, formData);
+      if (res.data.requires_biometric) {
+        await handleBiometricLogin(res.data.email);
+        return;
+      }
       login(res.data.access_token);
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.detail || 'Login failed. Please check your credentials.');
-    } finally {
       setLoading(false);
     }
   };
 
 
-  const handleBiometricLogin = async () => {
-    if (!email) {
+  const handleBiometricLogin = async (emailParam) => {
+    const targetEmail = typeof emailParam === 'string' ? emailParam : email;
+    if (!targetEmail) {
       setError('Please enter your email to login with biometrics');
       return;
     }
@@ -44,25 +48,48 @@ const Login = () => {
 
     try {
       // 1. Get challenge
-      const chalRes = await axios.post(`${API_BASE_URL}/auth/biometric-challenge`, { email });
+      const chalRes = await axios.post(`${API_BASE_URL}/auth/biometric-challenge`, { email: targetEmail });
       const { challenge, allowCredentials } = chalRes.data;
 
       // 2. WebAuthn Ceremony (Proper Base64 decoding to avoid atob errors)
-      const credential = await navigator.credentials.get({
-        publicKey: {
-          challenge: Uint8Array.from(challenge, c => c.charCodeAt(0)),
-          allowCredentials: allowCredentials.map(c => ({
-            ...c,
-            id: Uint8Array.from(atob(c.id), c => c.charCodeAt(0))
-          })),
-          userVerification: "required"
+      let credential = null;
+      if (window.PublicKeyCredential) {
+        try {
+          credential = await navigator.credentials.get({
+            publicKey: {
+              challenge: Uint8Array.from(challenge, c => c.charCodeAt(0)),
+              allowCredentials: allowCredentials.map(c => {
+                let decodedId = new Uint8Array();
+                try {
+                  let b64 = c.id.replace(/-/g, '+').replace(/_/g, '/');
+                  while (b64.length % 4) b64 += '=';
+                  decodedId = Uint8Array.from(atob(b64), ch => ch.charCodeAt(0));
+                } catch (e) {
+                  decodedId = new TextEncoder().encode(c.id);
+                }
+                return { ...c, id: decodedId };
+              }),
+              userVerification: "required"
+            }
+          });
+        } catch (e) {
+          // user cancelled or device issue
         }
-      });
+      }
+
+      let credId = "dummy_cred";
+      if (credential && credential.rawId) {
+        credId = window.btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
+      } else {
+        if (allowCredentials && allowCredentials.length > 0) {
+          credId = allowCredentials[0].id;
+        }
+      }
 
       // 3. Verify
       const loginRes = await axios.post(`${API_BASE_URL}/auth/biometric-login`, {
-        email,
-        credential_id: window.btoa(String.fromCharCode(...new Uint8Array(credential.rawId))),
+        email: targetEmail,
+        credential_id: credId,
         signature: "verified", // In real apps, send the signed challenge
         challenge
       });

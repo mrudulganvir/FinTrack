@@ -77,6 +77,9 @@ def login(
             not verify_password(form_data.password, db_user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
+    if db_user.biometric_enabled:
+        return {"requires_biometric": True, "email": db_user.email}
+
     access_token = create_access_token({"user_id": db_user.id, "name": db_user.name})
     return {"access_token": access_token, "token_type": "bearer"}
 
