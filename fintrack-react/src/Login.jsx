@@ -3,7 +3,8 @@ import { useUser } from './UserContext';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { API_BASE_URL, GOOGLE_CLIENT_ID } from './constants';
-import { Mail, Lock, LogIn, AlertCircle, Fingerprint } from 'lucide-react';
+import { Mail, Lock, LogIn, AlertCircle, Fingerprint, ScanFace } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -12,6 +13,8 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const { login } = useUser();
   const navigate = useNavigate();
+  const [isScanning, setIsScanning] = useState(false);
+  const videoRef = React.useRef(null);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -37,13 +40,31 @@ const Login = () => {
   };
 
 
-  const handleBiometricLogin = async (emailParam) => {
+  const handleBiometricLogin = async (emailParam, type = 'fingerprint') => {
     const targetEmail = typeof emailParam === 'string' ? emailParam : email;
     if (!targetEmail) {
       setError('Please enter your email to login with biometrics');
       return;
     }
     setError('');
+
+    if (type === 'face') {
+      setIsScanning(true);
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+        setTimeout(() => {
+          if (videoRef.current) videoRef.current.srcObject = stream;
+        }, 100);
+        await new Promise(resolve => setTimeout(resolve, 2500));
+        stream.getTracks().forEach(t => t.stop());
+        setIsScanning(false);
+      } catch (e) {
+        setError("Camera access denied.");
+        setIsScanning(false);
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
@@ -171,15 +192,26 @@ const Login = () => {
               )}
             </button>
 
-            <button 
-              type="button"
-              onClick={handleBiometricLogin}
-              disabled={loading}
-              className="w-full py-3.5 rounded-xl bg-white/5 border border-white/10 font-bold hover:bg-white/10 transition-all flex items-center justify-center gap-2 text-teal-400"
-            >
-              <Fingerprint size={20} />
-              Login with Biometrics
-            </button>
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              <button 
+                type="button"
+                onClick={() => handleBiometricLogin(email, 'fingerprint')}
+                disabled={loading}
+                className="py-3 rounded-xl bg-white/5 border border-white/10 font-bold hover:bg-white/10 transition-all flex flex-col items-center justify-center gap-2 text-teal-400 text-[10px] uppercase tracking-widest"
+              >
+                <Fingerprint size={24} />
+                Touch ID
+              </button>
+              <button 
+                type="button"
+                onClick={() => handleBiometricLogin(email, 'face')}
+                disabled={loading}
+                className="py-3 rounded-xl bg-white/5 border border-white/10 font-bold hover:bg-white/10 transition-all flex flex-col items-center justify-center gap-2 text-cyan-400 text-[10px] uppercase tracking-widest"
+              >
+                <ScanFace size={24} />
+                Face ID
+              </button>
+            </div>
           </form>
 
           <p className="text-center text-gray-500 text-sm mt-8">
@@ -187,6 +219,44 @@ const Login = () => {
           </p>
         </div>
       </div>
+
+
+      <AnimatePresence>
+        {isScanning && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[300] bg-[#0a0a0f] flex flex-col items-center justify-center p-6"
+          >
+            <div className="relative w-64 h-64 rounded-[3rem] overflow-hidden border-4 border-cyan-500/50 shadow-[0_0_80px_rgba(6,182,212,0.3)] mb-12">
+              <video 
+                ref={videoRef} 
+                autoPlay 
+                playsInline 
+                muted
+                className="w-full h-full object-cover scale-x-[-1]"
+              />
+              <div className="absolute inset-x-0 h-1 bg-cyan-400 shadow-[0_0_15px_#22d3ee] animate-scan-line z-10" />
+              <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/10 to-transparent" />
+            </div>
+            <div className="text-center">
+              <h3 className="text-xl font-black tracking-tighter text-cyan-400 uppercase mb-2">Biometric Scan</h3>
+              <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest animate-pulse">Verifying Identity...</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <style>{`
+        @keyframes scan-line {
+          0% { top: 0% }
+          100% { top: 100% }
+        }
+        .animate-scan-line {
+          animation: scan-line 2s linear infinite;
+        }
+      `}</style>
     </div>
   );
 };

@@ -91,7 +91,7 @@ const Income = () => {
                           fetchData();
                         }
                      }}
-                     className="p-1.5 rounded-lg text-gray-700 hover:bg-red-500/10 hover:text-red-400 transition-all opacity-0 group-hover:opacity-100"
+                     className="p-1.5 rounded-lg text-gray-500 hover:bg-red-500/10 hover:text-red-400 transition-all opacity-20 group-hover:opacity-100"
                    >
                      <Trash2 size={14} />
                    </button>

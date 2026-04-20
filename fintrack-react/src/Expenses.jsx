@@ -165,7 +165,7 @@ const Expenses = () => {
                     <div className="flex justify-center items-center gap-2">
                       <button 
                         onClick={() => handleDelete(item.id)}
-                        className="p-2 rounded-lg text-gray-600 hover:text-red-400 hover:bg-red-400/10 transition-all opacity-0 group-hover:opacity-100"
+                        className="p-2 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-400/10 transition-all opacity-20 group-hover:opacity-100"
                       >
                         <Trash2 size={16} />
                       </button>

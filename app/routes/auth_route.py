@@ -50,7 +50,11 @@ def signup(user: UserCreate, db: Session = Depends(get_db_connection)):
         db.refresh(new_user)
 
         # Issue a JWT immediately — client uses it to call onboarding endpoints
-        access_token = create_access_token({"user_id": new_user.id, "name": new_user.name})
+        access_token = create_access_token({
+            "user_id": new_user.id, 
+            "name": new_user.name,
+            "is_onboarded": new_user.is_onboarded
+        })
 
         return SignupResponse(
             access_token=access_token,
@@ -80,7 +84,11 @@ def login(
     if db_user.biometric_enabled:
         return {"requires_biometric": True, "email": db_user.email}
 
-    access_token = create_access_token({"user_id": db_user.id, "name": db_user.name})
+    access_token = create_access_token({
+        "user_id": db_user.id, 
+        "name": db_user.name,
+        "is_onboarded": db_user.is_onboarded
+    })
     return {"access_token": access_token, "token_type": "bearer"}
 
 
@@ -132,7 +140,11 @@ def google_login(payload: GoogleTokenRequest, db: Session = Depends(get_db_conne
         db_user.name = google_name
         db.commit()
 
-    access_token = create_access_token({"user_id": db_user.id, "name": db_user.name})
+    access_token = create_access_token({
+        "user_id": db_user.id, 
+        "name": db_user.name,
+        "is_onboarded": db_user.is_onboarded
+    })
 
     return {
         "access_token": access_token,
@@ -175,7 +187,11 @@ def biometric_login(payload: BiometricLoginRequest, db: Session = Depends(get_db
     if payload.credential_id != user.biometric_credential_id:
         raise HTTPException(status_code=401, detail="Hardware signature mismatch")
 
-    access_token = create_access_token({"user_id": user.id, "name": user.name})
+    access_token = create_access_token({
+        "user_id": user.id, 
+        "name": user.name,
+        "is_onboarded": user.is_onboarded
+    })
     return {
         "access_token": access_token, 
         "token_type": "bearer",

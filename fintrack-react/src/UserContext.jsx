@@ -15,7 +15,8 @@ export const UserProvider = ({ children }) => {
         setUser({
           id: decoded.user_id,
           name: decoded.name || `User #${decoded.user_id}`,
-          initials: decoded.name ? decoded.name.slice(0, 2).toUpperCase() : `U${decoded.user_id}`
+          initials: decoded.name ? decoded.name.slice(0, 2).toUpperCase() : `U${decoded.user_id}`,
+          is_onboarded: decoded.is_onboarded
         });
       } catch (error) {
         console.error("Token decoding failed", error);

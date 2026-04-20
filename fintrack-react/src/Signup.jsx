@@ -26,6 +26,7 @@ const slide = {
 
 export default function Signup() {
   const [step, setStep] = useState(1);
+  const [showBankChoice, setShowBankChoice] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', password: '' });
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState('');
@@ -43,6 +44,8 @@ export default function Signup() {
   const [bioEnabled, setBioEnabled] = useState(false);
   const [bioPreference, setBioPreference] = useState(null); // 'fingerprint' | 'face'
   const [showBioModal, setShowBioModal] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
+  const videoRef = useRef(null);
 
   const navigate = useNavigate();
   const { login, token, user: userContext } = useUser();
@@ -75,14 +78,14 @@ export default function Signup() {
 
   /* ── Auto-resume logic ─────────────────────────────────────────────────── */
   useEffect(() => {
-    // Only auto-jump to step 2 if we have a token AND the user isn't onboarded
-    if (token && userContext && !userContext.is_onboarded) {
-      setStep(2);
+    // Only show choice if we have a token AND the user isn't onboarded AND we are at step 1
+    if (token && userContext && !userContext.is_onboarded && step === 1 && !showBankChoice) {
+      setShowBankChoice(true);
     } else if (token && userContext?.is_onboarded) {
       // If already onboarded, just go home
       navigate('/');
     }
-  }, [token, userContext, navigate]);
+  }, [token, userContext, navigate, step, showBankChoice]);
 
   /* ── Google Sign-In button ─────────────────────────────────────────────── */
   useEffect(() => {
@@ -116,7 +119,7 @@ export default function Signup() {
       
       login(res.data.access_token);
       if (res.data.is_new_user || !res.data.is_onboarded) {
-        setStep(2);
+        setShowBankChoice(true);
       } else {
         navigate('/');
       }
@@ -138,7 +141,8 @@ export default function Signup() {
     try {
       const res = await axios.post(`${API_BASE_URL}/auth/signup`, formData);
       login(res.data.access_token);
-      // Step will change via useEffect when token arrives
+      setShowBankChoice(true);
+      // Step will change via choice modal or useEffect
     } catch (err) {
       if (err.response?.status === 400 && err.response?.data?.detail === 'Email already registered') {
         setError('This email is already registered. Please login or use a different email.');
@@ -256,9 +260,32 @@ export default function Signup() {
   const fromBase64 = (str) => Uint8Array.from(atob(str), c => c.charCodeAt(0));
 
   const handleBiometricSetup = async (type) => {
-    setBioPreference(type);
-    setError(''); setLoading(true);
+    setError('');
     const activeToken = token || localStorage.getItem('ft_token');
+    
+    // If Face ID, show camera scan first
+    if (type === 'face') {
+      setIsScanning(true);
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+        setTimeout(() => {
+          if (videoRef.current) videoRef.current.srcObject = stream;
+        }, 100);
+
+        // Simulate scan for 3 seconds
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        
+        // Stop stream
+        stream.getTracks().forEach(track => track.stop());
+        setIsScanning(false);
+      } catch (e) {
+        setError("Camera access denied. Please allow camera for Face ID.");
+        setIsScanning(false);
+        return;
+      }
+    }
+
+    setLoading(true);
     try {
       if (!window.PublicKeyCredential) {
         throw new Error('Biometrics not supported on this browser.');
@@ -493,7 +520,7 @@ export default function Signup() {
                 
                 <div className="grid grid-cols-2 gap-4">
                   <button 
-                    onClick={() => setShowBioModal(true)} 
+                    onClick={() => { setBioPreference('fingerprint'); setShowBioModal(true); }} 
                     disabled={loading} 
                     className="p-6 rounded-3xl bg-teal-500/10 border border-teal-500/20 hover:bg-teal-500/20 transition-all flex flex-col items-center gap-3"
                   >
@@ -501,7 +528,7 @@ export default function Signup() {
                     <span className="text-[10px] font-bold uppercase tracking-widest text-teal-400">Touch ID</span>
                   </button>
                   <button 
-                    onClick={() => setShowBioModal(true)} 
+                    onClick={() => { setBioPreference('face'); setShowBioModal(true); }} 
                     disabled={loading} 
                     className="p-6 rounded-3xl bg-cyan-500/10 border border-cyan-500/20 hover:bg-cyan-500/20 transition-all flex flex-col items-center gap-3"
                   >
@@ -519,7 +546,7 @@ export default function Signup() {
                       <h3 className="text-xl font-bold mb-2">Enable Biometrics?</h3>
                       <p className="text-gray-400 text-sm mb-8 leading-relaxed">This will allow you to sign in securely using your device's biometric sensors.</p>
                       <div className="space-y-3">
-                        <button onClick={() => handleBiometricSetup('biometric')} className="btn-primary">Yes, Enable Now</button>
+                        <button onClick={() => handleBiometricSetup(bioPreference || 'fingerprint')} className="btn-primary">Yes, Enable Now</button>
                         <button onClick={() => setShowBioModal(false)} className="w-full py-3 text-sm text-gray-500 font-bold hover:text-white transition-colors">Maybe later</button>
                       </div>
                     </div>
@@ -539,8 +566,89 @@ export default function Signup() {
           </AnimatePresence>
         </div>
       </div>
+
+      {/* ══ BANK LINKING CHOICE MODAL ══ */}
+      <AnimatePresence>
+        {showBankChoice && (
+          <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/80 backdrop-blur-md p-6">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="glass p-8 rounded-[2.5rem] border-glass-border w-full max-w-sm text-center shadow-2xl"
+            >
+              <div className="w-20 h-20 bg-gradient-to-tr from-orange-500/20 to-yellow-500/10 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-orange-500/20 shadow-lg">
+                <Building2 size={40} className="text-orange-400" />
+              </div>
+              <h3 className="text-2xl font-bold mb-3">Link Bank Account?</h3>
+              <p className="text-gray-400 text-sm mb-8 leading-relaxed">
+                Connect your bank to automatically track spending, get smart insights, and manage your wealth effortlessly.
+              </p>
+              <div className="space-y-3">
+                <button 
+                  onClick={() => { setStep(2); setShowBankChoice(false); }} 
+                  className="btn-primary w-full py-4"
+                >
+                  <Building2 size={18} />
+                  <span>Yes, Link My Bank</span>
+                </button>
+                <button 
+                  onClick={() => { setStep(4); setShowBankChoice(false); }} 
+                  className="w-full py-3 text-sm text-gray-500 font-bold hover:text-white transition-colors uppercase tracking-widest"
+                >
+                  I'll enter data manually
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
       
+
+
+      {/* ══ FACE SCANNER OVERLAY ══ */}
+      <AnimatePresence>
+        {isScanning && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[300] bg-[#0a0a0f] flex flex-col items-center justify-center p-6"
+          >
+            <div className="relative w-72 h-72 rounded-[3rem] overflow-hidden border-4 border-cyan-500/50 shadow-[0_0_80px_rgba(6,182,212,0.3)] mb-12">
+              <video 
+                ref={videoRef} 
+                autoPlay 
+                playsInline 
+                muted
+                className="w-full h-full object-cover scale-x-[-1]"
+              />
+              <div className="absolute inset-0 border-[40px] border-[#0a0a0f]/40 pointer-events-none" />
+              <div className="absolute inset-x-0 h-1 bg-cyan-400 shadow-[0_0_15px_#22d3ee] animate-scan-line z-10" />
+              <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/10 to-transparent" />
+            </div>
+            
+            <div className="text-center">
+              <h3 className="text-2xl font-black tracking-tighter text-cyan-400 uppercase mb-2">Analyzing Face</h3>
+              <p className="text-gray-500 text-xs font-bold uppercase tracking-widest animate-pulse">Position your face within the frame</p>
+            </div>
+
+            <div className="absolute bottom-12 flex items-center gap-4 text-cyan-500/40">
+              <div className="w-2 h-2 rounded-full bg-cyan-500 animate-ping" />
+              <span className="text-[10px] font-black uppercase tracking-widest">Encrypted Session Active</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <style>{`
+        @keyframes scan-line {
+          0% { top: 0% }
+          100% { top: 100% }
+        }
+        .animate-scan-line {
+          animation: scan-line 2s linear infinite;
+        }
         .input-field {
           width: 100%;
           background: rgba(255, 255, 255, 0.05);

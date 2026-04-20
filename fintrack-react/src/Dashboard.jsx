@@ -11,7 +11,8 @@ import {
   ChevronRight,
   Clock,
   BrainCircuit,
-  CreditCard
+  CreditCard,
+  Trash2
 } from 'lucide-react';
 import { CAT_EMOJI } from './constants';
 import TransactionModal from './TransactionModal';
@@ -36,12 +37,12 @@ const StatCard = ({ title, amount, icon: Icon, color, trend }) => (
   </div>
 );
 
-const TransactionRow = ({ tx }) => {
+const TransactionRow = ({ tx, onDelete }) => {
   const isIncome = tx.type === 'income';
   const emoji = CAT_EMOJI[tx.category?.toLowerCase()] || '💰';
   
   return (
-    <div className="flex items-center justify-between p-4 rounded-2xl bg-white/5 hover:bg-white/10 transition-all border border-transparent hover:border-white/5 active:scale-[0.98]">
+    <div className="flex items-center justify-between p-4 rounded-2xl bg-white/5 hover:bg-white/10 transition-all border border-transparent hover:border-white/5 group">
       <div className="flex items-center gap-4">
         <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl ${isIncome ? 'bg-green-500/15' : 'bg-red-500/15'}`}>
           {emoji}
@@ -51,11 +52,19 @@ const TransactionRow = ({ tx }) => {
           <p className="text-xs text-gray-500">{tx.category} • {new Date(tx.transaction_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</p>
         </div>
       </div>
-      <div className="text-right">
-        <p className={`font-bold ${isIncome ? 'text-green-400' : 'text-red-400'}`}>
-          {isIncome ? '+' : '-'}₹{tx.amount.toLocaleString('en-IN')}
-        </p>
-        <p className="text-[10px] text-gray-600 uppercase tracking-tighter">Completed</p>
+      <div className="flex items-center gap-4">
+        <div className="text-right">
+          <p className={`font-bold ${isIncome ? 'text-green-400' : 'text-red-400'}`}>
+            {isIncome ? '+' : '-'}₹{tx.amount.toLocaleString('en-IN')}
+          </p>
+          <p className="text-[10px] text-gray-600 uppercase tracking-tighter">Completed</p>
+        </div>
+        <button 
+          onClick={(e) => { e.stopPropagation(); onDelete(tx.id); }}
+          className="p-2 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-400/10 transition-all opacity-20 group-hover:opacity-100"
+        >
+          <Trash2 size={16} />
+        </button>
       </div>
     </div>
   );
@@ -99,6 +108,16 @@ const Dashboard = () => {
       console.error("Failed to fetch dashboard data", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Delete this transaction?')) return;
+    try {
+      await api.delete(`/transactions/${id}`);
+      fetchDashboardData();
+    } catch (error) {
+      console.error("Failed to delete transaction", error);
     }
   };
 
@@ -162,7 +181,7 @@ const Dashboard = () => {
               <div className="p-8 text-center text-gray-500">Loading your transactions...</div>
             ) : data.transactions.length > 0 ? (
               data.transactions.slice(0, 6).map(tx => (
-                <TransactionRow key={tx.id} tx={tx} />
+                <TransactionRow key={tx.id} tx={tx} onDelete={handleDelete} />
               ))
             ) : (
               <div className="p-12 text-center">
