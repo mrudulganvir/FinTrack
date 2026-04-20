@@ -12,7 +12,8 @@ import {
   MinusCircle,
   X,
   RefreshCw,
-  Globe
+  Globe,
+  BrainCircuit
 } from 'lucide-react';
 
 const InvestmentCard = ({ title, amount, profit, percent, color }) => (
@@ -154,10 +155,11 @@ const Investments = () => {
   const totalProfit = totalValue - totalInvested;
 
   const getActionStyles = (action) => {
-    switch(action) {
+    switch(action?.toUpperCase()) {
       case 'BUY': return { color: 'text-green-400', bg: 'bg-green-500/10', border: 'border-green-500/20', icon: <ArrowUpRight size={16}/> };
       case 'SELL': return { color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20', icon: <ArrowDownRight size={16}/> };
-      default: return { color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', icon: <MinusCircle size={16}/> };
+      case 'HOLD': return { color: 'text-gray-400', bg: 'bg-white/5', border: 'border-white/10', icon: <MinusCircle size={16}/> };
+      default: return { color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', icon: <Activity size={16}/> };
     }
   };
 
@@ -353,6 +355,23 @@ const Investments = () => {
                     ))}
                   </div>
 
+                  {/* AI BRAIN SECTION */}
+                  {suggestions.ai_advice && (
+                    <div className="p-8 rounded-[2rem] bg-gradient-to-br from-blue-600/20 to-purple-600/10 border border-blue-500/30 relative overflow-hidden">
+                       <div className="absolute top-0 right-0 p-4 opacity-10">
+                          <BrainCircuit size={80} />
+                       </div>
+                       <h5 className="text-[10px] font-black uppercase tracking-widest text-blue-400 mb-4 flex items-center gap-2">
+                          <Activity size={14} /> AI Strategist Analysis
+                       </h5>
+                       <div className="text-sm text-gray-200 leading-relaxed space-y-3 relative z-10">
+                          {suggestions.ai_advice.split('\n').map((line, i) => (
+                            <p key={i}>{line}</p>
+                          ))}
+                       </div>
+                    </div>
+                  )}
+
                   <div className="p-6 rounded-[2rem] bg-blue-500/5 border border-blue-500/10">
                      <h5 className="text-[10px] font-black uppercase tracking-widest text-blue-400 mb-3 ml-1">The "Why" (Historical Backtesting)</h5>
                      <p className="text-xs text-gray-300 leading-relaxed mb-4">{suggestions.explanation.summary}</p>
@@ -372,25 +391,34 @@ const Investments = () => {
 
                {/* Ground Truth Assets (yfinance) */}
                <div className="space-y-4">
-                  <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Market Ground Truth (yfinance)</h4>
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Market Signals & Trends</h4>
                   <div className="space-y-3">
-                    {suggestions.market_context.map((mark, i) => (
-                      <div key={i} className="flex justify-between items-center p-4 rounded-2xl bg-white/5 border border-white/5">
-                        <div className="flex items-center gap-3">
-                           <div className={`w-2 h-2 rounded-full ${mark.trend === 'up' ? 'bg-green-500' : 'bg-red-500'} animate-pulse`}></div>
-                           <div>
-                              <p className="text-xs font-bold text-white uppercase">{mark.name}</p>
-                              <p className="text-[10px] text-gray-500">Live: ₹{mark.current_price.toLocaleString()}</p>
-                           </div>
+                    {suggestions.market_context.map((mark, i) => {
+                      const sig = suggestions.signals.find(s => s.ticker === mark.name) || { signal: 'HOLD', reason: '' };
+                      const style = getActionStyles(sig.signal);
+                      
+                      return (
+                        <div key={i} className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-3 group hover:border-white/20 transition-all">
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-3">
+                               <div className={`w-2 h-2 rounded-full ${mark.trend === 'up' ? 'bg-green-500' : 'bg-red-500'} animate-pulse`}></div>
+                               <div>
+                                  <p className="text-xs font-bold text-white uppercase">{mark.name}</p>
+                                  <p className="text-[10px] text-gray-500">Live: ₹{mark.current_price.toLocaleString()}</p>
+                               </div>
+                            </div>
+                            <div className={`flex items-center gap-1 px-3 py-1 rounded-lg text-[10px] font-black ${style.bg} ${style.color} border ${style.border}`}>
+                               {style.icon} {sig.signal}
+                            </div>
+                          </div>
+                          {sig.reason && (
+                            <p className="text-[9px] text-gray-500 leading-relaxed border-t border-white/5 pt-2 italic">
+                              {sig.reason}
+                            </p>
+                          )}
                         </div>
-                        <div className="text-right">
-                           <p className={`text-xs font-black ${mark.return_3y > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                             {mark.return_3y > 0 ? '+' : ''}{mark.return_3y}%
-                           </p>
-                           <p className="text-[9px] text-gray-500 uppercase tracking-tighter">3Y Return</p>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                   <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
                     <p className="text-[10px] text-gray-500 italic text-center leading-relaxed">

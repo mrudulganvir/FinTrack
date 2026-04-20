@@ -1,7 +1,11 @@
 import requests
 import os
 from datetime import datetime, timedelta
-from typing import List, Dict
+from typing import List, Dict, Optional
+import pandas as pd
+import yfinance as yf
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.prompts import ChatPromptTemplate
 
 class InvestmentAdvisorService:
     """
@@ -14,6 +18,15 @@ class InvestmentAdvisorService:
         self.api_key = os.getenv("YAHOO_FINANCE_API_KEY")
         self.api_host = os.getenv("YAHOO_FINANCE_API_HOST", "yh-finance.p.rapidapi.com")
         self.base_url = f"https://{self.api_host}"
+        
+        # Initialize Gemini AI "The Brain"
+        self.llm = None
+        if os.getenv("GOOGLE_API_KEY"):
+            self.llm = ChatGoogleGenerativeAI(
+                model="gemini-1.5-flash",
+                google_api_key=os.getenv("GOOGLE_API_KEY"),
+                temperature=0.2
+            )
 
     def _fetch_api_data(self, symbol: str) -> Dict:
         """Helper to fetch from RapidAPI"""
@@ -112,17 +125,104 @@ class InvestmentAdvisorService:
         avg_market_return = sum(r['return_3y'] for r in market_stats) / len(market_stats) if market_stats else 12.0
         backtest_3y = investable_amount * (1 + (avg_market_return / 100))
 
-        return {
+        # 3. Add Buy/Sell Signals for current portfolio or tracked assets
+        signals = []
+        for mark in market_stats:
+            signal = self.get_technical_signal(mark['name'])
+            signals.append({
+                "ticker": mark['name'],
+                "signal": signal['action'],
+                "reason": signal['reason']
+            })
+
+        response = {
             "risk_profile": appetite.capitalize(),
             "monthly_surplus": round(savings, 2),
             "suggested_investment": round(investable_amount, 2),
             "recommendations": recommendations,
             "market_context": market_stats,
+            "signals": signals,
             "explanation": {
                 "historic_3y_projection": round(backtest_3y, 2),
                 "market_return_avg": round(avg_market_return, 2),
                 "summary": f"Based on your surplus of ₹{savings:,.0f}, we recommend allocating ₹{investable_amount:,.0f} across {appetite} assets. Historically, this strategy yielded {avg_market_return:.1f}% over the last 3 years."
             }
         }
+
+        # 4. Add AI "Brain" Insights if API key is present
+        if self.llm:
+            response["ai_advice"] = self.get_ai_brain_advice(response)
+
+        return response
+
+    def get_technical_signal(self, symbol: str) -> Dict:
+        """
+        Generates a simple technical signal (BUY/SELL/HOLD) 
+        based on Moving Average Crossovers (SMA 20 vs SMA 50).
+        """
+        try:
+            ticker = yf.Ticker(symbol)
+            df = ticker.history(period="60d")
+            if len(df) < 50:
+                return {"action": "HOLD", "reason": "Insufficient data for trend analysis."}
+            
+            df['SMA20'] = df['Close'].rolling(window=20).mean()
+            df['SMA50'] = df['Close'].rolling(window=50).mean()
+            
+            current_price = df['Close'].iloc[-1]
+            sma20 = df['SMA20'].iloc[-1]
+            sma50 = df['SMA50'].iloc[-1]
+            
+            if sma20 > sma50:
+                return {"action": "BUY", "reason": f"Bullish trend: 20-day SMA ({sma20:.2f}) crossed above 50-day SMA ({sma50:.2f}). Momentum is positive."}
+            elif sma20 < sma50:
+                return {"action": "SELL", "reason": f"Bearish trend: 20-day SMA ({sma20:.2f}) dropped below 50-day SMA ({sma50:.2f}). Consider locking in gains."}
+            else:
+                return {"action": "HOLD", "reason": "Stable trend. No immediate crossover detected."}
+        except Exception:
+            return {"action": "HOLD", "reason": "Error fetching market technicals."}
+
+    def get_ai_brain_advice(self, context: Dict) -> str:
+        """
+        The 'Brain' of the engine: Uses Gemini to synthesize market data 
+        and user profile into a cohesive strategy.
+        """
+        try:
+            prompt = ChatPromptTemplate.from_template("""
+            You are 'FinTrack Brain', an elite AI investment strategist.
+            
+            USER PROFILE:
+            - Risk Appetite: {risk_profile}
+            - Monthly Investable Surplus: ₹{monthly_surplus}
+            
+            SUGGESTED STRATEGY:
+            {recommendations}
+            
+            MARKET DATA (3Y Performance):
+            {market_context}
+            
+            TECHNICAL SIGNALS:
+            {signals}
+            
+            TASK:
+            Provide a concise, high-impact investment advice (max 150 words). 
+            - Tell the user exactly WHY they should follow this strategy now.
+            - Mention specific Buy/Sell signals from the technicals.
+            - Give a 'Pro Tip' for long-term wealth creation.
+            - Format with bold text for important numbers and tickers.
+            - Be encouraging but realistic.
+            """)
+            
+            chain = prompt | self.llm
+            response = chain.invoke({
+                "risk_profile": context["risk_profile"],
+                "monthly_surplus": context["monthly_surplus"],
+                "recommendations": context["recommendations"],
+                "market_context": context["market_context"],
+                "signals": context["signals"]
+            })
+            return response.content
+        except Exception as e:
+            return f"AI Advisor is currently unavailable: {str(e)}"
 
 advisor_service = InvestmentAdvisorService()

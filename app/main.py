@@ -21,6 +21,8 @@ from app.routes import (
 
 app = FastAPI(title="FinTrack", version="2.0.0")
 
+from app.core.config import settings
+
 # ── CORS ──────────────────────────────────────────────────────────────────────
 ALLOWED_ORIGINS = [
     "http://localhost:5173",
@@ -32,6 +34,11 @@ ALLOWED_ORIGINS = [
     "https://pfma-8c7b8.web.app",
     "https://pfma-8c7b8.firebaseapp.com",
 ]
+
+# Add FRONTEND_URL and BACKEND_URL from settings if they are not already in ALLOWED_ORIGINS
+for url in [settings.FRONTEND_URL, settings.BACKEND_URL]:
+    if url and url not in ALLOWED_ORIGINS:
+        ALLOWED_ORIGINS.append(url)
 
 app.add_middleware(
     CORSMiddleware,

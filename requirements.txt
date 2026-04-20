@@ -41,6 +41,7 @@ langchain==0.2.16
 langchain-core==0.2.38
 langchain-community==0.2.16
 langchain-mistralai==0.1.12
+langchain-google-genai==1.0.10
 mistralai==0.4.2
 
 # -------------------------------

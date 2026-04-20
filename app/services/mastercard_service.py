@@ -2,6 +2,7 @@ import os
 import httpx
 from typing import Dict, Any, Optional
 import logging
+from app.core.config import settings
 
 log = logging.getLogger(__name__)
 
@@ -113,9 +114,11 @@ class MastercardService:
         Generate a 'Mastercard Connect' URL to redirect the user to link their bank.
         """
         token = await self.get_authentication_token()
+        redirect_url = f"{settings.FRONTEND_URL}/onboarding?status=success"
+
         if not token:
             log.warning("Mastercard: Auth failed, returning MOCK Connect URL.")
-            return "http://localhost:5173/onboarding?status=success"
+            return redirect_url
             
         # Try different endpoints for Connect URL generation
         # 1. User suggested endpoint
@@ -137,7 +140,7 @@ class MastercardService:
         payload = {
             "partnerId": self.partner_id,
             "customerId": customer_id,
-            "redirectUrl": "http://localhost:5173/onboarding?status=success",
+            "redirectUrl": redirect_url,
         }
         
         async with httpx.AsyncClient() as client:
@@ -167,7 +170,7 @@ class MastercardService:
             
             # Mock fallback for sandbox WAF blocks
             log.warning("Mastercard: All URL generation failed. Returning MOCK Connect URL.")
-            return "http://localhost:5173/onboarding?status=success"
+            return redirect_url
 
     async def fetch_transactions(self, customer_id: str, account_id: str, from_date: str) -> Optional[list]:
         """

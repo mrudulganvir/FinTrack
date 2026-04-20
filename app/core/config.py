@@ -12,6 +12,10 @@ class Settings:
 
     SECRET_KEY = os.getenv("SECRET_KEY")
     ALGORITHM = os.getenv("ALGORITHM")
-    ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
+    ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
+
+    # URLs for redirects and documentation
+    BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
+    FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 settings = Settings()
