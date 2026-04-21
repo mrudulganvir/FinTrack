@@ -10,7 +10,7 @@ from app.database.migrations import run_migrations
 run_migrations()
 
 # create_all is still needed to create brand-new tables (e.g. linked_cards)
-models.Base.metadata.create_all(bind=engine)
+# models.Base.metadata.create_all(bind=engine)
 
 from app.routes import (
     auth_route, transaction_route, budget_routes, report_routes,
@@ -23,7 +23,15 @@ app = FastAPI(title="FinTrack", version="2.0.0")
 
 from app.core.config import settings
 
-# ── CORS ──────────────────────────────────────────────────────────────────────
+# ── COOP header — required for Google Sign-In popup postMessage ───────────────
+@app.middleware("http")
+async def add_coop_header(request: Request, call_next):
+    response: Response = await call_next(request)
+    if request.url.path.startswith("/auth"):
+        response.headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups"
+    return response
+
+# ── CORS (Move after other middlewares so it runs FIRST on the request) ──────
 ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
@@ -31,14 +39,16 @@ ALLOWED_ORIGINS = [
     "http://localhost:5000",
     "http://localhost:8000",
     "http://127.0.0.1:8000",
-    "https://pfma-8c7b8.web.app",
-    "https://pfma-8c7b8.firebaseapp.com",
+    "https://one-stop-9956a.web.app",
+    "https://fintrack-1-7p43.onrender.com"
 ]
 
 # Add FRONTEND_URL and BACKEND_URL from settings if they are not already in ALLOWED_ORIGINS
 for url in [settings.FRONTEND_URL, settings.BACKEND_URL]:
-    if url and url not in ALLOWED_ORIGINS:
-        ALLOWED_ORIGINS.append(url)
+    if url:
+        clean_url = url.rstrip("/")
+        if clean_url not in ALLOWED_ORIGINS:
+            ALLOWED_ORIGINS.append(clean_url)
 
 app.add_middleware(
     CORSMiddleware,
@@ -48,14 +58,6 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["*"],
 )
-
-# ── COOP header — required for Google Sign-In popup postMessage ───────────────
-@app.middleware("http")
-async def add_coop_header(request: Request, call_next):
-    response: Response = await call_next(request)
-    if request.url.path.startswith("/auth"):
-        response.headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups"
-    return response
 
 
 app.include_router(auth_route.router)

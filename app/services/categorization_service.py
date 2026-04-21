@@ -27,10 +27,10 @@ def _load_model():
 
     try:
         _pipeline = joblib.load(_MODEL_PATH)
-        print("✅ MODEL LOADED:", _MODEL_PATH)
+        print("SUCCESS: MODEL LOADED:", _MODEL_PATH)
 
     except Exception as e:
-        logger.error(f"❌ Failed to load categorization model: {e}")
+        logger.error(f"ERROR: Failed to load categorization model: {e}")
         _pipeline = None
 
 

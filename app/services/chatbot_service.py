@@ -1,17 +1,12 @@
-from langchain_mistralai import ChatMistralAI
-from langchain_core.prompts import ChatPromptTemplate
+from mistralai.client import Mistral
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
-llm = ChatMistralAI(
-    model="mistral-tiny",
-    temperature=0.3,
-    api_key=os.getenv("MISTRAL_API_KEY")
-)
-
-print("MISTRAL KEY:", os.getenv("MISTRAL_API_KEY"))
+api_key = os.getenv("MISTRAL_API_KEY")
+model = "mistral-small"
+client = Mistral(api_key=api_key)
 
 def clean_llm_response(text: str) -> str:
     import re
@@ -30,10 +25,9 @@ def format_transactions(transactions):
 
 
 def generate_reply(user_query: str, transactions):
-
     context = format_transactions(transactions)
 
-    prompt = ChatPromptTemplate.from_template("""
+    prompt = f"""
 You are a smart personal finance assistant.
 
 Format your response like this:
@@ -47,21 +41,24 @@ User transactions:
 {context}
 
 User question:
-{question}
+{user_query}
 
 Instructions:
 - Answer clearly in simple language
 - Mention exact amounts
 - Be helpful and concise
-""")
+"""
 
-    chain = prompt | llm
-
-    response = chain.invoke({
-        "context": context,
-        "question": user_query
-    })
+    chat_response = client.chat.complete(
+        model=model,
+        messages=[
+            {
+                "role": "user",
+                "content": prompt,
+            },
+        ]
+    )
     
-    cleaned = clean_llm_response(response.content)
+    cleaned = clean_llm_response(chat_response.choices[0].message.content)
 
     return cleaned

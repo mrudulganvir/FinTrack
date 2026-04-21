@@ -1,6 +1,6 @@
 export const API_BASE_URL = ['localhost', '127.0.0.1', '0.0.0.0'].includes(window.location.hostname)
   ? 'http://localhost:8000'
-  : 'https://fintrack-backend-8or0.onrender.com';
+  : 'https://fintrack-1-7p43.onrender.com';
 
 export const CAT_EMOJI = {
   grocery: '🛒', shopping: '🛍️', food: '🍱', utilities: '💡',

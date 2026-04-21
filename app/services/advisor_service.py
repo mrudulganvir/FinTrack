@@ -4,8 +4,8 @@ from datetime import datetime, timedelta
 from typing import List, Dict, Optional
 import pandas as pd
 import yfinance as yf
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.prompts import ChatPromptTemplate
+from google import genai
+from google.genai import types
 
 class InvestmentAdvisorService:
     """
@@ -20,13 +20,9 @@ class InvestmentAdvisorService:
         self.base_url = f"https://{self.api_host}"
         
         # Initialize Gemini AI "The Brain"
-        self.llm = None
+        self.client = None
         if os.getenv("GOOGLE_API_KEY"):
-            self.llm = ChatGoogleGenerativeAI(
-                model="gemini-1.5-flash",
-                google_api_key=os.getenv("GOOGLE_API_KEY"),
-                temperature=0.2
-            )
+            self.client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 
     def _fetch_api_data(self, symbol: str) -> Dict:
         """Helper to fetch from RapidAPI"""
@@ -150,7 +146,7 @@ class InvestmentAdvisorService:
         }
 
         # 4. Add AI "Brain" Insights if API key is present
-        if self.llm:
+        if self.client:
             response["ai_advice"] = self.get_ai_brain_advice(response)
 
         return response
@@ -188,21 +184,21 @@ class InvestmentAdvisorService:
         and user profile into a cohesive strategy.
         """
         try:
-            prompt = ChatPromptTemplate.from_template("""
+            prompt = f"""
             You are 'FinTrack Brain', an elite AI investment strategist.
             
             USER PROFILE:
-            - Risk Appetite: {risk_profile}
-            - Monthly Investable Surplus: ₹{monthly_surplus}
+            - Risk Appetite: {context["risk_profile"]}
+            - Monthly Investable Surplus: ₹{context["monthly_surplus"]}
             
             SUGGESTED STRATEGY:
-            {recommendations}
+            {context["recommendations"]}
             
             MARKET DATA (3Y Performance):
-            {market_context}
+            {context["market_context"]}
             
             TECHNICAL SIGNALS:
-            {signals}
+            {context["signals"]}
             
             TASK:
             Provide a concise, high-impact investment advice (max 150 words). 
@@ -211,17 +207,16 @@ class InvestmentAdvisorService:
             - Give a 'Pro Tip' for long-term wealth creation.
             - Format with bold text for important numbers and tickers.
             - Be encouraging but realistic.
-            """)
+            """
             
-            chain = prompt | self.llm
-            response = chain.invoke({
-                "risk_profile": context["risk_profile"],
-                "monthly_surplus": context["monthly_surplus"],
-                "recommendations": context["recommendations"],
-                "market_context": context["market_context"],
-                "signals": context["signals"]
-            })
-            return response.content
+            response = self.client.models.generate_content(
+                model='gemini-1.5-flash',
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    temperature=0.2,
+                )
+            )
+            return response.text
         except Exception as e:
             return f"AI Advisor is currently unavailable: {str(e)}"
 
