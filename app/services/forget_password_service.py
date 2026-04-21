@@ -89,7 +89,7 @@ def _send_otp_sms(phone: str, otp: str) -> None:
             return
         else:
             logger.error("Twilio credentials missing in production!")
-            raise HTTPException(status_code=502, detail="SMS service unavailable.")
+            raise HTTPException(status_code=502, detail="SMS Gateway Error: Twilio credentials (SID/Token/Number) are missing in environment variables.")
  
     try:
         from twilio.rest import Client
@@ -103,7 +103,7 @@ def _send_otp_sms(phone: str, otp: str) -> None:
  
     except Exception as exc:
         logger.error("Twilio error for %s: %s", phone, exc)
-        raise HTTPException(status_code=502, detail="SMS delivery failed. Please try again.")
+        raise HTTPException(status_code=502, detail=f"SMS delivery failed via Twilio. Error: {str(exc)}")
  
  
 # ── Service functions ──────────────────────────────────────────────────────────
