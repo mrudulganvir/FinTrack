@@ -103,7 +103,7 @@ export default function Signup() {
         ux_mode: 'popup',
       });
       const el = document.getElementById('gsi-signup');
-      if (el) window.google.accounts.id.renderButton(el, { theme: 'outline', size: 'large', width: '100%', shape: 'pill' });
+      if (el) window.google.accounts.id.renderButton(el, { theme: 'outline', size: 'large', width: '350', shape: 'pill' });
     };
     init();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -141,8 +141,7 @@ export default function Signup() {
     try {
       const res = await axios.post(`${API_BASE_URL}/auth/signup`, formData);
       login(res.data.access_token);
-      setShowBankChoice(true);
-      // Step will change via choice modal or useEffect
+      navigate('/onboarding');
     } catch (err) {
       if (err.response?.status === 400 && err.response?.data?.detail === 'Email already registered') {
         setError('This email is already registered. Please login or use a different email.');
@@ -378,28 +377,28 @@ export default function Signup() {
                   <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Full Name</label>
                   <div className="relative group">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-teal-400 transition-colors" size={18} />
-                    <input id="name" type="text" value={formData.name} onChange={handleChange} placeholder="John Doe" required className="input-field" />
+                    <input id="name" type="text" value={formData.name} onChange={handleChange} placeholder="John Doe" required autoComplete="name" className="input-field" />
                   </div>
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Email Address</label>
                   <div className="relative group">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-teal-400 transition-colors" size={18} />
-                    <input id="email" type="email" value={formData.email} onChange={handleChange} placeholder="you@email.com" required className="input-field" />
+                    <input id="email" type="email" value={formData.email} onChange={handleChange} placeholder="you@email.com" required autoComplete="email" className="input-field" />
                   </div>
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Phone Number</label>
                   <div className="relative group">
                     <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-teal-400 transition-colors" size={18} />
-                    <input id="phone" type="tel" value={formData.phone} onChange={handleChange} placeholder="10-digit mobile number" required maxLength={10} className="input-field" />
+                    <input id="phone" type="tel" value={formData.phone} onChange={handleChange} placeholder="10-digit mobile number" required autoComplete="tel" maxLength={10} className="input-field" />
                   </div>
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Set Password</label>
                   <div className="relative group">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-teal-400 transition-colors" size={18} />
-                    <input id="password" type={showPw ? 'text' : 'password'} value={formData.password} onChange={handleChange} placeholder="Min. 6 characters" required className="input-field" />
+                    <input id="password" type={showPw ? 'text' : 'password'} value={formData.password} onChange={handleChange} placeholder="Min. 6 characters" required autoComplete="new-password" className="input-field" />
                     <button type="button" onClick={() => setShowPw(v => !v)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-teal-400 transition-colors">
                       {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>

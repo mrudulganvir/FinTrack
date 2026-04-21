@@ -26,6 +26,10 @@ from app.core.config import settings
 # ── COOP header — required for Google Sign-In popup postMessage ───────────────
 @app.middleware("http")
 async def add_coop_header(request: Request, call_next):
+    # Important: Skip for OPTIONS requests to avoid breaking CORS preflight
+    if request.method == "OPTIONS":
+        return await call_next(request)
+
     response: Response = await call_next(request)
     if request.url.path.startswith("/auth"):
         response.headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups"
@@ -53,6 +57,7 @@ for url in [settings.FRONTEND_URL, settings.BACKEND_URL]:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex="https://.*one-stop-9956a\.web\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
