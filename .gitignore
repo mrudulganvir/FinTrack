@@ -6,4 +6,4 @@ node_modules/
 
 *.p12
 app/core/README.txt
-app\core\razorpay_test_api_keys_1776357853032.csv
+app/core/razorpay_test_api_keys_1776357853032.csv
