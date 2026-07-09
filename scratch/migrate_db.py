@@ -34,7 +34,7 @@ def migrate():
 
         # 2. Ensure investments table exists (since it was just added to models)
         try:
-            from app.database.models import Base
+            from backend.app.database.models import Base
             Base.metadata.create_all(bind=engine)
             print("All models synced (Investment, etc.).")
         except Exception as e:

@@ -16,6 +16,7 @@ import Login from './Login';
 import Onboarding from './Onboarding';
 import Signup from './Signup';
 import ForgotPassword from './ForgotPassword';
+import ZerodhaCallback from './ZerodhaCallback';
 
 const Loader = () => (
   <div className="h-screen bg-dark flex items-center justify-center text-teal-400 font-bold tracking-widest animate-pulse">
@@ -42,8 +43,8 @@ const ProtectedRoute = ({ children }) => {
 const AppRoutes = () => (
   <Routes>
     {/* Public */}
-    <Route path="/login"           element={<Login />} />
-    <Route path="/signup"          element={<Signup />} />
+    <Route path="/login" element={<Login />} />
+    <Route path="/signup" element={<Signup />} />
     <Route path="/forgot-password" element={<ForgotPassword />} />
 
     {/* Onboarding — auth required, but no sidebar */}
@@ -52,18 +53,19 @@ const AppRoutes = () => (
     } />
 
     {/* Protected app pages */}
-    <Route path="/"            element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-    <Route path="/expenses"    element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
-    <Route path="/income"      element={<ProtectedRoute><Income /></ProtectedRoute>} />
-    <Route path="/budgets"     element={<ProtectedRoute><Budgets /></ProtectedRoute>} />
-    <Route path="/loans"       element={<ProtectedRoute><Loans /></ProtectedRoute>} />
-    <Route path="/reports"     element={<ProtectedRoute><Reports /></ProtectedRoute>} />
-    <Route path="/insights"    element={<ProtectedRoute><Insights /></ProtectedRoute>} />
+    <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+    <Route path="/expenses" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
+    <Route path="/income" element={<ProtectedRoute><Income /></ProtectedRoute>} />
+    <Route path="/budgets" element={<ProtectedRoute><Budgets /></ProtectedRoute>} />
+    <Route path="/loans" element={<ProtectedRoute><Loans /></ProtectedRoute>} />
+    <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+    <Route path="/insights" element={<ProtectedRoute><Insights /></ProtectedRoute>} />
     <Route path="/investments" element={<ProtectedRoute><Investments /></ProtectedRoute>} />
-    <Route path="/settings"    element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-    <Route path="/chatbot"     element={<ProtectedRoute><Chatbot /></ProtectedRoute>} />
+    <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+    <Route path="/chatbot" element={<ProtectedRoute><Chatbot /></ProtectedRoute>} />
 
     <Route path="*" element={<Navigate to="/" replace />} />
+    <Route path="/zerodha/callback" element={<BareProtectedRoute><ZerodhaCallback /></BareProtectedRoute>} />
   </Routes>
 );
 

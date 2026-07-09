@@ -12,6 +12,11 @@ export const UserProvider = ({ children }) => {
     if (token) {
       try {
         const decoded = jwtDecode(token);
+        if (decoded.exp && Date.now() >= decoded.exp * 1000) {
+          logout();
+          return;
+        }
+
         setUser({
           id: decoded.user_id,
           name: decoded.name || `User #${decoded.user_id}`,
